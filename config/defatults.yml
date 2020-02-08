@@ -1,0 +1,98 @@
+# This is another example document that shows what the default settings are for the
+# PSEC electronics. This should not be used to reset the configuration. Rather,
+# call ./bin/setConfig with no parameters, which will reset the configuration
+#
+# An idea of the usage of this would be the basis for any other config, then delete the
+# settings you don't need to change
+acdc_settings:
+  pedestal:
+    0:
+      all: 2048
+    1:
+      all: 2048
+    2:
+      all: 2048
+    3:
+      all: 2048
+    4:
+      all: 2048
+    5:
+      all: 2048
+    6:
+      all: 2048
+    7:
+      all: 2048
+
+  threshold:
+    0:
+      all: 0
+    1:
+      all: 0
+    2:
+      all: 0
+    3:
+      all: 0
+    4:
+      all: 0
+    5:
+      all: 0
+    6:
+      all: 0
+    7:
+      all: 0
+      
+trigger_settings:
+  trig_mask:
+    0: 0x0
+    1: 0x0
+    2: 0x0
+    3: 0x0
+    4: 0x0
+    5: 0x0
+    6: 0x0
+    7: 0x0
+
+  trig_enable:
+    0: off
+    1: off
+    2: off
+    3: off
+    4: off
+    5: off
+    6: off
+    7: off
+
+  trig_sign:
+    0: falling
+    1: falling
+    2: falling
+    3: falling
+    4: falling
+    5: falling
+    6: falling
+    7: falling
+
+  sma_trig_on_fe:
+    0: off
+    1: off
+    2: off
+    3: off
+    4: off
+    5: off
+    6: off
+    7: off
+
+  wait_for_sys: off
+  rate_only: off
+
+  hrdw_trig: off
+  hrdw_trig_src: 0
+  hrdw_sl_trig: off
+  hrdw_sl_trig_src: 0
+
+  use_coinc: off
+  use_trig_valid: off
+  coinc_num_ch: 0
+  coinc_num_asic: 0
+  coinc_window: 0
+  coinc_pulsew: 0

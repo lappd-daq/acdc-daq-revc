@@ -1,0 +1,31 @@
+# This config was written for ISU's LAPPD test bench to use one board to hardware trigger on coincidence events.
+# For more details on these configuration files, see the README and the example document
+acdc_settings:
+  pedestal:
+    1:
+      all: 2000
+
+  threshold:
+    1:
+      all: 1850
+
+trigger_settings:
+  trig_mask:
+    1: 0xFFFFFFFF
+
+  trig_enable:
+    1: on
+
+  trig_sign:
+    1: falling
+
+  hrdw_trig: on
+  hrdw_trig_src: 0
+
+
+  use_coinc: off
+  use_trig_valid: off
+  coinc_num_ch: 2
+  coinc_num_asic: 1
+  coinc_window: 15
+  coinc_pulsew: 7

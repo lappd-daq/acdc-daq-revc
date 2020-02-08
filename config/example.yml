@@ -1,0 +1,91 @@
+# These settings are related to the "acdc" settings in the previous version
+acdc_settings:
+  # These are the values for the pedestal in ADC counts on the range [0, 4096]
+  pedestal:
+    # You can specify any board, but don't have to
+    0: # board 0
+      # You can specify per chip
+      0: 3000
+      1: 3000
+      2: 3000
+      3: 3000
+      4: 3000
+    1: # board 1
+      # Or you can set all chips to the same value
+      all: 3000
+  # These are the values for the threshold in ADC counts on the range [0, 4096]
+  threshold:
+    # The per board and per chip values are set the same as the pedestal values
+    1: # Board 1
+      all: 3200
+
+# These settings are related to the "trig" settings in the previous version
+trigger_settings:
+  # This sets the 30-bit boolean mask for the triggers
+  trig_mask:
+    # Specify per board
+    0: 0xFFFFFFFF
+    1: 0xFFFFFFFF
+    2: 0xFFFFFFFF
+    3: 0xFFFFFFFF
+    4: 0xFFFFFFFF
+    5: 0xFFFFFFFF
+    6: 0xFFFFFFFF
+    7: 0xFFFFFFFF
+
+  # This enables the hardware trigger per board
+  trig_enable:
+    # Specify per board, using [on, true, yes, y] or [off, false, no, n]
+    0: off
+    1: on
+    2: off
+    3: off
+    4: off
+    5: off
+    6: off
+    7: off
+
+  # This sets which side of the signal to trigger on
+  trig_sign: # Only accepts {'rising', 'falling'}
+    0: falling
+    1: rising
+    2: falling
+    3: falling
+    4: falling
+    5: falling
+    6: falling
+    7: falling
+
+  # Wait for system trig
+  wait_for_sys: off
+  # specify scalar mode
+  rate_only: off
+
+  # external trig settings
+  hrdw_trig: on
+  # 0=ext, 3 = board0, 4=b1, 6=b2, 7=b3
+  hrdw_trig_src: 0
+
+  hrdw_sl_trig: off
+  hrdw_sl_trig_src: 0
+
+  #use sma trig input on AC/DC card [address [0,1]]
+  sma_trig_on_fe:
+    0: off
+    1: off
+    2: off
+    3: off
+    4: off
+    5: off
+    6: off
+    7: off
+
+  # coincidence window settings
+  use_coinc: off
+  coinc_window: 5 # [0, 15]
+  coinc_pulsew: 2 # [0, 7]
+  coinc_num_ch: 1 # [0, 30]
+  coinc_num_asic: 1 # [0, 5]
+
+  # State machines
+  use_trig_valid: off

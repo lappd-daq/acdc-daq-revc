@@ -1,0 +1,13 @@
+# This config was written for ISU's LAPPD test bench to use one board to hardware trigger on low photoelectron
+# LAPPD pulsesfor more details on these configuration files, see the README and the example document
+acdc_settings:
+  pedestal:
+    0:
+      all: 2000
+
+  threshold:
+    0:
+      all: 1850
+
+trigger_settings:
+  hrdw_trig: off

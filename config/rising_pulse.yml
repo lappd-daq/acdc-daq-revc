@@ -1,0 +1,25 @@
+# This config was written for ISU's test bench to use one board to hardware trigger on a rising pulse
+# for more details on these configuration files, see the README and the example document
+acdc_settings:
+  pedestal:
+    1:
+      all: 3000
+
+  threshold:
+    1:
+      all: 3200
+
+trigger_settings:
+  trig_mask:
+    1: 0xFFFFFFFF
+
+  trig_enable:
+    1: on
+
+  trig_sign:
+    1: rising
+
+  hrdw_trig: on
+  hrdw_trig_src: 0
+
+

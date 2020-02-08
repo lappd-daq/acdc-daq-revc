@@ -1,0 +1,11 @@
+# This config was written for ISU's test bench to use one board to hardware trigger on a rising pulse
+# for more details on these configuration files, see the README and the example document
+acdc_settings:
+  pedestal:
+    0:
+      all: 2000
+
+trigger_settings:
+  sma_trig_on_fe:
+    0: on
+
