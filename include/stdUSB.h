@@ -55,6 +55,7 @@ private:
     uint16_t USBFX2_VENDOR_ID; //0x090c;
     uint16_t USBFX2_PRODUCT_ID; //0x1000;
 
+protected:
     struct usb_dev_handle *stdHandle;
 };
 

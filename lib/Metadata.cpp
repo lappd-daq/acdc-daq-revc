@@ -154,6 +154,10 @@ void Metadata::setBoardAndEvent(unsigned short board, unsigned short event)
 //which is then parsed and organized in this class. 
 void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 {
+	//if the buffer is 0 length (i.e. bad usb comms)
+	//return doing nothing
+	if(acdcBuffer.size() == 0) return;
+	
 
 	//byte that indicates the metadata of
 	//each psec chip is about to follow. 

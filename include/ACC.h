@@ -6,7 +6,7 @@
 
 using namespace std;
 
-#define CC_BUFFERSIZE 32
+#define CC_BUFFERSIZE 50
 #define ACDC_BUFFERSIZE 10000
 #define MAX_NUM_BOARDS 8
 
@@ -14,8 +14,9 @@ class ACC
 {
 public:
 	ACC();
-	ACC(uint16_t vid, uint16_t pid); 
 	~ACC();
+
+	void testFunction();
 
 	//----------parsing functions (no usb comms)
 	void printAccMetadata(bool pullNew = false);
