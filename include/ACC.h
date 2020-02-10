@@ -7,6 +7,7 @@
 using namespace std;
 
 #define CC_BUFFERSIZE 32
+#define ACDC_BUFFERSIZE 10000
 #define MAX_NUM_BOARDS 8
 
 class ACC
@@ -16,7 +17,7 @@ public:
 	ACC(uint16_t vid, uint16_t pid); 
 	~ACC();
 
-	//parsing functions (no usb comms)
+	//----------parsing functions (no usb comms)
 	void printAccMetadata(bool pullNew = false);
 	void printRawAccBuffer(bool pullNew = false);
 	map<int, bool>  checkFullRamRegisters(bool pullNew = false);
@@ -26,14 +27,12 @@ public:
 	unsigned short vectorToUnsignedShort(vector<int> a);
 
 	
-	//functions that involve usb comms
+	//-----------functions that involve usb comms
+	//(see cpp declaration for more comments above functions)
 	void createAcdcs(); //creates ACDC objects, explicitly querying both buffers
+	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
+	void readAcdcBuffers(); //reads the acdc buffers of connected boards
 
-	//sends software trigger to all connected boards. 
-	//bin option allows one to force a particular 160MHz
-	//clock cycle to trigger on. anything greater than 3
-	//is defaulted to 0. 
-	void softwareTrigger(vector<int> boards = {}, int bin = 0); 
 
 
 private:
@@ -46,16 +45,21 @@ private:
 	map<int, bool> dcPkt; ////which boards (first index) have a dc packet (dont know what that means)
 
 
-	//functions that involve usb comms
+	//-----------functions that involve usb comms
 	vector<unsigned short> readAccBuffer();
 
 
-	//parsing functions (no usb comms)
+	//-----------parsing functions (no usb comms)
 	vector<int> whichAcdcsConnected(bool pullNew = false);
 	void printByte(unsigned short val);
-	void wakeup(); //wakes the usb line, only called in constructor. 
+	vector<unsigned short> sendAndRead(unsigned int command, int buffsize); //wakes the usb line, only called in constructor. 
 	bool checkUSB(); //checking usb line and returning or couting appropriately.  
-
+	//--0xB class of commands, the most cryptic
+	void prepSync(); //preps sync? need to read firmware to understand this
+	void makeSync(); //make sync? need to read firmware to understand this
+	void resetAccTrigger();
+	void setAccTrigValid();
+	//--end 0xB
 };
 
 #endif

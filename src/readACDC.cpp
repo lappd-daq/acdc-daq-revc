@@ -12,5 +12,10 @@ int main() {
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
 	acc.softwareTrigger(); //trigger all boards. 
+	acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
+	this_thread::sleep_for(chrono::milliseconds(5));
+	acc.softwareTrigger();
+	acc.readAcdcBuffers();
+
 	return 1;
 }

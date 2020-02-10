@@ -6,6 +6,7 @@ ACDC::ACDC()
 {
 	trigMask = 0xFFFFFF;
 	convertMaskToChannels();
+	initializeMetadataKeys();
 }
 
 ACDC::ACDC(int bi)
@@ -13,6 +14,7 @@ ACDC::ACDC(int bi)
 	boardIndex = bi;
 	trigMask = 0xFFFFFF;
 	convertMaskToChannels();
+	initializeMetadataKeys();
 }
 
 
@@ -26,6 +28,11 @@ void ACDC::setTriggerMask(unsigned int mask)
 {
 	trigMask = mask;
 	convertMaskToChannels();
+}
+
+int ACDC::getBoardIndex()
+{
+	return boardIndex;
 }
 
 unsigned int ACDC::getTriggerMask()
@@ -56,3 +63,44 @@ void ACDC::convertMaskToChannels()
 		}
 	}
 }
+
+void ACDC::setLastBuffer(vector<unsigned short> b)
+{
+	lastAcdcBuffer = b;
+	meta.parseBuffer(b); //the BIG buffer parsing function that fills data/metadata maps
+}
+
+//looks at the last ACDC buffer and organizes
+//all of the data into a data object. This is called
+//explicitly so as to not allocate a bunch of memory 
+//without need.  
+void ACDC::fillData()
+{
+	//make sure an acdc buffer has been
+	//filled. if not, there is nothing to be done.
+	if(lastAcdcBuffer.size() == 0)
+	{
+		cout << "You tried to parse ACDC data without pulling an ACDC buffer" << endl;
+		return;
+	}
+
+	//word that indicates the data is
+	//about to start for each psec chip.
+	unsigned short startword = 0xF005; 
+	unsigned short endword = 0xBA11; //just for safety, uses the 256 sample rule. 
+
+
+}
+
+
+
+
+
+
+
+
+
+
+
+
+

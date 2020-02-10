@@ -207,9 +207,9 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     buff[2] = data >> 16;
     buff[3] = data >> 24;
    
-    //cout << "Data is: ";
-    //printByte(data);
-    //cout << endl;
+    cout << "Data is: ";
+    printByte(data);
+    cout << endl;
 
     int retval = usb_bulk_write(stdHandle, 0x02, buff, sizeof(buff), USB_TOUT_MS);
 
@@ -259,6 +259,29 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
     }
 
     return false;
+}
+
+//this is a function Evan wrote to properly allocate
+//and delete memory for the readData function that was
+//written in C back in 2000 something. 
+vector<unsigned short> stdUSB::safeReadData(int maxSamples)
+{
+    int samples; //number of bytes actually read
+    unsigned short* buffer; //this type required by usb driver
+    buffer = (unsigned short*)calloc(maxSamples + 2, sizeof(unsigned short)); //safe allocation
+    readData(buffer, maxSamples + 2, &samples); //read up to maxSamples
+
+    //fill buffer into a vector
+    vector<unsigned short> v_buffer;
+    cout << "Got " << samples << " samples from usbread" << endl;
+    //loop over each element in buffer
+    for(int i = 0; i < samples; i++)
+    {
+        v_buffer.push_back(buffer[i]);
+    }
+
+    free(buffer); //free the calloc'ed memory
+    return v_buffer;
 }
 
 bool stdUSB::isOpen() {

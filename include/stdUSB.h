@@ -10,6 +10,9 @@ StdUSB libusb implementation used here uses same function interface with native 
 *****/
 
 #include <usb.h>
+#include <vector>
+
+using namespace std;
 
 #define INVALID_HANDLE_VALUE NULL
 #define USB_TOUT_MS 50 // in ms
@@ -42,6 +45,8 @@ public:
     bool reset();
 
     void printByte(unsigned int val);
+
+    vector<unsigned short> safeReadData(int maxSamples); //allocates memory properly for reading
 
 private:
     struct usb_device* init(int device_count);

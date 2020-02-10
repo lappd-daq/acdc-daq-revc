@@ -12,86 +12,63 @@ ACC::ACC()
 {
 	uint16_t vid = 0x6672;
 	uint16_t pid = 0x2920;
-	stdUSB* tempusb = new stdUSB(vid, pid);
-	if(!tempusb->isOpen())
+	usb = new stdUSB(vid, pid);
+	if(!usb->isOpen())
 	{
 		cout << "Usb was unable to connect to ACC" << endl;
+		delete usb;
 		exit(EXIT_FAILURE);
 	}
-	else
-	{
-		usb = tempusb;
-	}
-
-	//the step that is "black magic"
-	//to clear any historesis in the 
-	//firmware/USB state from previous
-	//sessions
-	wakeup();
-
 }
 
 ACC::ACC(uint16_t vid, uint16_t pid)
 {
-	stdUSB* tempusb = new stdUSB(vid, pid);
-	if(!tempusb->isOpen())
-	{
-		cout << "Usb was unable to connect to ACC" << endl;
-		exit(EXIT_FAILURE);
-	}
-	else
-	{
-		usb = tempusb;
-	}
-
-	//the step that is "black magic"
-	//to clear any historesis in the 
-	//firmware/USB state from previous
-	//sessions
-	wakeup();
-
-}
-
-//this is an empirically formed
-//"wake-up" function that clears any
-//historetical states in the firmware
-//or USB line. I've found that this is needed
-//before the first commands are sent to the board
-//upon first starting the _software_. It has to
-//do with the way the ACC is parsing USB bits
-//and how the USB driver memory is deallocating. 
-void ACC::wakeup()
-{
+	usb = new stdUSB(vid, pid);
 	if(!usb->isOpen())
 	{
-		bool retval = usb->createHandles();
-		if(!retval)
-		{
-			cout << "Cannot connect to ACC usb" << endl;
-			exit(EXIT_FAILURE);
-		}
+		cout << "Usb was unable to connect to ACC" << endl;
+		delete usb;
+		exit(EXIT_FAILURE);
 	}
-	//read firmware or programmers manual for explanation
-	//this is me encapsulating poorly written firmware comms
-	unsigned int command = 0x1e0C0005; 
-	//writing this tells the ACC to respond
-	//with its own metadata
+}
+
+ACC::~ACC()
+{
+	/*
+	resetAccTrigger();
+	readAcdcBuffers();
+	resetAccTrigger();
+	readAcdcBuffers();
+	*/
+	delete usb;
+}
+
+
+//this is "black magic". 
+//for some reason (firmware or USB bug)
+//the set-usb-readmode commands require 
+//a number of sends and reads before 
+//it returns any USB packets. 
+//this is something to change when things get
+//worked out. 
+vector<unsigned short> ACC::sendAndRead(unsigned int command, int buffsize)
+{
+	if(!checkUSB()) exit(EXIT_FAILURE);
 
 	int send_counter = 0;
 	int max_sends = 50; //arbitrary. 
 	bool loop_breaker = false;
-	int samples; //number of bytes actually read
-	unsigned short* buffer;
 	//this loop is because the ACC or USB
 	//driver seems to need repetative
 	//writing in order to properly get the
 	//message across
+	vector<unsigned short> tempbuff;
 	while(!loop_breaker)
 	{
 		usb->sendData(command);
 		send_counter++;
-	    buffer = (unsigned short*)calloc(CC_BUFFERSIZE + 2, sizeof(unsigned short));
-		if(usb->readData(buffer, CC_BUFFERSIZE + 2, &samples))
+		tempbuff = usb->safeReadData(buffsize + 2);
+		if(tempbuff.size() > 0)
 		{
 			loop_breaker = true;
 		}
@@ -100,12 +77,9 @@ void ACC::wakeup()
 			loop_breaker = true;
 		}
 	}
+	return tempbuff;
 }
 
-ACC::~ACC()
-{
-	delete usb;
-}
 
 bool ACC::checkUSB()
 {
@@ -125,6 +99,49 @@ bool ACC::checkUSB()
 	return true;
 }
 
+//-----------The 0xB class of commands, the most cryptic
+
+//(1) clearing the Acc instruction in firmware
+//(2) sets Acc trigger = valid
+//(3) CC_SYNC goes to 1 which makes the
+//firmware wait 50,000 clocks before sending
+//the usb message. 
+void ACC::prepSync()
+{
+	unsigned int command = 0x000B0018;
+	usb->sendData(command);
+}
+
+//(1) clearing the Acc instruction in firmware
+//(2) sets Acc trigger = valid
+//(3) CC_SYNC goes to 0 which means it
+//will send the usb message immediately
+void ACC::makeSync()
+{
+	unsigned int command = 0x000B0010;
+	usb->sendData(command);
+}
+
+//(1) resets firmware in trigger and time
+//(2) does software reset of transeivers.vhd
+//(3) sets CC_INSTRUCTION to the command. 
+//Previously called "manage_cc_fifo", but now
+//calling it "resetAccTrigger"
+void ACC::resetAccTrigger()
+{
+	unsigned int command = 0x000B0001;
+	usb->sendData(command);
+}
+
+
+void ACC::setAccTrigValid()
+{
+	unsigned int command = 0x000B0006;
+	usb->sendData(command);
+}
+
+
+//------------- end 0xB
 
 //this queries the Acc buffer,
 //finds which ACDCs are connected, then
@@ -166,25 +183,9 @@ vector<unsigned short> ACC::readAccBuffer()
 	//writing this tells the ACC to respond
 	//with its own metadata
 	unsigned int command = 0x1e0C0005; 
-	
-	int samples; //number of bytes actually read
-	unsigned short* buffer; //this type required by usb driver
-	buffer = (unsigned short*)calloc(CC_BUFFERSIZE + 2, sizeof(unsigned short)); //safe allocation
-	usb->sendData(command);
-	usb->readData(buffer, CC_BUFFERSIZE + 2, &samples); //read up to CC_BUFFFERSIZE + 2 bytes or less
-
-	//fill buffer into a vector
-	vector<unsigned short> v_buffer;
-	//loop over each element in buffer
-	for(int i = 0; i < samples; i++)
-	{
-		v_buffer.push_back(buffer[i]);
-	}
-
-	free(buffer); //free the calloc'ed memory
-	lastAccBuffer = v_buffer;
-
-	return v_buffer;
+	vector<unsigned short> v_buffer = sendAndRead(command, CC_BUFFERSIZE);
+	lastAccBuffer = v_buffer; //save as a private variable
+	return v_buffer; //also return as an option
 }
 
 void ACC::printByte(unsigned short val)
@@ -374,26 +375,84 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 		boards = alignedAcdcIndices;
 	}
 
+	readAccBuffer(); //needs to be done before sending software trig?
+
 	cout << "Sending a software trigger to boards ";
 	for(int bi: boards) cout << bi << ", ";
 	cout << endl;
 
 	//turn this into an unsigned int mask. 
-	unsigned int mask = vectorToUnsignedInt(boards);
+	unsigned short mask = vectorToUnsignedShort(boards);
 	//the present version of firmware only allows
 	//one to mask boards 0-3 (as opposed to 0-7). 
 	//take this part out when moving to 8 board firmware. 
-	mask = mask & 0x0000000F;
+	mask = mask & 0x000F;
+
+	cout << "Soft trig mask is "; 
+	printByte(mask);
+	cout << endl;
 
 	//force the board to trigger on a certain 160MHz
 	//clock cycle within the event. default is 0, and
 	//cannot be more than 3. 
 	bin = bin % 4;
 
+	
+
 	//send the command
-	unsigned int command = 0x000E000; 
-	command = command | mask | (1 << 4) | (bin << 5);
+	unsigned int command = 0x000E0000; 
+	command = command | mask;
 
+	//prep synchronization?
+	//prepSync();
 	usb->sendData(command);
+	//make synchronization?
+	//makeSync();
 
+}
+
+//sends a command to read the ACDC buffer
+//and loads that buffer into memory as a private
+//variable in the ACDC objects themselves. 
+//then tells the ACDC objects to parse their
+//own f*$&ing buffers. 
+void ACC::readAcdcBuffers()
+{
+	cout << "Reading ACDC buffers" << endl;
+	//assumes that the last ACC buffer is still relevant
+	//and double-checks the connected board values. however,
+	//only boards that have recently been software triggered
+	//will have updated metadata/buffers. 
+
+	//refreshed connected Acdc list (only parser, no usb packets sent)
+	whichAcdcsConnected();
+
+	//each ACDC needs its own USB packet sent. There is no
+	//bulk transfer where it captures all data from all 
+	//boards. 
+	for(int bi: alignedAcdcIndices)
+	{
+		cout << "Reading board number " << bi << endl;
+		unsigned int command = 0x1e0C0000; //base command for set readmode
+		command = command | (unsigned int)(bi + 1); //which board to read
+		//vector<unsigned short> acdc_buffer = sendAndRead(command, ACDC_BUFFERSIZE);
+		usb->sendData(command);
+		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+		this_thread::sleep_for(chrono::milliseconds(1000));
+		
+		//save this as a private member of ACDC
+		//by looping through our acdc vector
+		//and checking each index (not optimal but)
+		//who cares about 4 loop iterations. 
+		for(ACDC a: acdcs)
+		{
+			if(a.getBoardIndex() == bi)
+			{
+				cout << "Saving buffer (size " << acdc_buffer.size() << ") on board " << bi << endl;
+				a.setLastBuffer(acdc_buffer); //also triggers parsing function
+			}
+		}
+	}
+
+	resetAccTrigger();
 }
