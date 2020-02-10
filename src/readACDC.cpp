@@ -11,11 +11,17 @@ int main() {
 
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
+	cout << "out of create acdcds" << endl;
 	acc.softwareTrigger(); //trigger all boards. 
+	cout << "out of software trig" << endl;
 	acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
-	this_thread::sleep_for(chrono::milliseconds(5));
-	acc.softwareTrigger();
-	acc.readAcdcBuffers();
+	cout << "out of read buffers" << endl;
+
+	bool verbose = false;
+	acc.printAcdcInfo(verbose);
+	//this_thread::sleep_for(chrono::milliseconds(5));
+	//acc.softwareTrigger();
+	//acc.readAcdcBuffers();
 
 	return 1;
 }

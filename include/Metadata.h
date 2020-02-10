@@ -8,6 +8,8 @@
 #define NUM_PSEC 5
 #define NUM_CH 30
 
+using namespace std;
+
 class Metadata
 {
 public:
@@ -19,7 +21,9 @@ public:
 	vector<int> getMaskedChannels(); //returns a vector format of masked channels
 	void standardPrint(); //lite print
 	void printAllMetadata(); //full raw print. 
-	
+	//two metadatas that are known externally need to be set by ACDC class.
+	void setBoardAndEvent(unsigned short board, unsigned short event); 
+
 private:
 	map<string, unsigned short> metadata;
 

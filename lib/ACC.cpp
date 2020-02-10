@@ -40,6 +40,7 @@ ACC::~ACC()
 	resetAccTrigger();
 	readAcdcBuffers();
 	*/
+	clearAcdcs();
 	delete usb;
 }
 
@@ -164,15 +165,29 @@ void ACC::createAcdcs()
 
 	
 	//clear the acdc vector
-	acdcs.clear();
+	clearAcdcs();
 	//create ACDC objects with their board numbers
 	//loaded into alignedAcdcIndices in the
 	//last function call. 
 	for(int bi: alignedAcdcIndices)
 	{
 		cout << "Creating a new ACDC object for detected ACDC: " << bi << endl;
-		acdcs.push_back(ACDC(bi));
+		ACDC* temp = new ACDC();
+		temp->setBoardIndex(bi);
+		acdcs.push_back(temp);
 	}
+
+}
+
+//properly delete Acdc vector
+//as each one was created by new. 
+void ACC::clearAcdcs()
+{
+	for(int i = 0; i < (int)acdcs.size(); i++)
+	{
+		delete acdcs[i];
+	}
+	acdcs.clear();
 }
 
 vector<unsigned short> ACC::readAccBuffer()
@@ -331,6 +346,17 @@ void ACC::printRawAccBuffer(bool pullNew)
 	
 }
 
+//for each connected board (ACDC in acdc's)
+//print the last loaded metadata object.
+void ACC::printAcdcInfo(bool verbose)
+{
+	for(ACDC* a: acdcs)
+	{
+		cout << "Metadata from ACDC #" << a->getBoardIndex() << endl;
+		a->printMetadata(verbose);
+	}
+}
+
 //turns {0, 3, 6} into 0x00000049 (b1001001)
 unsigned int ACC::vectorToUnsignedInt(vector<int> a)
 {
@@ -439,17 +465,17 @@ void ACC::readAcdcBuffers()
 		usb->sendData(command);
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 		this_thread::sleep_for(chrono::milliseconds(1000));
-		
+
 		//save this as a private member of ACDC
 		//by looping through our acdc vector
 		//and checking each index (not optimal but)
 		//who cares about 4 loop iterations. 
-		for(ACDC a: acdcs)
+		for(ACDC* a: acdcs)
 		{
-			if(a.getBoardIndex() == bi)
+			if(a->getBoardIndex() == bi)
 			{
 				cout << "Saving buffer (size " << acdc_buffer.size() << ") on board " << bi << endl;
-				a.setLastBuffer(acdc_buffer); //also triggers parsing function
+				a->setLastBuffer(acdc_buffer); //also triggers parsing function
 			}
 		}
 	}

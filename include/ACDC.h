@@ -18,12 +18,15 @@ class ACDC
 {
 public:
 	ACDC();
-	ACDC(int bi); //the constructor that is mainly used
 	~ACDC();
+
+
+	void printMetadata(bool verbose = false);
 
 	void setTriggerMask(unsigned int mask);
 	unsigned int getTriggerMask(); //get the trig mask (this syntax used)
 	int getBoardIndex();
+	void setBoardIndex(int bi);
 	vector<int> getMaskedChannels(); //get this private var. 
 	void setLastBuffer(vector<unsigned short> b);
 
@@ -37,6 +40,7 @@ private:
 
 	void convertMaskToChannels();
 	void fillData(); //parses the acdc buffer and fills the data map
+	int getEventNumber(); 
 };
 
 #endif

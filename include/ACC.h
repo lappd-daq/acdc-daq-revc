@@ -20,6 +20,7 @@ public:
 	//----------parsing functions (no usb comms)
 	void printAccMetadata(bool pullNew = false);
 	void printRawAccBuffer(bool pullNew = false);
+	void printAcdcInfo(bool verbose = false);
 	map<int, bool>  checkFullRamRegisters(bool pullNew = false);
 	map<int, bool>  checkDigitizingFlag(bool pullNew = false);
 	map<int, bool>  checkDcPktFlag(bool pullNew = false);
@@ -39,7 +40,7 @@ private:
 	stdUSB* usb;
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port)
-	vector<ACDC> acdcs; //a vector of active acdc boards. 
+	vector<ACDC*> acdcs; //a vector of active acdc boards. 
 	map<int, bool> fullRam; //which boards (first index) have full ram
 	map<int, bool> digFlag; //which boards (first index) have a dig start flag (dont know what that means)
 	map<int, bool> dcPkt; ////which boards (first index) have a dc packet (dont know what that means)
@@ -60,6 +61,7 @@ private:
 	void resetAccTrigger();
 	void setAccTrigValid();
 	//--end 0xB
+	void clearAcdcs(); //memory deallocation for acdc vector. 
 };
 
 #endif

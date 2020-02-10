@@ -3,7 +3,9 @@
 #include <sstream>
 #include <bitset>
 #include <iostream>
+#include <cmath>
 
+using namespace std;
 
 Metadata::Metadata()
 {
@@ -12,18 +14,19 @@ Metadata::Metadata()
 
 Metadata::Metadata(vector<unsigned short> acdcBuffer)
 {
-
+	initializeMetadataKeys();
+	parseBuffer(acdcBuffer);
 }
 
 Metadata::~Metadata()
 {
-
 }
 
 //prints the raw metadata bytes
 //in decimal, hex, and binary
 void Metadata::printAllMetadata()
 {
+
     vector<string>::iterator kit;
     for(kit = metadata_keys.begin(); kit != metadata_keys.end(); ++kit)
     {
@@ -46,6 +49,10 @@ void Metadata::standardPrint()
 {
 	vector<int> masked_channels = getMaskedChannels();
 
+
+
+
+
 	cout << "CC_EVENT_COUNT:" << metadata["CC_EVENT_COUNT"] << ", ";
 	cout << "CC_TIME (nclocks, hi:mid:lo)  " << metadata["CC_TIMESTAMP_HI"] << ":" << metadata["CC_TIMESTAMP_MID"] << ":" << metadata["CC_TIMESTAMP_LO"] << endl;
 	cout << "--------" << endl;
@@ -59,7 +66,7 @@ void Metadata::standardPrint()
 	{
 		cout << to_string(*it) << ",";
 	}
-	
+
 	cout << endl;
 	cout << "self-trig enable: " << metadata["self_trig"] << endl;
 	cout << "trig sign:        " << metadata["trigger_sign"] << endl;
@@ -76,13 +83,13 @@ void Metadata::standardPrint()
 	double ref_volt_mv = 1200;
 	double num_bits = 4096;
 
-	for (int i = 0; i < 5; i++) {
+	for (int i = 0; i < NUM_PSEC; i++) {
 		cout << "PSEC:" << i;
-		cout << "|ADC clock/trgt:" << metadata["ro_cnt"] * 10 * pow(2, 11) / (pow(10, 6));
-		cout << "/" << metadata["ro_target_cnt"] * 10 * pow(2, 11) / (pow(10, 6)) << "MHz";
-		cout << ",ro-bias:" << metadata["ro_dac_value"] * ref_volt_mv / num_bits << "mV";
-		cout << "|Ped:" << dec << metadata["vbias"] * ref_volt_mv / num_bits << "mV";
-		cout << "|Trig:" << metadata["trigger_threshold"] * ref_volt_mv / num_bits << "mV";
+		cout << "|ADC clock/trgt:" << metadata["ro_cnt"+to_string(i)] * 10 * pow(2, 11) / (pow(10, 6));
+		cout << "/" << metadata["ro_target_cnt"+to_string(i)] * 10 * pow(2, 11) / (pow(10, 6)) << "MHz";
+		cout << ",ro-bias:" << metadata["ro_dac_value"+to_string(i)] * ref_volt_mv / num_bits << "mV";
+		cout << "|Ped:" << dec << metadata["vbias"+to_string(i)] * ref_volt_mv / num_bits << "mV";
+		cout << "|Trig:" << metadata["trigger_threshold"+to_string(i)] * ref_volt_mv / num_bits << "mV";
 		cout << endl;
 	}
 
@@ -103,7 +110,6 @@ vector<int> Metadata::getMaskedChannels()
 	}
 
     unsigned long mask = (metadata["trig_mask_hi"] << 16) + metadata["trig_mask_lo"];
-    vector<int> masked_channels;
     for(int i = 1; i <= NUM_CH; i++)
     {
         //logic operate on the i'th bit.
@@ -128,16 +134,16 @@ vector<int> Metadata::getMaskedChannels()
 
 
 
-
-
-
-
-
 //----------Massive parsing functions are below. 
 
 
 
-
+//two metadatas that are known externally need to be set by ACDC class.
+void Metadata::setBoardAndEvent(unsigned short board, unsigned short event)
+{
+	checkAndInsert("Event", event);
+	checkAndInsert("Board", board);
+}
 
 
 
@@ -148,6 +154,7 @@ vector<int> Metadata::getMaskedChannels()
 //which is then parsed and organized in this class. 
 void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 {
+
 	//byte that indicates the metadata of
 	//each psec chip is about to follow. 
 	const unsigned short startword = 0xBA11; 
@@ -186,7 +193,8 @@ void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 	//be before the first occurance of the ac_info startword. 
 	//this is why you see below "start_indices.at(0) + 1". 
 	unsigned int cc_header_start = 0x1234;
-	bit = std::find(acdcBuffer.begin(), acdcBuffer.begin() + start_indices.at(0) + 1, cc_header_start);
+	bit = std::find(acdcBuffer.begin(), acdcBuffer.begin() + start_indices.at(0), cc_header_start);
+	++bit; //so that first byte is not the cc_header_start word. 
 	bool breaker = false;
 	while(!breaker)
 	{
@@ -226,14 +234,12 @@ void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 			infobytes.push_back(*bit);
 			++bit;
 		}
-		ac_info.insert(pair<int, vector<unsigned short>(chip_count, infobytes));
+		ac_info.insert(pair<int, vector<unsigned short>>(chip_count, infobytes));
 		chip_count++;
 	}
 
 	//-----start the rutheless decoding of the 
 	//-----acdc firmware and acc firmware packets. 
-	checkAndInsert("Event", count);
-    checkAndInsert("Board", frontEnd);
     for(int i = 0; i < NUM_PSEC; i++)
     {
         //indexing directly from ACDC top-level diagram and "lvds_com.vhd" line 316
@@ -411,7 +417,6 @@ void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //called in firmware "BIN_COUNT_SAVE" in triggerAndTime.vhd line 112. 
     //also contained in this buffer element is bin_count_start and bin_count. 
     checkAndInsert("CC_BIN_COUNT", (cc_header_info[0] & 0x18) >> 3);
-
 
 	return;
 }

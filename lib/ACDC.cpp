@@ -6,23 +6,20 @@ ACDC::ACDC()
 {
 	trigMask = 0xFFFFFF;
 	convertMaskToChannels();
-	initializeMetadataKeys();
 }
 
-ACDC::ACDC(int bi)
-{
-	boardIndex = bi;
-	trigMask = 0xFFFFFF;
-	convertMaskToChannels();
-	initializeMetadataKeys();
-}
 
 
 ACDC::~ACDC()
 {
-
+	cout << "Calling acdc detructor" << endl;
 }
 
+void ACDC::printMetadata(bool verbose)
+{
+	meta.standardPrint();
+	if(verbose) meta.printAllMetadata();
+}
 
 void ACDC::setTriggerMask(unsigned int mask)
 {
@@ -33,6 +30,11 @@ void ACDC::setTriggerMask(unsigned int mask)
 int ACDC::getBoardIndex()
 {
 	return boardIndex;
+}
+
+void ACDC::setBoardIndex(int bi)
+{
+	boardIndex = bi;
 }
 
 unsigned int ACDC::getTriggerMask()
@@ -68,6 +70,9 @@ void ACDC::setLastBuffer(vector<unsigned short> b)
 {
 	lastAcdcBuffer = b;
 	meta.parseBuffer(b); //the BIG buffer parsing function that fills data/metadata maps
+
+	int evNo = getEventNumber(); //some function that returns an event number. not sure how to get this yet. 
+	meta.setBoardAndEvent((unsigned short)boardIndex, (unsigned short)evNo);
 }
 
 //looks at the last ACDC buffer and organizes
@@ -90,6 +95,11 @@ void ACDC::fillData()
 	unsigned short endword = 0xBA11; //just for safety, uses the 256 sample rule. 
 
 
+}
+
+int ACDC::getEventNumber()
+{
+	return 0;
 }
 
 

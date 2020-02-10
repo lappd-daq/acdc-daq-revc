@@ -36,15 +36,21 @@ add_library(ACC
 add_library(ACDC
         ${LIBRARY_SOURCE_DIR}/ACDC.cpp)
 
-
 add_library(myusb
         ${LIBRARY_SOURCE_DIR}/stdUSB.cpp)
 
+add_library(Metadata
+        ${LIBRARY_SOURCE_DIR}/Metadata.cpp)
+
 target_link_libraries(myusb PRIVATE usb)
 
-target_link_libraries(ACC myusb ACDC yaml-cpp)
+target_link_libraries(ACC myusb ACDC Metadata yaml-cpp)
+
+
+
 
 add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
+
 
 
 
