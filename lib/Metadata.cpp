@@ -152,11 +152,11 @@ void Metadata::setBoardAndEvent(unsigned short board, unsigned short event)
 //takes the full acdcBuffer as input. 
 //splits it into a map[psec4][vector<unsigned shorts>]
 //which is then parsed and organized in this class. 
-void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
+bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 {
 	//if the buffer is 0 length (i.e. bad usb comms)
 	//return doing nothing
-	if(acdcBuffer.size() == 0) return;
+	if(acdcBuffer.size() == 0) return false;
 	
 
 	//byte that indicates the metadata of
@@ -179,48 +179,66 @@ void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 	//indices of elements in the acdcBuffer
 	//that correspond to the byte ba11
 	vector<int> start_indices; 
-	vector<unsigned short>::iterator bit = acdcBuffer.begin();
+	vector<unsigned short>::iterator bit;
 
-	//the argument of this while loop is complicated but it does this:
-	//set bit to the pointer of vector element when that element is == startword. 
-	//end the loop if you reach the end of the vector. 
-	while ((bit = std::find_if(bit, acdcBuffer.end(), [](int x){return x == startword;})) != acdcBuffer.end())
+	//loop through the data and find locations of startwords. 
+    //this can be made more efficient if you are having efficiency problems.
+	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
 	{
 		//the iterator is at an element with startword value. 
 		//push the index (integer, from std::distance) to a vector. 
-	    start_indices.push_back(std::distance(acdcBuffer.begin(), bit));
-	    bit++;
+        if(*bit == startword)
+        {
+             start_indices.push_back(std::distance(acdcBuffer.begin(), bit));
+        }
 	}
 
 	//re-use this iterator to fill the cc_header_info vector
 	//which starts with the first occurance of 1234. This will
 	//be before the first occurance of the ac_info startword. 
-	//this is why you see below "start_indices.at(0) + 1". 
 	unsigned int cc_header_start = 0x1234;
-	bit = std::find(acdcBuffer.begin(), acdcBuffer.begin() + start_indices.at(0), cc_header_start);
+	bit = std::find(acdcBuffer.begin(), acdcBuffer.end(), cc_header_start);
 	++bit; //so that first byte is not the cc_header_start word. 
-	bool breaker = false;
-	while(!breaker)
+    int counter = 0;
+    int maxAccInfo = 20; //the most bytes that would possibly be needed. 
+	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
 	{
 		cc_header_info.push_back(*bit);
-		++bit;
 		//the set of packets ends with the start word as well...
-		if(*bit == cc_header_start)
+        //counter is an extra protection in case the ACC missed a packet
+        //(an error... but this will likely return false at the code protections below)
+		if(*bit == cc_header_start || counter == maxAccInfo)
 		{
-			breaker = true; //just cuz infinite while loops are bad. 
 			break;
 		}
+        counter++;
 	}
 
 
 
-	//check to make sure there aren't more startwords
-	//than there are chips. If there are, we have a problem. 
+	//I have found experimentally that sometimes
+    //the ACC sends an ACDC buffer that has 8001 elements
+    //(correct) but has BAD data, i.e. with extra ADC samples
+    //and missing PSEC metadata (startwords). This event
+    //needs to be thrown away really, but here all I can 
+    //do is return and say that the metadata is nothing. 
 	if(start_indices.size() != NUM_PSEC)
 	{
-		cout << "In parsing ACDC buffer, found an extra matadata flag byte." << endl;
+		cout << "In parsing ACDC buffer, found " << start_indices.size() << " matadata flag bytes." << endl;
 		cout << "Metadata for this event will likely be jarbled. Code a protection!" << endl;
+        return false;
 	}
+
+    //aparently this can happen, have not had enough 
+    //trials to debug. 
+    if(start_indices.size() == 0)
+    {
+        for(unsigned short v: acdcBuffer)
+        {
+            cout << std::hex << v << endl;
+        }
+        return false;
+    }
 
 	//loop through each startword index and store metadata. 
 	int chip_count = 0;
@@ -422,7 +440,7 @@ void Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //also contained in this buffer element is bin_count_start and bin_count. 
     checkAndInsert("CC_BIN_COUNT", (cc_header_info[0] & 0x18) >> 3);
 
-	return;
+	return true;
 }
 
 
