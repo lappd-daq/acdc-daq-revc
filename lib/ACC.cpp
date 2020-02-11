@@ -224,6 +224,18 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 		if((alignment_packet & (1 << i)))
 		{
 			//the i'th board is connected
+
+			//protection against a NASTY error I saw
+			//due to a bad ACC buffer. We will need to investigate
+			//but for now I am protecting against seg faults. 
+			if(i > 3)
+			{
+				//return with no connected boards
+				connectedBoards.clear();
+				alignedAcdcIndices = connectedBoards;
+				return connectedBoards;
+			}
+
 			connectedBoards.push_back(i);
 		}
 	}

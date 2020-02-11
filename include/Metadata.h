@@ -17,7 +17,7 @@ public:
 	Metadata(vector<unsigned short> acdcBuffer); //if a buffer exists already to parse
 	~Metadata();
 
-	void parseBuffer(vector<unsigned short> acdcBuffer); 
+	bool parseBuffer(vector<unsigned short> acdcBuffer); //returns success or fail 1/0
 	vector<int> getMaskedChannels(); //returns a vector format of masked channels
 	void standardPrint(); //lite print
 	void printAllMetadata(); //full raw print. 
