@@ -28,8 +28,10 @@ public:
 	map<int, bool>  checkFullRamRegisters(bool pullNew = false);
 	map<int, bool>  checkDigitizingFlag(bool pullNew = false);
 	map<int, bool>  checkDcPktFlag(bool pullNew = false);
-	unsigned int vectorToUnsignedInt(vector<int> a); 
+	unsigned int vectorToUnsignedInt(vector<int> a); //utility for going from list to 101011 bits. 
 	unsigned short vectorToUnsignedShort(vector<int> a);
+	int getAccEventNumber(bool pullNew = false); //gets the Acc event number
+	void writeAcdcDataToFile(ofstream& d, ofstream& m); 
 
 	
 	//-----------functions that involve usb comms
@@ -37,6 +39,10 @@ public:
 	void createAcdcs(); //creates ACDC objects, explicitly querying both buffers
 	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
 	void readAcdcBuffers(); //reads the acdc buffers of connected boards
+	void initializeForDataReadout(int trigMode = 0);
+	bool readNewAcdcData(); //similar to readAcdcBuffer but without leading or trailing usb commands
+	void dataCollectionCleanup(); //a set of usb commands to reset boards after data logging
+
 
 
 
@@ -45,9 +51,9 @@ private:
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port)
 	vector<ACDC*> acdcs; //a vector of active acdc boards. 
-	map<int, bool> fullRam; //which boards (first index) have full ram
-	map<int, bool> digFlag; //which boards (first index) have a dig start flag (dont know what that means)
-	map<int, bool> dcPkt; ////which boards (first index) have a dc packet (dont know what that means)
+	vector<int> fullRam; //which boards (board index) have full ram
+	vector<int> digFlag; //which boards (board index) have a dig start flag (dont know what that means)
+	vector<int> dcPkt; ////which boards (board index) have a dc packet (dont know what that means)
 
 
 	//-----------functions that involve usb comms

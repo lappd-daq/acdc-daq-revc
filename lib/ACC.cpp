@@ -144,6 +144,12 @@ void ACC::setAccTrigValid()
 	usb->sendData(command);
 }
 
+void ACC::setAccTrigInvalid()
+{
+	unsigned int command = 0x1e0B0004;
+	usb->sendData(command);
+}
+
 
 //------------- end 0xB
 
@@ -291,12 +297,19 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 		readAccBuffer();
 	}
 
+	vector<int> connectedBoards;
+	if(lastAccBuffer.size() < 3) 
+	{
+		cout << "Something wrong with ACC buffer" << endl;
+		return connectedBoards;
+	}
+
 	//for explanation of the "2", see INFO1 of CC_STATE in packetUSB.vhd
 	unsigned short alignment_packet = lastAccBuffer.at(2); 
 	//binary representation of this packet is 1 if the
 	//board is connected for both the first two bytes
 	//and last two bytes. 
-	vector<int> connectedBoards;
+	
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
 	{
 		if((alignment_packet & (1 << i)))
@@ -331,8 +344,16 @@ map<int, bool> ACC::checkFullRamRegisters(bool pullNew)
 		readAccBuffer();
 	}
 
-	unsigned short ram_packet = lastAccBuffer.at(4);
-	map<int, bool> tempRamFull;
+	vector<int> tempRamFull;
+	if(lastAccBuffer.size() < 5) 
+	{
+		cout << "Something wrong with ACC buffer" << endl;
+		fullRam = tempRamFull;
+		return tempRamFull;
+	}
+
+	unsigned short ram_packet = lastAccBuffer.at(4) & 0x000F;
+	
 
 	//this will change when the full 8 bits of 
 	//xram_full in packetUSB.vhd are included in the ACC buffer. 
@@ -342,7 +363,7 @@ map<int, bool> ACC::checkFullRamRegisters(bool pullNew)
 		if((ram_packet & (1 << i)))
 		{
 			//the i'th board is connected
-			tempRamFull.insert(pair<int, bool>(i, true));
+			tempRamFull.push_back(i);
 		}
 	}
 
@@ -360,9 +381,17 @@ map<int, bool> ACC::checkDigitizingFlag(bool pullNew)
 		readAccBuffer();
 	}
 
-	unsigned short dig_packet = lastAccBuffer.at(4);
-	map<int, bool> tempDigFlag;
+	//just in case the Acc doesnt have a good buffer
+	vector<int> tempDigFlag;
+	if(lastAccBuffer.size() < 5) 
+	{
+		cout << "Something wrong with ACC buffer" << endl;
+		digFlag = tempDigFlag;
+		return tempDigFlag;
+	}
 
+	unsigned short dig_packet = lastAccBuffer.at(4) & 0x0F00;
+	
 	//this will change when the full 8 bits of 
 	//xram_full in packetUSB.vhd are included in the ACC buffer. 
 	int bitsTransferred = 4; 
@@ -371,7 +400,7 @@ map<int, bool> ACC::checkDigitizingFlag(bool pullNew)
 		if((dig_packet & (1 << i)))
 		{
 			//the i'th board is connected
-			tempDigFlag.insert(pair<int, bool>(i, true));
+			tempDigFlag.push_back(i);
 		}
 	}
 
@@ -388,8 +417,17 @@ map<int, bool> ACC::checkDcPktFlag(bool pullNew)
 		readAccBuffer();
 	}
 
-	unsigned short dc_packet = lastAccBuffer.at(4);
-	map<int, bool> tempDcPktFlag;
+	//just in case the Acc doesnt have a good buffer
+	vector<int> tempDcPktFlag;
+	if(lastAccBuffer.size() < 5) 
+	{
+		cout << "Something wrong with ACC buffer" << endl;
+		dcPkt = tempDcPktFlag;
+		return tempDcPktFlag;
+	}
+
+	unsigned short dc_packet = lastAccBuffer.at(4) & 0x00F0;
+	
 
 	//this will change when the full 8 bits of 
 	//xram_full in packetUSB.vhd are included in the ACC buffer. 
@@ -399,7 +437,7 @@ map<int, bool> ACC::checkDcPktFlag(bool pullNew)
 		if((dc_packet & (1 << i)))
 		{
 			//the i'th board is connected
-			tempDcPktFlag.insert(pair<int, bool>(i, true));
+			tempDcPktFlag.push_back(i);
 		}
 	}
 
@@ -424,6 +462,28 @@ void ACC::printRawAccBuffer(bool pullNew)
 		cout << endl;
 	}
 	
+}
+
+//looks at the last ACC buffer and reads
+//the last ACC event count. 
+int ACC::getAccEventNumber(bool pullNew)
+{
+	if(!pullNew && lastAccBuffer.size() == 0)
+	{
+		readAccBuffer();
+	}
+
+	//just in case the Acc doesnt have a good buffer
+	if(lastAccBuffer.size() < 6) 
+	{
+		cout << "Something wrong with ACC buffer" << endl;
+		return NULL;
+	}
+
+	unsigned short evno_lo = lastAccBuffer.at(5);
+	unsigned short evno_hi = lastAccBuff.at(4) & (1 << 15); //one bit only..
+	unsigned int evno = evno_lo + (evno_hi << 16);
+	return (int)evno;
 }
 
 //for each connected board (ACDC in acdc's)
@@ -553,47 +613,203 @@ void ACC::readAcdcBuffers()
 	resetAccTrigger();
 }
 
+
+//this is a function that sends a specific set
+//of usb commands to configure the boards for
+//triggering on real events. 
+void ACC::initializeForDataReadout(int trigMode)
+{
+	//software trigger
+	if(trigMode == 0)
+	{
+		//i'm taking this directly from a USB listening
+		//mode of the old software. it may not be unique.
+		//it is cryptic and is possibly unstable. 
+		setAccTrigInvalid();
+		unsigned int command = 0x1e0c0000;
+		usb->sendData(command);
+		setAccTrigInvalid();
+		command = 0x1e0c0000;
+		usb->sendData(command);
+		command = 0x1e0c0000;
+		usb->sendData(command);
+		resetAccTrigger();
+		prepSync();
+		softwareTrigger();
+		makeSync();
+	}
+	
+	//other trigger modes soon to come
+	return;
+}
+
+//a set of specific usb commands to reset
+//the board configurations to a well defined
+//state after doing a logData data collection.
+void ACC::dataCollectionCleanup()
+{
+	//i'm taking this directly from a USB listening
+	//mode of the old software. it may not be unique.
+	//it is cryptic and is possibly unstable. 
+	setAccTrigInvalid();
+	resetAccTrigger();
+	resetAccTrigger();
+	resetAccTrigger();
+	unsigned int command = 0x1e0c0010;
+	usb->sendData(command);
+	command = 0x1e0c0000;
+	usb->sendData(command);
+	resetAccTrigger();
+	return;
+
+}
+
+//similar to readAcdcBuffer but without
+//leading or trailing usb commands. It also
+//explicitly tells the ACDCs to store their
+//waveform data into private members, something
+//that is not always done (to save memory). 
+bool ACC::readNewAcdcData()
+{
+	//parse the last ACC buffer to see which
+	//ACDCs we should look at for new data. 
+	checkFullRamRegisters();
+	//if for some reason none of
+	//the boards sent data to ACC
+	if(fullRam.size() == 0)
+	{
+		//no events found
+		return false;
+	}
+
+	//otherwise, fullRam will have some 
+	//elements corresponding to board indices
+	cout << "Reading ACDC buffers that have triggered events:" << endl;
+
+	//each ACDC needs to be queried individually
+	//by the ACC for its buffer. 
+	for(int bi: fullRam)
+	{
+		cout << "\tReading board number " << bi << endl;
+		unsigned int command = 0x1e0C0000; //base command for set readmode
+		command = command | (unsigned int)(bi + 1); //which board to read
+
+		//send 
+		usb->sendData(command);
+		//read only once. sometimes the buffer comes up empty. 
+		//made a choice not to pound it with a loop until it
+		//responds. 
+		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+
+		//save this buffer a private member of ACDC
+		//by looping through our acdc vector
+		//and checking each index. 
+		for(ACDC* a: acdcs)
+		{
+			if(a->getBoardIndex() == bi)
+			{
+				//set the buffer that we just read
+				a->setLastBuffer(acdc_buffer, getAccEventNumber()); //also triggers parsing function
+				//tells it explicitly to load the data
+				//component of the buffer into private memory. 
+				a->parseDataFromBuffer(); 
+			}
+		}
+	}
+
+	return true;
+}
+
+//just tells each ACDC that has a fullRam flag
+// to write its data and metadata maps to the filestreams. 
+//Event number is passed to the ACDC objects to help. 
+void ACC::writeAcdcDataToFile(ofstream& d, ofstream& m)
+{
+	for(int bi: fullRam)
+	{
+		for(ACDC* a: acdcs)
+		{
+			if(a->getBoardIndex() == bi)
+			{
+				a->writeDataToFile(d, m);
+			}
+		}
+	}
+}
+
+
+
 void ACC::testFunction()
 {
 	unsigned int command;
+	command = 0x1e0c0000;
+	usb->sendData(command);
+	command = 0x1e0b0001;
+	usb->sendData(command);
+	command = 0x000b0018;
+	usb->sendData(command);
+	command = 0x000e0003;
+	usb->sendData(command);
+	command = 0x000b0010;
+	usb->sendData(command);
+
+	command = 0x1e0b0004;
+	usb->sendData(command);
 	command = 0x1e0c0005;
 	usb->sendData(command);
 	usb->safeReadData(CC_BUFFERSIZE + 2);
+
+	//check if there are digitized events
+	//if so do 1e0c0000 & (1 << boardIndex) for all
+
+
+	//put this block in initialize. 
+	command = 0x1e0b0004;
 	usb->sendData(command);
-	usb->safeReadData(CC_BUFFERSIZE + 2);
-	command = 0x000E0001;
+	command = 0x1e0c0000;
 	usb->sendData(command);
-	command = 0x1e0C0001;
+	command = 0x1e0b0004;
 	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE + 2);
+	command = 0x1e0c0000;
+	usb->sendData(command);
+
+	command = 0x1e0c0000;
+	usb->sendData(command);
 	command = 0x1e0b0001;
 	usb->sendData(command);
+	command = 0x000b0018;
 	usb->sendData(command);
-	//command = 0x1e0C0001;
-	//usb->sendData(command);
-	//usb->safeReadData(ACDC_BUFFERSIZE + 2);
-	//command = 0x1e0b0001;
-	//usb->sendData(command);
+	command = 0x000e0003;
+	usb->sendData(command);
+	command = 0x000b0010;
+	usb->sendData(command);
 
+	command = 0x1e0b0004;
+	usb->sendData(command);
 	command = 0x1e0c0005;
 	usb->sendData(command);
 	usb->safeReadData(CC_BUFFERSIZE + 2);
-	//usb->sendData(command);
-	//usb->safeReadData(CC_BUFFERSIZE + 2);
-	command = 0x000E0001;
+
+
+	command = 0x1e0b0004;
 	usb->sendData(command);
-	command = 0x1e0C0001;
+	command = 0x1e0c0000;
 	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE + 2);
-	command = 0x1e0b0001;
+	command = 0x1e0b0004;
 	usb->sendData(command);
+	command = 0x1e0c0000;
 	usb->sendData(command);
+
+	//done
+	command = 0x1e0b0004;
+	usb->sendData(command);
+	command = 0x1e0c0010;
+	usb->sendData(command);
+	command = 0x1e0b0004;
+	usb->sendData(command);
+	command = 0x1e0c0000;
+	usb->sendData(command);	
 
 
 
-	command = 0x1e0C0001;
-	//usb->sendData(command);
-	//usb->safeReadData(ACDC_BUFFERSIZE + 2);
-	command = 0x1e0b0001;
-	//usb->sendData(command);
 }

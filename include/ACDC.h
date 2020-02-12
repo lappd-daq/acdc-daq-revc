@@ -13,6 +13,7 @@ using namespace std;
 #define NUM_CH 30
 #define NUM_PSEC 5
 #define NUM_SAMP 256
+#define NUM_CH_PER_CHIP 6
 
 class ACDC
 {
@@ -31,9 +32,11 @@ public:
 	int getNumPsec() {int a = NUM_PSEC; return a;}
 	int getNumSamp() {int a = NUM_SAMP; return a;}
 	vector<int> getMaskedChannels(); //get this private var. 
-	void setLastBuffer(vector<unsigned short> b);
+	void setLastBuffer(vector<unsigned short> b, int eventNumber = 0); 
 	void setPeds(map<int, vector<double>> p){peds = p;} //sets pedestal map
 	void setConv(map<int, vector<double>> c){conv = c;} //sets adc-conversion map
+	void parseDataFromBuffer(); //parses only the psec data component of the ACDC buffer
+	void writeDataToFile(ofstream& d, ofstream& m); //writes data and metadata to filestream
 
 
 
@@ -49,7 +52,6 @@ private:
 
 	void convertMaskToChannels();
 	void fillData(); //parses the acdc buffer and fills the data map
-	int getEventNumber(); 
 };
 
 #endif

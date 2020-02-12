@@ -45,6 +45,14 @@ void Metadata::printAllMetadata()
     return;
 }
 
+void Metadata::writeMetadataToFile(ofstream& m, string delim)
+{
+    for(string k: metadata_keys)
+    {
+        m << metadata[k] << delim;
+    }
+    m << endl;
+}
 //this function prints a one line string of the metadata_keys
 //vector to an ofstream "m" with delimiters delim. used
 //in the data logging / metadata logging to ascii functions. 
@@ -154,12 +162,21 @@ vector<int> Metadata::getMaskedChannels()
 
 
 //two metadatas that are known externally need to be set by ACDC class.
-void Metadata::setBoardAndEvent(unsigned short board, unsigned short event)
+void Metadata::setBoardAndEvent(unsigned short board, int event)
 {
-	checkAndInsert("Event", event);
+    //there is a problem in that the map has been
+    //defined assuming all metadata are unsigned shorts. 
+    //but this only goes to 2^16 events (65536). If this happens, 
+    //restart the count at zero
+    event = event % 65536;
+	checkAndInsert("Event", (unsigned short)event);
 	checkAndInsert("Board", board);
 }
 
+int Metadata::getEventNumber()
+{
+    return (int)metadata["Event"];
+}
 
 
 

@@ -23,8 +23,10 @@ public:
 	void standardPrint(); //lite print
 	void printAllMetadata(); //full raw print. 
 	void printKeysToFile(ofstream& m, string delim); //prints a one line header of all metadata keys
+	void writeMetadataToFile(ofstream& m, string delim); //prints one long line with all metadata to the stream
 	//two metadatas that are known externally need to be set by ACDC class.
-	void setBoardAndEvent(unsigned short board, unsigned short event); 
+	void setBoardAndEvent(unsigned short board, int event); 
+	int getEventNumber();
 
 
 private:
