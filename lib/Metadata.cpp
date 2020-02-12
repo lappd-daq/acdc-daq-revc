@@ -28,12 +28,12 @@ void Metadata::printAllMetadata()
 {
 
     vector<string>::iterator kit;
-    for(kit = metadata_keys.begin(); kit != metadata_keys.end(); ++kit)
+    for(string k: metadata_keys)
     {
 
-        cout << *kit << "\t" << metadata[*kit] << "\t"; //decimal rep
+        cout << k << "\t" << metadata[k] << "\t"; //decimal rep
         stringstream ss;
-        ss << std::hex << metadata[*kit]; 
+        ss << std::hex << metadata[k]; 
         string hexstr(ss.str());
         cout << hexstr << "\t"; //hex rep
         unsigned n;
@@ -45,6 +45,21 @@ void Metadata::printAllMetadata()
     return;
 }
 
+//this function prints a one line string of the metadata_keys
+//vector to an ofstream "m" with delimiters delim. used
+//in the data logging / metadata logging to ascii functions. 
+void Metadata::printKeysToFile(ofstream& m, string delim)
+{
+    for(string k: metadata_keys)
+    {
+        m << k << delim;
+    }
+    m << endl;
+    return;
+}
+
+//prints some relevant metadat to the
+//standard cout. 
 void Metadata::standardPrint()
 {
 	vector<int> masked_channels = getMaskedChannels();

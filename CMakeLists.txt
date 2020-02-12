@@ -51,8 +51,11 @@ target_link_libraries(ACC myusb ACDC Metadata yaml-cpp)
 
 add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
 
+add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
+
 
 
 
 target_link_libraries(readACDC PUBLIC ACC)
+target_link_libraries(logData PUBLIC ACC)
 
