@@ -66,12 +66,14 @@ void ACDC::convertMaskToChannels()
 	}
 }
 
-void ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
+bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
 {
 	lastAcdcBuffer = b;
-	meta.parseBuffer(b); //the BIG buffer parsing function that fills data/metadata maps
-
+	bool goodBuffer = true;
+	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills data/metadata maps
 	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
+	return goodBuffer;
+
 }
 
 //looks at the last ACDC buffer and organizes

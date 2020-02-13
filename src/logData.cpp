@@ -2,7 +2,7 @@
 #include <fstream>
 #include <thread>
 #include <chrono>
-#include <signal>
+#include <signal.h>
 #include "ACC.h"
 
 using namespace std;
@@ -13,6 +13,7 @@ bool SIGFOUND = false;
 
 void sigHandler(int s)
 {
+	cout << "got sigint " << s; //to remove compiler warning about unused variable
 	SIGFOUND = true;
 }
 
@@ -28,14 +29,17 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 
 	//initialize the ACC and ACDC objects, waking
 	//up the USB line and making sure there are no issues. 
-	cout << "---Starting data logging by checking for ACC and ACDC connectivity:"
+	cout << "---Starting data logging by checking for ACC and ACDC connectivity:";
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects. also loads peds/lins
 	acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
 
+
+	//acc.testFunction();
+	//return 0;
+
 	int evCounter = 0; //loop ends when this reaches nev
-	int lastEventNumber = acc.getAccEventNumber(); //current ACC master event number
-	int currentEventNumber = lastEventNumber; //checked against last to see if new event arrived
+	int corruptCounter = 0;
 	bool pullNewAccBuffer = true; //used when we need a new Acc buffer. 
 
 	//duration variables
@@ -59,16 +63,25 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			//different for software vs hardware trigger
 			acc.initializeForDataReadout(trigMode); 
 
+
+			//add a wait here if desired
+			//this_thread::sleep_for(chrono::milliseconds(1000));
+
 			//tell the ACC to not send a trigger for a moment
+			//(both trigger modes)
 			acc.setAccTrigInvalid();
-			//pull a new ACC buffer and get event number
-			currentEventNumber = acc.getAccEventNumber(pullNewAccBuffer);
+
+			bool eventHappened = false;
+			//read the ACC buffer and see if
+			//there are new events. 
+			eventHappened = acc.areThereAcdcEvents(pullNewAccBuffer); 
+
 			//if yes, then lets pull the data and digitize
-			if(currentEventNumber > lastEventNumber)
+			if(eventHappened)
 			{
 				end = chrono::steady_clock::now();
 				cout << " found an event after waiting for a trigger. ";
-				cout << "Computer time was " << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds. ";
+				cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
 				//function specifically designed to pull new
 				//waveform data without sending some triggers
 				//like "readAcdcBuffer()" does. 
@@ -82,22 +95,10 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				}
 				else
 				{
-					cout << "BUT FOR SOME REASON the ACDC buffer was corrupt, not iterating event counter" << endl;
+					cout << "BUT FOR SOME REASON the ACDC buffer was corrupt, throwing event away" << endl;
+					corruptCounter++;
 				}
 				//head back to the top
-				continue;
-			}
-			else if(currentEventNumber < lastEventNumber)
-			{
-				cout << "Data logging had a usb comms error with ACC" << endl;
-				//could throw an exception here to kill and gracefully reset the boards. 
-				//but for now I am going to try just keep chugging. 
-				currentEventNumber = lastEventNumber;
-				continue;
-			}
-			else
-			{
-				//start at the top again
 				continue;
 			}
 		}
@@ -106,13 +107,15 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	{
 		cout << mechanism << endl;
 		acc.dataCollectionCleanup();
+
 		return 0;
 	}
 
 	end = chrono::steady_clock::now();
-	cout << "Finished collecting " << nev << " events after " << chrono::duration_cast<chrono::seconds>(end - start).count() << " seconds. "<< endl;
+	cout << "Finished collecting " << nev << " events after " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. "<< endl;
 	//clean up at the end
 	acc.dataCollectionCleanup();
+	cout << "Collected " << evCounter << " events and had to wade through " << corruptCounter << " number of corrupt buffers to get there" << endl;
 
 	return 1;
 }
@@ -202,7 +205,7 @@ int main(int argc, char *argv[]) {
 
 	//start the loop that logs data and creates all
 	//usb volitile objects.
-	int retval = dataQueryLoop(dataofs, metaofs, nevents, trigMode);
+	dataQueryLoop(dataofs, metaofs, nevents, trigMode);
 
 	dataofs.close();
 	metaofs.close();

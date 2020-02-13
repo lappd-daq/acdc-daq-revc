@@ -25,9 +25,9 @@ public:
 	void printAccMetadata(bool pullNew = false);
 	void printRawAccBuffer(bool pullNew = false);
 	void printAcdcInfo(bool verbose = false);
-	map<int, bool>  checkFullRamRegisters(bool pullNew = false);
-	map<int, bool>  checkDigitizingFlag(bool pullNew = false);
-	map<int, bool>  checkDcPktFlag(bool pullNew = false);
+	vector<int> checkFullRamRegisters(bool pullNew = false);
+	vector<int> checkDigitizingFlag(bool pullNew = false);
+	vector<int> checkDcPktFlag(bool pullNew = false);
 	unsigned int vectorToUnsignedInt(vector<int> a); //utility for going from list to 101011 bits. 
 	unsigned short vectorToUnsignedShort(vector<int> a);
 	int getAccEventNumber(bool pullNew = false); //gets the Acc event number
@@ -41,8 +41,9 @@ public:
 	void readAcdcBuffers(); //reads the acdc buffers of connected boards
 	void initializeForDataReadout(int trigMode = 0);
 	bool readNewAcdcData(); //similar to readAcdcBuffer but without leading or trailing usb commands
+	bool areThereAcdcEvents(bool pullNew = false); //reads ACC buffer and sees if there are new events. 
 	void dataCollectionCleanup(); //a set of usb commands to reset boards after data logging
-
+	void setAccTrigInvalid(); //b004, only public because it is called in logData
 
 
 
@@ -68,9 +69,11 @@ private:
 	//--0xB class of commands, the most cryptic
 	void prepSync(); //preps sync? need to read firmware to understand this
 	void makeSync(); //make sync? need to read firmware to understand this
-	void resetAccTrigger();
-	void setAccTrigValid();
+	void resetAccTrigger(); //b0001
+	void setAccTrigValid(); //b0006
 	//--end 0xB
+	void setFreshReadmode(); //c0001
+
 	void clearAcdcs(); //memory deallocation for acdc vector. 
 	int parsePedsAndConversions(); //puts ped and LUT-scan data into ACDC objects
 };

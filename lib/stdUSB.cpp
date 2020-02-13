@@ -22,7 +22,13 @@ stdUSB::stdUSB()
     stdHandle = INVALID_HANDLE_VALUE; 
     USBFX2_VENDOR_ID = 0x6672;
     USBFX2_PRODUCT_ID = 0x2920;
-    createHandles();
+    bool retval;
+    retval = createHandles();
+    if(!retval)
+    {
+        cout << "Usb was unable to connect to USB line, exiting" << endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 stdUSB::stdUSB(uint16_t vid, uint16_t pid) 
@@ -30,7 +36,13 @@ stdUSB::stdUSB(uint16_t vid, uint16_t pid)
     stdHandle = INVALID_HANDLE_VALUE; 
     USBFX2_VENDOR_ID = vid;
     USBFX2_PRODUCT_ID = pid;
-    createHandles();
+    bool retval;
+    retval = createHandles();
+    if(!retval)
+    {
+        cout << "Usb was unable to connect to USB line, exiting" << endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 stdUSB::~stdUSB() { 
@@ -207,13 +219,19 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     buff[2] = data >> 16;
     buff[3] = data >> 24;
    
-    /*
+    
     cout << "Data is: ";
     printByte(data);
     cout << endl;
-    */
+    
 
     int retval = usb_bulk_write(stdHandle, 0x02, buff, sizeof(buff), USB_TOUT_MS);
+
+    //Evan using sleep statements to give the USB some time. 
+    //it is likely that usb_bulk_write includes this time factor
+    //but I am having problems so I am slowing things down. 
+    //4bytes*8bits per byte/48Mbits per sec x 2 for good luck
+    usleep(2*4*8.0/(48.0));
 
     //printf("SendData: sent %d bytes\n", retval);
 
@@ -245,9 +263,17 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
 
     int buff_sz = l*sizeof(unsigned short);
 
+    //Evan using sleep statements to give the USB some time. 
+    //it is likely that usb_bulk_read includes this time factor
+    //but I am having problems so I am slowing things down. 
+    //l-packets*4bytes per packet*8bits per byte/48Mbits per sec = ~6ms x2 for good luck
+    usleep(2*l*4.0*8.0/(48.0)); 
+
     //cout << "Read buffer maximum size is " << buff_sz << endl;
     int retval = usb_bulk_read(stdHandle, 0x86, (char*)pData, buff_sz, USB_TOUT_MS);
     //cout << "Got " << retval << " bytes" << endl;
+
+
 
 
     if (retval > 0) {
@@ -275,7 +301,7 @@ vector<unsigned short> stdUSB::safeReadData(int maxSamples)
 
     //fill buffer into a vector
     vector<unsigned short> v_buffer;
-    //cout << "Got " << samples << " samples from usbread" << endl;
+    cout << "Got " << samples << " samples from usbread" << endl;
     //loop over each element in buffer
     for(int i = 0; i < samples; i++)
     {
