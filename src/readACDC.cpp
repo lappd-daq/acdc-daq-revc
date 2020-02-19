@@ -11,11 +11,26 @@ int main() {
 
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
-	acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
+	acc.softwareTrigger();
+	bool waitForAll = true; //require that all ACDC buffers be found for success. 
+	int retval = acc.readAcdcBuffers(waitForAll); //read ACDC buffer from usb, save and parse in ACDC objects
 
-	bool verbose = false;
-	acc.printAcdcInfo(verbose);
+	acc.resetAccTrigger();
+	acc.resetAccTrigger();
 
+	//only print if you actually
+	//got ACDC data. 
+	if(retval == 0)
+	{
+		bool verbose = false;
+		acc.printAcdcInfo(verbose);
+	}
+	else if(retval == 1)
+	{
+		bool verbose = false;
+		acc.printAcdcInfo(verbose);
+		cout << "***Found data but got a corrupt buffer.***" << endl;
+	}
 
 	return 1;
 }

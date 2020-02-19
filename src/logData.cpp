@@ -31,12 +31,20 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	//up the USB line and making sure there are no issues. 
 	cout << "---Starting data logging by checking for ACC and ACDC connectivity:";
 	ACC acc;
-	acc.createAcdcs(); //detect ACDCs and create ACDC objects. also loads peds/lins
-	acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
+	acc.createAcdcs(); //detect ACDCs and create ACDC objects
+	acc.softwareTrigger();
+	bool success = acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
 
+	acc.resetAccTrigger();
+	acc.resetAccTrigger();
 
-	//acc.testFunction();
-	//return 0;
+	//only print if you actually
+	//got ACDC data. 
+	if(!success)
+	{
+		cout << "Could not connect to ACDCs" << endl;
+		return 0;
+	}
 
 	int evCounter = 0; //loop ends when this reaches nev
 	int corruptCounter = 0;
@@ -47,67 +55,57 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	auto end = chrono::steady_clock::now(); //just for initialization
 	try
 	{
-		while(evCounter < nev)
+		for(int evCounter = 0; evCounter < nev; evCounter++)
 		{
 			//close gracefull if ctrl-C is thrown
-			if(SIGFOUND)
-			{
-				throw("Ctrl-C detected, closing nicely");
-			}
+			if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
 
 			cout << "On event " << evCounter << " of " << nev << "... ";
 
-			//send a set of USB commands to configure
-			//ACC board for readout, as well as send signals
-			//to ACDC to configure it to take data. 
-			//different for software vs hardware trigger
+			//send a set of USB commands to configure ACC
+			//send a software trigger
 			acc.initializeForDataReadout(trigMode); 
-
-
-			//add a wait here if desired
-			//this_thread::sleep_for(chrono::milliseconds(1000));
 
 			//tell the ACC to not send a trigger for a moment
 			//(both trigger modes)
 			acc.setAccTrigInvalid();
 
-			bool eventHappened = false;
-			//read the ACC buffer and see if
-			//there are new events. 
-			eventHappened = acc.areThereAcdcEvents(pullNewAccBuffer); 
-
-			//if yes, then lets pull the data and digitize
-			if(eventHappened)
+			int eventHappened = 2;
+			//retval of readAcdcBuffers = 0 indicates
+			//total success of pulling ACDC data. 
+			while(eventHappened != 0)
 			{
-				end = chrono::steady_clock::now();
-				cout << " found an event after waiting for a trigger. ";
-				cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
-				//function specifically designed to pull new
-				//waveform data without sending some triggers
-				//like "readAcdcBuffer()" does. 
-				bool retval; //indicates success or failure
-				retval = acc.readNewAcdcData(); 
-				if(retval)
+				//close gracefull if ctrl-C is thrown
+				if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
+				eventHappened = acc.readAcdcBuffers(); 
+				if(eventHappened == 1)
 				{
-					cout << "Writing the event to file" << endl;
-					acc.writeAcdcDataToFile(dataofs, metaofs); //writes to file
-					evCounter++; 
-				}
-				else
-				{
-					cout << "BUT FOR SOME REASON the ACDC buffer was corrupt, throwing event away" << endl;
 					corruptCounter++;
 				}
-				//head back to the top
-				continue;
+
+				//this I think is required after reading data. 
+				/*
+				setAccTrigInvalid();
+				setFreshReadmode();
+				setAccTrigInvalid();
+				setFreshReadmode();
+				*/
 			}
+
+
+			end = chrono::steady_clock::now();
+			cout << " found an event after waiting for a trigger. ";
+			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
+
+			cout << "Writing the event to file" << endl;
+			acc.writeAcdcDataToFile(dataofs, metaofs); //writes to file
+			//head to top, incrementing event counter.
 		}
 	}
 	catch(string mechanism)
 	{
 		cout << mechanism << endl;
 		acc.dataCollectionCleanup();
-
 		return 0;
 	}
 

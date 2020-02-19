@@ -208,6 +208,7 @@ void stdUSB::printByte(unsigned int val)
  */
 bool stdUSB::sendData(unsigned int data)// throw(...)
 {
+
     if (stdHandle == INVALID_HANDLE_VALUE) return false;
 
     /* Shifted right because send value needs to be in 
@@ -225,6 +226,7 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     cout << endl;
     
 
+    usleep(2*4*8.0/(48.0));
     int retval = usb_bulk_write(stdHandle, 0x02, buff, sizeof(buff), USB_TOUT_MS);
 
     //Evan using sleep statements to give the USB some time. 
@@ -272,8 +274,7 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
     //cout << "Read buffer maximum size is " << buff_sz << endl;
     int retval = usb_bulk_read(stdHandle, 0x86, (char*)pData, buff_sz, USB_TOUT_MS);
     //cout << "Got " << retval << " bytes" << endl;
-
-
+    usleep(2*l*4.0*8.0/(48.0)); 
 
 
     if (retval > 0) {

@@ -103,6 +103,9 @@ vector<unsigned short> ACC::readAccBuffer()
 		cout << "(4) Plug in USB" << endl;
 		cout << "(5) Wait for green ACC LED to turn off" << endl;
 		cout << "(5) Repeat if needed" << endl;
+		cout << "Trying USB reset before closing... " << endl;
+		usb->reset();
+		sleep(1);
 		exit(EXIT_FAILURE);
 	}
 	lastAccBuffer = v_buffer; //save as a private variable
@@ -140,6 +143,8 @@ void ACC::makeSync()
 //calling it "resetAccTrigger". The software
 //reset in transeivers flags that software is
 //done reading over usb and goes to LVDS idle. 
+//Also sets SOFT_TRIG to 0 if it was at 1. Also
+//sets TRIG_OUT signal to 0. 
 void ACC::resetAccTrigger()
 {
 	unsigned int command = 0x1e0B0001;
@@ -247,10 +252,10 @@ int ACC::parsePedsAndConversions()
 		{
 			cout << "WARNING: Your board number " << bi << " does not have a pedestal calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
 			pedCounter++;
-			for(int chip = 0; chip < a->getNumPsec(); chip++)
+			for(int channel = 0; channel < a->getNumCh(); channel++)
 			{
-				vector<double> vtemp(a->getNumSamp(), defaultPed); //vector of 0's
-				tempMap[chip] = vtemp;
+				vector<double> vtemp(a->getNumCh(), defaultPed); //vector of 0's
+				tempMap[channel] = vtemp;
 			}
 			a->setPeds(tempMap);
 		}
@@ -264,18 +269,20 @@ int ACC::parsePedsAndConversions()
 		{
 			cout << "WARNING: Your board number " << bi << " does not have a linearity scan calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
 			linCounter++;
-			for(int chip = 0; chip < a->getNumPsec(); chip++)
+			for(int channel = 0; channel < a->getNumCh(); channel++)
 			{
-				vector<double> vtemp(a->getNumSamp(), defaultConversion); //vector of 0's
-				tempMap[chip] = vtemp;
+				vector<double> vtemp(a->getNumCh(), defaultConversion); //vector of defaults
+				tempMap[channel] = vtemp;
 			}
-			a->setPeds(tempMap);
+			a->setConv(tempMap);
 		}
 		//otherwise, parse the file. 
 		else
 		{
 			cout << "Will write parsing function later" << endl;
 		}
+		ifped.close();
+		iflin.close();
 	}
 
 	return linCounter;
@@ -298,7 +305,7 @@ void ACC::printByte(unsigned short val)
 {
 	cout << val << ", "; //decimal
 	stringstream ss;
-	ss << std::hex << val;
+	ss << std::hex << val;          
 	string hexstr(ss.str());
 	cout << hexstr << ", "; //hex
 	unsigned n;
@@ -351,24 +358,6 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 	//this allows no vector clearing to be needed
 	alignedAcdcIndices = connectedBoards;
 	return connectedBoards;
-}
-
-bool ACC::areThereAcdcEvents(bool pullNew)
-{
-	if(pullNew)
-	{
-		readAccBuffer();
-	}
-	checkFullRamRegisters(); //fills the vector with acdc indices that have events
-	if(fullRam.size() > 0)
-	{
-		return true;
-	}
-	else
-	{
-		return false;
-	}
-	return false;
 }
 
 //returns map[board][is ram full]
@@ -445,6 +434,8 @@ vector<int> ACC::checkDigitizingFlag(bool pullNew)
 }
 
 //returns map[board][is digitizing flag true]
+//dcPkt indicates that an ACDC has started sending
+//data to the ACC, but has not yet filled the ram. 
 vector<int> ACC::checkDcPktFlag(bool pullNew)
 {
 	if(pullNew ||lastAccBuffer.size() == 0)
@@ -561,6 +552,19 @@ unsigned short ACC::vectorToUnsignedShort(vector<int> a)
 	return result;
 }
 
+vector<int> ACC::unsignedShortToVector(unsigned short a)
+{
+	vector<int> result;
+	int lenOfShort = 16;
+	for(int i = 0; i < lenOfShort; i++)
+	{
+		if(a & (1 << i))
+		{
+			result.push_back(i);
+		}
+	}
+	return result;
+}
 
 //sends software trigger to all connected boards. 
 //bin option allows one to force a particular 160MHz
@@ -577,7 +581,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 		boards = alignedAcdcIndices;
 	}
 
-	cout << "Sending a software trigger to boards ";
+	cout << "Sending a software trigger to baards ";
 	for(int bi: boards) cout << bi << ", ";
 	cout << endl;
 
@@ -596,29 +600,88 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 
 	//send the command
 	unsigned int command = 0x000E0000; 
-	command = command | mask | (1 << 4) | (bin << 5);
+	command = command | mask; //currently not including bin-setting functionality
 
 	usb->sendData(command);
 }
 
-//sends a command to read the ACDC buffer
-//and loads that buffer into memory as a private
-//variable in the ACDC objects themselves. 
-//then tells the ACDC objects to parse their
-//own f*$&ing buffers. 
-void ACC::readAcdcBuffers()
+//checks to see if there are any ACDC buffers
+//in the ram of the ACC. If waitForAll = true (false by default),
+//it will continue checking until all alignedAcdcs have sent
+//data to the ACC RAM. 
+//return codes:
+//0 = data found and parsed successfully
+//1 = data found but had a corrupt buffer
+//2 = no data found
+int ACC::readAcdcBuffers(bool waitForAll)
 {
-	
-	//refreshed connected Acdc list (only parser, no usb packets sent)
-	whichAcdcsConnected();
-	//ACC sends trigger to all (default) ACDCs
-	softwareTrigger();
+	//First, loop and look for 
+	//a fullRam flag on ACC indicating
+	//that ACDCs have sent data to the ACC
+	int maxChecks = 15; //will give up after this many
+	int check = 0;
+	bool pullNewAccBuffer = true;
+	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
+	while(check < maxChecks)
+	{
+		//pull a new Acc buffer and parse
+		//the data-ready state indicators. 
+		checkDcPktFlag(pullNewAccBuffer);
+		checkFullRamRegisters();
 
-	cout << "Reading ACDC buffers:" << endl;
+		//debug
+		if(lastAccBuffer.size() > 4)
+		{
+			cout << "Ram/Pkt byte is: ";
+			printByte(lastAccBuffer.at(4));
+			cout << endl;
+		}
+	
+		//check which ACDCs have both gotten a trigger
+		//and have filled the ACC ram, thus starting
+		//it's USB write flag. 
+		unsigned short fr = vectorToUnsignedShort(fullRam);
+		unsigned short dc = vectorToUnsignedShort(dcPkt);
+		//a vector of indices that have both flags = 1
+		boardsReadyForRead = unsignedShortToVector(fr & dc); 
+
+		if(waitForAll)
+		{
+			if(boardsReadyForRead.size() != alignedAcdcIndices.size())
+			{
+				//have not gotten all ACDC data
+				check++;
+			}
+			else
+			{
+				//found them all. 
+				break;
+			}
+		}
+		else
+		{
+			if(boardsReadyForRead.size() == 0)
+			{
+				//have not gotten any ACDC data
+				check++;
+			}
+			else
+			{
+				//found at least 1 ACDC data
+				break;
+			}
+		}
+	}
+
+	if(check == maxChecks)
+	{
+		cout << "ACDC buffers were never sent to the ACC" << endl;
+		return 2;
+	}
 
 	//each ACDC needs to be queried individually
 	//by the ACC for its buffer. 
-	for(int bi: alignedAcdcIndices)
+	for(int bi: boardsReadyForRead)
 	{
 		cout << "\tReading board number " << bi << endl;
 		unsigned int command = 0x1e0C0000; //base command for set readmode
@@ -631,6 +694,31 @@ void ACC::readAcdcBuffers()
 		//responds. 
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 
+
+		//----corrupt buffer checks begin
+		//sometimes the ACDCs dont send back good
+		//data. It is unclear why, but we would
+		//just rather throw this event away. 
+		bool corruptBuffer = false;
+		if(acdc_buffer.size() == 0)
+		{
+			corruptBuffer = true;
+		}
+		int nonzerocount = 0;
+		//if the first 20 bytes are all 0's, it is corrupt...
+		for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
+		{
+			if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
+		}
+		if(nonzerocount == 0) {corruptBuffer = true;}
+
+		if(corruptBuffer)
+		{
+			return 1;
+		}
+		//----corrupt buffer checks end. 
+
+
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
 		//and checking each index (not optimal but)
@@ -639,16 +727,30 @@ void ACC::readAcdcBuffers()
 		{
 			if(a->getBoardIndex() == bi)
 			{
-				a->setLastBuffer(acdc_buffer); //also triggers parsing function
+				//set the buffer that we just read. 
+				//There is a string of bool returning
+				//functions that checks if the buffer is corrupt
+				//in a sense that it doesn't follow the expected
+				//packet order or packet format. Ultimately, this
+				//is presently set by the Metadata.parseBuffer() member
+				//and returns "bad buffer" if there are not NUM_PSEC 
+				//number of info blocks. 
+				corruptBuffer = !(a->setLastBuffer(acdc_buffer, getAccEventNumber())); //also triggers parsing function
+				if(corruptBuffer)
+				{
+					cout << "********* got this failure mode ****************" << endl;
+					return 1;
+				}
+				//tells it explicitly to load the data
+				//component of the buffer into private memory. 
+				a->parseDataFromBuffer(); 
 			}
 		}
 	}
 
-	//clear the firmware state
-	resetAccTrigger();
-	resetAccTrigger();
-}
 
+	return 2;
+}
 
 //this is a function that sends a specific set
 //of usb commands to configure the boards for
@@ -669,11 +771,6 @@ void ACC::initializeForDataReadout(int trigMode)
 		prepSync();
 		softwareTrigger();
 		makeSync();
-		//roughly the minimum time it takes
-		//for the software trigger to reach
-		//all of the boards and be ready for
-		//data query.
-		usleep(40000); 
 	}
 	
 	//other trigger modes soon to come
@@ -692,18 +789,22 @@ void ACC::dataCollectionCleanup()
 	setAccTrigInvalid(); //b4
 	resetAccTrigger(); //b1
 	resetAccTrigger();
-	unsigned int command = 0x1e0c0001;
+	unsigned int command;
+	command = 0x1e0c0001;
 	usb->sendData(command);
 	usb->safeReadData(ACDC_BUFFERSIZE +2);
 
+	
+
 	resetAccTrigger();
-	command = 0x1e0c0010;
+	command = 0x1e0c0010; //set trig src 0. 
 	usb->sendData(command);
 	setFreshReadmode();
 	resetAccTrigger();
 	command = 0x1e0c0001;
-	usb->sendData(command);	
+	usb->sendData(command);
 	usb->safeReadData(ACDC_BUFFERSIZE +2);
+
 
 	resetAccTrigger();
 
@@ -720,22 +821,49 @@ void ACC::dataCollectionCleanup()
 	setFreshReadmode();
 	resetAccTrigger();
 	command = 0x1e0c0001;
-	usb->sendData(command);	
+	usb->sendData(command);
 	usb->safeReadData(ACDC_BUFFERSIZE +2);
 
 	resetAccTrigger(); //b1
+
+
 	resetAccTrigger();
 	command = 0x1e0c0001;
 	usb->sendData(command);
 	usb->safeReadData(ACDC_BUFFERSIZE +2);
 
 	resetAccTrigger(); //b1
+
+
 	resetAccTrigger();
 	command = 0x1e0c0001;
 	usb->sendData(command);
 	usb->safeReadData(ACDC_BUFFERSIZE +2);
 
+
 	resetAccTrigger();
+
+}
+
+
+//tells ACDCs to clear their ram. 
+//necessary when closing the program, for example.
+void ACC::dumpData()
+{
+	for(ACDC* a: acdcs)
+	{
+		//prep the ACC
+		resetAccTrigger();
+		resetAccTrigger();
+		int bi = a->getBoardIndex();
+		unsigned int command = 0x1e0C0000; //base command for set readmode
+		command = command | (unsigned int)(bi + 1); //which board to read
+
+		//send and read. 
+		usb->sendData(command);
+		usb->safeReadData(ACDC_BUFFERSIZE + 2);
+
+	}
 
 }
 
@@ -744,7 +872,7 @@ void ACC::dataCollectionCleanup()
 //explicitly tells the ACDCs to store their
 //waveform data into private members, something
 //that is not always done (to save memory). 
-bool ACC::readNewAcdcData()
+int ACC::readNewAcdcData()
 {
 	//parse the last ACC buffer to see which
 	//ACDCs we should look at for new data. 

@@ -1,4 +1,6 @@
 #include "ACDC.h"
+#include <bitset>
+#include <sstream>
 
 using namespace std;
 
@@ -66,6 +68,8 @@ void ACDC::convertMaskToChannels()
 	}
 }
 
+
+
 bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
 {
 	lastAcdcBuffer = b;
@@ -75,6 +79,34 @@ bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
 	return goodBuffer;
 
 }
+
+//utility for debugging
+void ACDC::writeRawBufferToFile()
+{
+    string fnnn = "raw-acdc-buffer.txt";
+    cout << "Printing ACDC buffer to file : " << fnnn << endl;
+    ofstream cb(fnnn);
+    for(unsigned short k: lastAcdcBuffer)
+    {
+        printByte(cb, k);
+        cb << endl;
+    }
+    cb.close();
+}
+
+void ACDC::printByte(ofstream& ofs, unsigned short val)
+{
+    ofs << val << ", "; //decimal
+    stringstream ss;
+    ss << std::hex << val;
+    string hexstr(ss.str());
+    ofs << hexstr << ", "; //hex
+    unsigned n;
+    ss >> n;
+    bitset<16> b(n);
+    ofs << b.to_string(); //binary
+}
+
 
 //looks at the last ACDC buffer and organizes
 //all of the data into a data object. This is called
@@ -96,6 +128,8 @@ void ACDC::parseDataFromBuffer()
 		cout << "Please check the ACC class for an initialization of this calibration data" << endl;
 		return;
 	}
+
+	writeRawBufferToFile(); //debug
 
 	//word that indicates the data is
 	//about to start for each psec chip.

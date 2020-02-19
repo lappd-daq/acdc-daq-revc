@@ -149,6 +149,18 @@ vector<int> Metadata::getMaskedChannels()
 
 
 
+void Metadata::printByte(ofstream& ofs, unsigned short val)
+{
+    ofs << val << ", "; //decimal
+    stringstream ss;
+    ss << std::hex << val;
+    string hexstr(ss.str());
+    ofs << hexstr << ", "; //hex
+    unsigned n;
+    ss >> n;
+    bitset<16> b(n);
+    ofs << b.to_string(); //binary
+}
 
 
 
@@ -257,6 +269,14 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         cout << "***********************************************************" << endl;
 		cout << "In parsing ACDC buffer, found " << start_indices.size() << " matadata flag bytes." << endl;
 		cout << "Metadata for this event will likely be jarbled. Code a protection!" << endl;
+        string fnnn = "acdc-corrupt-buffer.txt";
+        cout << "Printing to file : " << fnnn << endl;
+        ofstream cb(fnnn);
+        for(unsigned short k: acdcBuffer)
+        {
+            printByte(cb, k);
+            cb << endl;
+        }
         return false;
 	}
 
