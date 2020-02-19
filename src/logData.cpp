@@ -8,6 +8,10 @@
 using namespace std;
 
 
+//please do not use this script. it has not
+//been tested nor completed.
+
+
 //global variable for sigint capture
 bool SIGFOUND = false;
 

@@ -85,7 +85,6 @@ bool ACC::checkUSB()
 //that does not rely on any ACDCs to be connected. 
 vector<unsigned short> ACC::readAccBuffer()
 {
-	cout << "Reading the ACC info buffer" << endl;
 	if(!checkUSB()) exit(EXIT_FAILURE);
 
 	//writing this tells the ACC to respond
@@ -630,12 +629,14 @@ int ACC::readAcdcBuffers(bool waitForAll)
 		checkFullRamRegisters();
 
 		//debug
+		/*
 		if(lastAccBuffer.size() > 4)
 		{
 			cout << "Ram/Pkt byte is: ";
 			printByte(lastAccBuffer.at(4));
 			cout << endl;
 		}
+		*/
 	
 		//check which ACDCs have both gotten a trigger
 		//and have filled the ACC ram, thus starting
@@ -749,7 +750,7 @@ int ACC::readAcdcBuffers(bool waitForAll)
 	}
 
 
-	return 2;
+	return 0;
 }
 
 //this is a function that sends a specific set

@@ -129,7 +129,7 @@ void ACDC::parseDataFromBuffer()
 		return;
 	}
 
-	writeRawBufferToFile(); //debug
+	//writeRawBufferToFile(); //debug
 
 	//word that indicates the data is
 	//about to start for each psec chip.
