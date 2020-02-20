@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include "stdUSB.h"
 #include <iostream>
+#include <chrono>
 #include <sstream>
 #include <bitset>
 
@@ -227,16 +228,8 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     */
     
 
-    usleep(2*4*8.0/(48.0));
     int retval = usb_bulk_write(stdHandle, 0x02, buff, sizeof(buff), USB_TOUT_MS);
 
-    //Evan using sleep statements to give the USB some time. 
-    //it is likely that usb_bulk_write includes this time factor
-    //but I am having problems so I am slowing things down. 
-    //4bytes*8bits per byte/48Mbits per sec x 2 for good luck
-    usleep(2*4*8.0/(48.0));
-
-    //printf("SendData: sent %d bytes\n", retval);
 
     if (retval == 4){ //return value must be exact as the bytes transferred
       //printf("sending data to board...\n");  
@@ -267,14 +260,14 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
     int buff_sz = l*sizeof(unsigned short);
 
     //Evan using sleep statements to give the USB some time. 
-    //it is likely that usb_bulk_read includes this time factor
-    //but I am having problems so I am slowing things down. 
-    //l-packets*4bytes per packet*8bits per byte/48Mbits per sec = ~6ms x2 for good luck
-    usleep(2*l*4.0*8.0/(48.0)); 
-
-    //cout << "Read buffer maximum size is " << buff_sz << endl;
+    //I have measured time of usb_bulk_read and it does not last
+    //long enough assuming 48Mbit/s data transfer. Maybe it thinks
+    //this is a super fast line? But the usb firmware is clocked at
+    //48Mbit per sec. 
+    //l-packets*4bytes per packet*8bits per byte/48Mbits per sec = ~0.6ms - 6ms depending on which. 
+    usleep(l*4.0*8.0/(48.0)); 
     int retval = usb_bulk_read(stdHandle, 0x86, (char*)pData, buff_sz, USB_TOUT_MS);
-    usleep(2*l*4.0*8.0/(48.0)); 
+    usleep(l*4.0*8.0/(48.0)); 
 
 
     if (retval > 0) {

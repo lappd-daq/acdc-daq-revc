@@ -131,7 +131,8 @@ int ACDC::parseDataFromBuffer()
 		return 2;
 	}
 
-	//writeRawBufferToFile(); //debug
+	//clear the data map prior.
+	data.clear();
 
 	//word that indicates the data is
 	//about to start for each psec chip.
@@ -157,17 +158,11 @@ int ACDC::parseDataFromBuffer()
 		if(byte == endword)
 		{
 			dataFlag = false;
-			
-			//if the number
-			//of datapoints in between 
-			//the metadata packets is not
-			//NUM_CH_PER_CHIP*NUM_SAMP (256*6)
-			if(waveform.size() != 0)
-			{
-				//data map is not totally filled...
-				cout << waveform.size() << endl;
-				return 1;
-			}
+			//push the last waveform to data. 
+			data[channelCount] = waveform;
+			waveform.clear();
+			//dont iterate channel, itl happen at
+			//the startword if statement. 
 			continue;
 		}
 
@@ -229,11 +224,11 @@ void ACDC::writeDataToFile(ofstream& d, ofstream& m)
 		waveform = it->second;
 		channel = it->first;
 		//first three columns are event, board, channel
-		d << evno << delim << boardIndex << delim << channel << delim;
+		d << evno << delim << boardIndex << delim << channel;
 		//loop the vector and print values
 		for(double s: waveform)
 		{
-			d << s << delim;
+			d << delim << s;
 		}
 		d << endl;
 	}

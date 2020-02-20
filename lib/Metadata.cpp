@@ -47,10 +47,23 @@ void Metadata::printAllMetadata()
 
 void Metadata::writeMetadataToFile(ofstream& m, string delim)
 {
+    bool firstCount = true;
     for(string k: metadata_keys)
     {
-        m << metadata[k] << delim;
+        //no space at the first key
+        if(firstCount)
+        {
+            m << metadata[k];
+            firstCount = false;
+        }
+        //space preceeding each key
+        else
+        {
+           m << delim << metadata[k]; 
+        }
+        
     }
+    //no space at the end of the line. 
     m << endl;
 }
 //this function prints a one line string of the metadata_keys
@@ -58,12 +71,24 @@ void Metadata::writeMetadataToFile(ofstream& m, string delim)
 //in the data logging / metadata logging to ascii functions. 
 void Metadata::printKeysToFile(ofstream& m, string delim)
 {
+    bool firstCount = true;
     for(string k: metadata_keys)
     {
-        m << k << delim;
+        //no space at the first key
+        if(firstCount)
+        {
+            m << k;
+            firstCount = false;
+        }
+        //space preceeding each key
+        else
+        {
+           m << delim << k; 
+        }
+        
     }
+    //no space at the end of the line. 
     m << endl;
-    return;
 }
 
 //prints some relevant metadat to the
@@ -551,7 +576,7 @@ void Metadata::initializeMetadataKeys()
 
 	//event properties
 	metadata_keys.push_back("num_triggered_channels"); metadata_keys.push_back("triggered_channels_hi");
-	metadata_keys.push_back("triggered_channels_lo");metadata_keys.push_back("triggered_channels_lo");
+	metadata_keys.push_back("triggered_channels_lo");
 	metadata_keys.push_back("firmware_resets_hi");metadata_keys.push_back("firmware_resets_lo");
 	//settings (from configuration file)
 	metadata_keys.push_back("self_trig"); metadata_keys.push_back("wait_for_sys");

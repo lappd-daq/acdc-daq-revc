@@ -48,6 +48,17 @@ vector<unsigned short> ACC::sendAndRead(unsigned int command, int buffsize)
 		send_counter++;
 		tempbuff = usb->safeReadData(buffsize + 2);
 
+		//this is a BAD failure that I have seen happen
+		//if the USB line is flooded by the ACC. The 
+		//result is that some c++ memory has been overwritten
+		//(calloc buffer doesn't allocate enough bytes). 
+		//You need to continue with a crazy large buffsize to
+		//clear the USB line or multiple things will crash. 
+		if((int)tempbuff.size() > buffsize + 2)
+		{
+			buffsize = 10*buffsize; //big enough to hold a whole ACDC buffer
+			continue;
+		}
 		//if the buffer is non-zero size, then
 		//we got a message back. break the loop
 		if(tempbuff.size() > 0)
@@ -601,7 +612,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 
 	//send the command
 	unsigned int command = 0x000E0000; 
-	command = command | mask; //currently not including bin-setting functionality
+	command = command | mask | (1 << 5) | (bin << 4); //currently not including bin-setting functionality
 
 	usb->sendData(command);
 }
@@ -1019,128 +1030,15 @@ void ACC::writeAcdcDataToFile(ofstream& d, ofstream& m)
 
 void ACC::testFunction()
 {
+
 	unsigned int command;
-	for(int i = 0; i < 4; i++)
-	{
-	command = 0x1e0c0000;
+	command = 0x1e0a0001;
 	usb->sendData(command);
-	command = 0x1e0b0004;
+	sleep(3);
+	command = 0x1e0a0000;
 	usb->sendData(command);
-	command = 0x1e0c0000;
+	sleep(3);
+	command = 0x1e0a0001;
 	usb->sendData(command);
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x000b0018;
-	usb->sendData(command);
-	command = 0x000e0003;
-	usb->sendData(command);
-	command = 0x000b0010;
-	usb->sendData(command);
-
-	command = 0x1e0b0004;
-	usb->sendData(command);
-	command = 0x1e0c0005;
-	usb->sendData(command);
-	lastAccBuffer = usb->safeReadData(CC_BUFFERSIZE + 2);
-	cout << "The dig flag byte ";
-
-	checkFullRamRegisters(); cout << "size of fullRam " << fullRam.size() << endl;
-	checkDigitizingFlag(); cout << "size of digFlag " << digFlag.size() << endl;
-	checkDcPktFlag(); cout << "size of dcpkt " << dcPkt.size() << endl;
-	for(int v: fullRam)
-	{
-		cout << "full Ram " << v << endl;
-	}
-	for(int v: dcPkt)
-	{
-		cout << "dcPck " << v << endl;
-	}
-	for(int v: digFlag)
-	{
-		cout << "digFlag " << v << endl;
-	}
-
-	//check if there are digitized events
-	//if so do 1e0c0000 & (1 << boardIndex) for all
-
-
-	//put this block in initialize. 
-	command = 0x1e0b0004;
-	usb->sendData(command);
-	command = 0x1e0c0000;
-	usb->sendData(command);
-	command = 0x1e0b0004;
-	usb->sendData(command);
-	command = 0x1e0c0000;
-	usb->sendData(command);
-
-	}
-	//done
-	command = 0x1e0b0004;
-	usb->sendData(command);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0001;
-	usb->sendData(command);	
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0010;
-	usb->sendData(command);
-	command = 0x1e0c0000;
-	usb->sendData(command);
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0001;
-	usb->sendData(command);	
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
-
-	command = 0x1e0b0004;
-	usb->sendData(command);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0001;
-	usb->sendData(command);	
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0010;
-	usb->sendData(command);
-	command = 0x1e0c0000;
-	usb->sendData(command);
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0001;
-	usb->sendData(command);	
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0001;
-	usb->sendData(command);	
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0b0001;
-	usb->sendData(command);
-	command = 0x1e0c0001;
-	usb->sendData(command);	
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	command = 0x1e0b0001;
-	usb->sendData(command);
+	sleep(3);
 }

@@ -107,7 +107,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			acc.setFreshReadmode();
 			
 			end = chrono::steady_clock::now();
-			cout << " found an event after waiting for a trigger. ";
+			cout << "Found an event after waiting for a trigger. ";
 			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. " << endl;
 
 			cout << "Writing the event to file" << endl;
