@@ -4,10 +4,12 @@
 #include <sstream>
 #include <string>
 #include <thread>
+#include <algorithm>
 #include <chrono>
 #include <fstream>
 
 using namespace std;
+
 
 ACC::ACC()
 {
@@ -227,7 +229,7 @@ int ACC::parsePedsAndConversions()
 {
 	int linCounter = 0; //counts how many board numbers DO NOT have matching lin files
 	int pedCounter = 0; //counts how many board numbers DO NOT have matching ped files
-	double defaultConversion = 4096.0/1200.0; //default for ADC-to-mv conversion
+	double defaultConversion = 1200.0/4096.0; //default for ADC-to-mv conversion
 	double defaultPed = 0.0; //sets the baseline around 600mV
 	//loop over all connected boards
 	for(ACDC* a: acdcs)
@@ -251,9 +253,9 @@ int ACC::parsePedsAndConversions()
 		{
 			cout << "WARNING: Your board number " << bi << " does not have a pedestal calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
 			pedCounter++;
-			for(int channel = 0; channel < a->getNumCh(); channel++)
+			for(int channel = 1; channel <= a->getNumCh(); channel++)
 			{
-				vector<double> vtemp(a->getNumCh(), defaultPed); //vector of 0's
+				vector<double> vtemp(a->getNumSamp(), defaultPed); //vector of 0's
 				tempMap[channel] = vtemp;
 			}
 			a->setPeds(tempMap);
@@ -268,9 +270,9 @@ int ACC::parsePedsAndConversions()
 		{
 			cout << "WARNING: Your board number " << bi << " does not have a linearity scan calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
 			linCounter++;
-			for(int channel = 0; channel < a->getNumCh(); channel++)
+			for(int channel = 1; channel <= a->getNumCh(); channel++)
 			{
-				vector<double> vtemp(a->getNumCh(), defaultConversion); //vector of defaults
+				vector<double> vtemp(a->getNumSamp(), defaultConversion); //vector of defaults
 				tempMap[channel] = vtemp;
 			}
 			a->setConv(tempMap);
@@ -580,7 +582,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 		boards = alignedAcdcIndices;
 	}
 
-	cout << "Sending a software trigger to baards ";
+	cout << "Sending a software trigger to boards ";
 	for(int bi: boards) cout << bi << ", ";
 	cout << endl;
 
@@ -684,7 +686,6 @@ int ACC::readAcdcBuffers(bool waitForAll)
 	//by the ACC for its buffer. 
 	for(int bi: boardsReadyForRead)
 	{
-		cout << "\tReading board number " << bi << endl;
 		unsigned int command = 0x1e0C0000; //base command for set readmode
 		command = command | (unsigned int)(bi + 1); //which board to read
 
@@ -739,17 +740,186 @@ int ACC::readAcdcBuffers(bool waitForAll)
 				corruptBuffer = !(a->setLastBuffer(acdc_buffer, getAccEventNumber())); //also triggers parsing function
 				if(corruptBuffer)
 				{
-					cout << "********* got this failure mode ****************" << endl;
+					cout << "********* Corrupt buffer caught at ACC level ****************" << endl;
 					return 1;
 				}
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
-				a->parseDataFromBuffer(); 
+				int retval;//to catch corrupt buffers
+				retval = a->parseDataFromBuffer(); 
+				if(retval == 1)
+				{
+					cout << "********* Corrupt buffer caught at ACDC parser level ****************" << endl;
+					a->writeRawBufferToFile();
+					return 1;
+				}
+
 			}
 		}
 	}
 
 
+	return 0;
+}
+
+
+//identical to readAcdcBuffer but does an infinite
+//loop when the trigMode is 1 (hardware trig) and
+//switches toggles waitForAll depending on trig mode. 
+//0 = data found and parsed successfully
+//1 = data found but had a corrupt buffer
+//2 = no data found
+int ACC::listenForAcdcData(int trigMode)
+{
+
+	bool waitForAll = false;
+	bool pullNewAccBuffer = true;
+	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
+
+	//this function is simply readAcdcBuffers
+	//if the trigMode is software
+	if(trigMode == 0)
+	{
+		waitForAll = true;
+		int retval;
+		retval = readAcdcBuffers(waitForAll);
+		return retval;
+	}
+
+
+	//duration variables
+	auto start = chrono::steady_clock::now();
+	auto now = chrono::steady_clock::now(); //just for initialization 
+	auto printDuration = chrono::seconds(20); //prints as it loops and listens
+	auto lastPrint = chrono::steady_clock::now();
+
+	try
+	{
+		while(true)
+		{
+			now = chrono::steady_clock::now();
+			if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
+			{
+				cout << "Have been waiting for a trigger for " << chrono::duration_cast<chrono::seconds>(now - start).count() << " seconds" << endl;
+				lastPrint = chrono::steady_clock::now();
+			}
+
+			//pull a new Acc buffer and parse
+			//the data-ready state indicators. 
+			checkDcPktFlag(pullNewAccBuffer);
+			checkFullRamRegisters();
+
+			//debug
+
+			if(lastAccBuffer.size() > 4)
+			{
+				cout << "Ram/Pkt byte is: ";
+				printByte(lastAccBuffer.at(4));
+				cout << endl;
+			}
+		
+			//check which ACDCs have both gotten a trigger
+			//and have filled the ACC ram, thus starting
+			//it's USB write flag. 
+			
+			//I want to see that dcPkt and fullRam
+			//are equivalent. If one board finishes
+			//sending data to ACC before another, for
+			//example, we still want to wait. 
+			std::sort(fullRam.begin(), fullRam.end());
+			std::sort(dcPkt.begin(), dcPkt.end());
+			if(dcPkt == fullRam)
+			{
+				//all boards have finished
+				//sending data to ACC. 
+				break;
+			}
+		}
+
+		/*
+		//put some timeout condition here
+		//if desireable
+		if(check == maxChecks)
+		{
+			cout << "ACDC buffers were never sent to the ACC" << endl;
+			return 2;
+		}
+		*/
+
+		//each ACDC needs to be queried individually
+		//by the ACC for its buffer. 
+		for(int bi: fullRam)
+		{
+			unsigned int command = 0x1e0C0000; //base command for set readmode
+			command = command | (unsigned int)(bi + 1); //which board to read
+
+			//send 
+			usb->sendData(command);
+			//read only once. sometimes the buffer comes up empty. 
+			//made a choice not to pound it with a loop until it
+			//responds. 
+			vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+
+
+			//----corrupt buffer checks begin
+			//sometimes the ACDCs dont send back good
+			//data. It is unclear why, but we would
+			//just rather throw this event away. 
+			bool corruptBuffer = false;
+			if(acdc_buffer.size() == 0)
+			{
+				corruptBuffer = true;
+			}
+			int nonzerocount = 0;
+			//if the first 20 bytes are all 0's, it is corrupt...
+			for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
+			{
+				if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
+			}
+			if(nonzerocount == 0) {corruptBuffer = true;}
+
+			if(corruptBuffer)
+			{
+				return 1;
+			}
+			//----corrupt buffer checks end. 
+
+
+			//save this buffer a private member of ACDC
+			//by looping through our acdc vector
+			//and checking each index (not optimal but)
+			//who cares about 4 loop iterations. 
+			for(ACDC* a: acdcs)
+			{
+				if(a->getBoardIndex() == bi)
+				{
+					//set the buffer that we just read. 
+					//There is a string of bool returning
+					//functions that checks if the buffer is corrupt
+					//in a sense that it doesn't follow the expected
+					//packet order or packet format. Ultimately, this
+					//is presently set by the Metadata.parseBuffer() member
+					//and returns "bad buffer" if there are not NUM_PSEC 
+					//number of info blocks. 
+					corruptBuffer = !(a->setLastBuffer(acdc_buffer, getAccEventNumber())); //also triggers parsing function
+					if(corruptBuffer)
+					{
+						cout << "********* got this failure mode ****************" << endl;
+						return 1;
+					}
+					//tells it explicitly to load the data
+					//component of the buffer into private memory. 
+					a->parseDataFromBuffer(); 
+				}
+			}
+		}
+	}
+	catch(string mechanism)
+	{
+		cout << mechanism << endl;
+		return 2;
+	}
+	
 	return 0;
 }
 
@@ -781,68 +951,27 @@ void ACC::initializeForDataReadout(int trigMode)
 //a set of specific usb commands to reset
 //the board configurations to a well defined
 //state after doing a logData data collection.
-void ACC::dataCollectionCleanup()
+void ACC::dataCollectionCleanup(int trigMode)
 {
 	//i'm taking this directly from a USB listening
 	//mode of the old software. it may not be unique.
 	//it is cryptic and is possibly unstable.
-
-	setAccTrigInvalid(); //b4
-	resetAccTrigger(); //b1
-	resetAccTrigger();
 	unsigned int command;
-	command = 0x1e0c0001;
-	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
+	if(trigMode == 0)
+	{
+		setAccTrigInvalid(); //b4
+		resetAccTrigger(); //b1
+		command = 0x1e0c0010; //set trig src 0. 
+		usb->sendData(command);
+		setFreshReadmode(); //c0
 
+		setAccTrigInvalid(); //b4
+		resetAccTrigger(); //b1
+		command = 0x1e0c0010; //set trig src 0. 
+		usb->sendData(command);
+		setFreshReadmode(); //c0
+	}
 	
-
-	resetAccTrigger();
-	command = 0x1e0c0010; //set trig src 0. 
-	usb->sendData(command);
-	setFreshReadmode();
-	resetAccTrigger();
-	command = 0x1e0c0001;
-	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-
-	resetAccTrigger();
-
-	setAccTrigInvalid();
-	resetAccTrigger(); 
-	resetAccTrigger();
-	command = 0x1e0c0001;
-	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	resetAccTrigger();
-	command = 0x1e0c0010;
-	usb->sendData(command);
-	setFreshReadmode();
-	resetAccTrigger();
-	command = 0x1e0c0001;
-	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	resetAccTrigger(); //b1
-
-
-	resetAccTrigger();
-	command = 0x1e0c0001;
-	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-	resetAccTrigger(); //b1
-
-
-	resetAccTrigger();
-	command = 0x1e0c0001;
-	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE +2);
-
-
-	resetAccTrigger();
 
 }
 
@@ -868,100 +997,6 @@ void ACC::dumpData()
 
 }
 
-//similar to readAcdcBuffer but without
-//leading or trailing usb commands. It also
-//explicitly tells the ACDCs to store their
-//waveform data into private members, something
-//that is not always done (to save memory). 
-int ACC::readNewAcdcData()
-{
-	//parse the last ACC buffer to see which
-	//ACDCs we should look at for new data. 
-	checkFullRamRegisters();
-
-	//no events were sent from the 
-	//ACDC to the ACC. 
-	if(fullRam.size() == 0)
-	{
-		//no events found
-		return false;
-	}
-
-	//otherwise, fullRam will have some 
-	//elements corresponding to board indices
-	cout << "Reading ACDC buffers that have triggered events:" << endl;
-
-	//each ACDC needs to be queried individually
-	//by the ACC for its buffer. 
-	for(int bi: fullRam)
-	{
-		cout << "\tReading board number " << bi << endl;
-		unsigned int command = 0x1e0C0000; //base command for set readmode
-		command = command | (unsigned int)(bi + 1); //which board to read
-
-		//send 
-		usb->sendData(command);
-		//read only once. sometimes the buffer comes up empty. 
-		//made a choice not to pound it with a loop until it
-		//responds. 
-		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-
-		//sometimes the ACDCs dont send back good
-		//data. It is unclear why, but we would
-		//just rather throw this event away. 
-		bool corruptBuffer = false;
-		if(acdc_buffer.size() == 0)
-		{
-			corruptBuffer = true;
-		}
-		int nonzerocount = 0;
-		//if the first 20 bytes are all 0's, it is corrupt...
-		for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
-		{
-			if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
-		}
-		if(nonzerocount == 0) {corruptBuffer = true;}
-
-		if(corruptBuffer)
-		{
-			return false;
-		}
-
-		//save this buffer a private member of ACDC
-		//by looping through our acdc vector
-		//and checking each index. 
-		for(ACDC* a: acdcs)
-		{
-			if(a->getBoardIndex() == bi)
-			{
-				//set the buffer that we just read. 
-				//There is a string of bool returning
-				//functions that checks if the buffer is corrupt
-				//in a sense that it doesn't follow the expected
-				//packet order or packet format. Ultimately, this
-				//is presently set by the Metadata.parseBuffer() member
-				//and returns "bad buffer" if there are not NUM_PSEC 
-				//number of info blocks. 
-				corruptBuffer = !(a->setLastBuffer(acdc_buffer, getAccEventNumber())); //also triggers parsing function
-				if(corruptBuffer)
-				{
-					cout << "********* got this failure mode ****************" << endl;
-					return false;
-				}
-				//tells it explicitly to load the data
-				//component of the buffer into private memory. 
-				a->parseDataFromBuffer(); 
-			}
-		}
-	}
-
-	setAccTrigInvalid();
-	setFreshReadmode();
-	setAccTrigInvalid();
-	setFreshReadmode();
-
-	return true;
-}
 
 //just tells each ACDC that has a fullRam flag
 // to write its data and metadata maps to the filestreams. 
@@ -1027,7 +1062,6 @@ void ACC::testFunction()
 
 	//check if there are digitized events
 	//if so do 1e0c0000 & (1 << boardIndex) for all
-	readNewAcdcData();
 
 
 	//put this block in initialize. 

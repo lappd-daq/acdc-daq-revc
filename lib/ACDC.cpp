@@ -109,24 +109,26 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 
 
 //looks at the last ACDC buffer and organizes
-//all of the data into a data object. This is called
-//explicitly so as to not allocate a bunch of memory 
-//without need.  
-void ACDC::parseDataFromBuffer()
+//all of the data into a data map. 
+//retval: 
+//2: other error
+//1: corrupt buffer 
+//0: all good
+int ACDC::parseDataFromBuffer()
 {
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
 	if(lastAcdcBuffer.size() == 0)
 	{
 		cout << "You tried to parse ACDC data without pulling/setting an ACDC buffer" << endl;
-		return;
+		return 2;
 	}
 
 	if(peds.size() == 0 || conv.size() == 0)
 	{
 		cout << "Found no pedestal or LUT conversion data but was told to parse data." << endl;
 		cout << "Please check the ACC class for an initialization of this calibration data" << endl;
-		return;
+		return 2;
 	}
 
 	//writeRawBufferToFile(); //debug
@@ -140,54 +142,54 @@ void ACDC::parseDataFromBuffer()
 	double sampleValue = 0.0; //temporary holder for the sample in ADC-counts/mV
 	bool dataFlag = false; //if we are currently on psec-data bytes. 
 	vector<double> waveform; //the current channel's data as a vector of doubles. 
-	//a for loop through the whole buffer, no fancy math, just flags. 
+	//a for loop through the whole buffer and save states
 	for(unsigned short byte: lastAcdcBuffer)
 	{
-		if(byte == startword)
+		if(byte == startword && !dataFlag)
 		{
 			//re-initialize for a new PSEC chip
 			dataFlag = true;
 			sampleCount = 0;
-			//if we have already been storing data
-			//(i.e. waveform.size() != 0 or channel is not 0)
-			if(channelCount != 0)
-			{
-				data[channelCount] = waveform; //save the data
-				waveform.clear(); //fresh vector
-			}
 			channelCount++;
 			continue;
 		}
-		//one possible way to reset sample count. 
-		//if you hit 256 samples, you may still want dataFlag = true;
+		
 		if(byte == endword)
 		{
 			dataFlag = false;
-			sampleCount = 0;
+			
+			//if the number
+			//of datapoints in between 
+			//the metadata packets is not
+			//NUM_CH_PER_CHIP*NUM_SAMP (256*6)
+			if(waveform.size() != 0)
+			{
+				//data map is not totally filled...
+				cout << waveform.size() << endl;
+				return 1;
+			}
 			continue;
 		}
+
 		if(dataFlag)
 		{
+			//here is where we assume every
+			//channel to have NUM_SAMP samples. 
 			if(sampleCount == NUM_SAMP)
 			{
-				//still want to take data
-				//possibly.  
 				sampleCount = 0;
-				data[channelCount] = waveform; //save the data
-				waveform.clear(); //fresh vector
+				data[channelCount] = waveform;
+				waveform.clear();
 				channelCount++;
-				//if this is now a new chip, 
-				//turn dataFlag off because there
-				//is a set of AcdcMetadata bytes to
-				//iterate past. 
-				if((channelCount - 1) % NUM_CH_PER_CHIP == 0 || channelCount > NUM_CH)
-				{
-					dataFlag = false;
-					continue;
-				}
+			}
+			if(channelCount > NUM_CH)
+			{
+				//we are done here. 
+				break; //could also be continue.
 			}
 
-			//here is where we actually save data.
+			//---these lines fill a waveform vector
+			//---that will be inserted into the data map
 			sampleValue = (double)byte; //adc counts
 			//apply a pedestal subtraction
 			sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
@@ -196,11 +198,13 @@ void ACDC::parseDataFromBuffer()
 			//save in the vector. vector is saved in the data map when
 			//the channel count is iterated. 
 			waveform.push_back(sampleValue); 
+			sampleCount++;
 			continue;
 		}
+		
 	}
 
-	return;
+	return 0;
 
 }
 
@@ -225,11 +229,11 @@ void ACDC::writeDataToFile(ofstream& d, ofstream& m)
 		waveform = it->second;
 		channel = it->first;
 		//first three columns are event, board, channel
-		d << evno << delim << boardIndex << delim << channel;
+		d << evno << delim << boardIndex << delim << channel << delim;
 		//loop the vector and print values
 		for(double s: waveform)
 		{
-			d << s;
+			d << s << delim;
 		}
 		d << endl;
 	}

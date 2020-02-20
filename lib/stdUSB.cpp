@@ -274,7 +274,6 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
 
     //cout << "Read buffer maximum size is " << buff_sz << endl;
     int retval = usb_bulk_read(stdHandle, 0x86, (char*)pData, buff_sz, USB_TOUT_MS);
-    //cout << "Got " << retval << " bytes" << endl;
     usleep(2*l*4.0*8.0/(48.0)); 
 
 
@@ -284,7 +283,6 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
     } 
     else{
         *lread = retval;
-        //cout << "usb read failed with retval " << retval << endl;
         return false;
     }
 

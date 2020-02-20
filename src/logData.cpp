@@ -37,26 +37,32 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
 	acc.softwareTrigger();
-	bool success = acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
+	bool waitForAll = true; //require that all ACDC buffers be found for success. 
+	int retval = acc.readAcdcBuffers(waitForAll); //read ACDC buffer from usb, save and parse in ACDC objects
 
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
 
 	//only print if you actually
 	//got ACDC data. 
-	if(!success)
+	if(retval == 2)
 	{
 		cout << "Could not connect to ACDCs" << endl;
 		return 0;
 	}
+	else if(retval == 1)
+	{
+		cout << "Of the aligned ACDCs, not all sent data back to the ACC" << endl;
+		return 0;
+	}
 
-	int evCounter = 0; //loop ends when this reaches nev
-	int corruptCounter = 0;
-	bool pullNewAccBuffer = true; //used when we need a new Acc buffer. 
+	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
+	int maxCorruptCounts = 10; //if this many failed ACDC pulls occur, kill loop. 
 
 	//duration variables
 	auto start = chrono::steady_clock::now();
 	auto end = chrono::steady_clock::now(); //just for initialization
+	
 	try
 	{
 		for(int evCounter = 0; evCounter < nev; evCounter++)
@@ -67,8 +73,9 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			cout << "On event " << evCounter << " of " << nev << "... ";
 
 			//send a set of USB commands to configure ACC
-			//send a software trigger
-			acc.initializeForDataReadout(trigMode); 
+			//send a software trigger if trigMode = 0
+			//currently doesn't support any other mode
+			acc.initializeForDataReadout(trigMode);
 
 			//tell the ACC to not send a trigger for a moment
 			//(both trigger modes)
@@ -79,30 +86,34 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			//total success of pulling ACDC data. 
 			while(eventHappened != 0)
 			{
+				if(corruptCounter >= maxCorruptCounts)
+				{
+					throw("Too many corrupt events");
+				}
 				//close gracefull if ctrl-C is thrown
 				if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
-				eventHappened = acc.readAcdcBuffers(); 
+				eventHappened = acc.listenForAcdcData(trigMode);
 				if(eventHappened == 1)
 				{
 					corruptCounter++;
 				}
 
-				//this I think is required after reading data. 
-				/*
-				setAccTrigInvalid();
-				setFreshReadmode();
-				setAccTrigInvalid();
-				setFreshReadmode();
-				*/
 			}
 
-
+			
+			acc.setAccTrigInvalid();
+			acc.setFreshReadmode();
+			acc.setAccTrigInvalid();
+			acc.setFreshReadmode();
+			
 			end = chrono::steady_clock::now();
 			cout << " found an event after waiting for a trigger. ";
-			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
+			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. " << endl;
 
 			cout << "Writing the event to file" << endl;
-			acc.writeAcdcDataToFile(dataofs, metaofs); //writes to file
+			//writes to file. assumes no new AccBuffer 
+			//has been pulled (i.e. uses fullRam from last AccBuffer)
+			acc.writeAcdcDataToFile(dataofs, metaofs); 
 			//head to top, incrementing event counter.
 		}
 	}
@@ -117,7 +128,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	cout << "Finished collecting " << nev << " events after " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. "<< endl;
 	//clean up at the end
 	acc.dataCollectionCleanup();
-	cout << "Collected " << evCounter << " events and had to wade through " << corruptCounter << " number of corrupt buffers to get there" << endl;
+	cout << "Found " << corruptCounter << " number of corrupt buffers during acquisition" << endl;
 
 	return 1;
 }
@@ -209,6 +220,7 @@ int main(int argc, char *argv[]) {
 	//usb volitile objects.
 	dataQueryLoop(dataofs, metaofs, nevents, trigMode);
 
+	cout << "Closing output files" << endl;
 	dataofs.close();
 	metaofs.close();
 

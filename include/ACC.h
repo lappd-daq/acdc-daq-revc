@@ -40,12 +40,14 @@ public:
 	void createAcdcs(); //creates ACDC objects, explicitly querying both buffers
 	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
 	int readAcdcBuffers(bool waitForAll = false); //reads the acdc buffers
+	int listenForAcdcData(int trigMode); //almost identical to readAcdcBuffers but intended for real data triggering
+
 	void initializeForDataReadout(int trigMode = 0);
-	int readNewAcdcData(); //similar to readAcdcBuffer but without leading or trailing usb commands
-	void dataCollectionCleanup(); //a set of usb commands to reset boards after data logging
+	void dataCollectionCleanup(int trigMode = 0); //a set of usb commands to reset boards after data logging
 	void setAccTrigInvalid(); //b004, only public because it is called in logData
 	void dumpData(); //tells ACDCs to clear their ram
 	void resetAccTrigger(); //b0001
+	void setFreshReadmode(); //c0001
 
 
 
@@ -73,7 +75,7 @@ private:
 	void makeSync(); //make sync? need to read firmware to understand this
 	void setAccTrigValid(); //b0006
 	//--end 0xB
-	void setFreshReadmode(); //c0001
+	
 
 	void clearAcdcs(); //memory deallocation for acdc vector. 
 	int parsePedsAndConversions(); //puts ped and LUT-scan data into ACDC objects
