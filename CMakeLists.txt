@@ -1,9 +1,9 @@
 cmake_minimum_required(VERSION 3.1)
-project(acdc-daq)
-set(acdc-daq_VERSION_MAJOR 2)
-set(acdc-daq VERSION_MINOR 1)
+project(acdc-daq-revc)
+set(acdc-daq-revc_VERSION_MAJOR 1)
+set(acdc-daq-revc VERSION_MINOR 1)
 
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++17")
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -std=c++14")
 set(CMAKE_BINARY_DIR ${CMAKE_SOURCE_DIR}/bin)
 set(EXECUTABLE_OUTPUT_PATH ${CMAKE_BINARY_DIR})
 set(LIBRARY_OUTPUT_PATH ${CMAKE_BINARY_DIR})
@@ -13,7 +13,7 @@ set(EXECUTABLE_SOURCE_DIR "${CMAKE_SOURCE_DIR}/src")
 include(ExternalProject)
 ExternalProject_Add(project_yaml_cpp
         GIT_REPOSITORY "https://github.com/jbeder/yaml-cpp"
-        GIT_TAG "yaml-cpp-0.6.2"
+        GIT_TAG "yaml-cpp-0.6.3"
         INSTALL_COMMAND ""
         PREFIX ${CMAKE_CURRENT_BINARY_DIR}/yaml-cpp)
 ExternalProject_Get_Property(project_yaml_cpp source_dir)
@@ -55,9 +55,14 @@ target_link_libraries(ACC myusb ACDC Metadata Config yaml-cpp)
 add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
 add_executable(setConfig ${EXECUTABLE_SOURCE_DIR}/setConfig.cpp)
 
+add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
+
 
 
 
 target_link_libraries(readACDC PUBLIC ACC)
-target_link_libraries(setConfig PUBLIC ACC Config)
+
+target_link_libraries(logData PUBLIC ACC)
+
+
 

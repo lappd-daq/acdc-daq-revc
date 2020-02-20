@@ -5,17 +5,42 @@
 
 using namespace std;
 
+
+//this script has been QC tested by Evan on
+//two boards. 2/19/20
+
 //reads ACDC metadata on all detectable
 //boards and prints it to stdout
 int main() {
 
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
-	acc.readAcdcBuffers(); //read ACDC buffer from usb, save and parse in ACDC objects
 
-	bool verbose = false;
-	acc.printAcdcInfo(verbose);
+	acc.softwareTrigger();
+	bool waitForAll = true; //require that all ACDC buffers be found for success. 
+	int retval = acc.readAcdcBuffers(waitForAll); //read ACDC buffer from usb, save and parse in ACDC objects
 
+	acc.resetAccTrigger();
+	acc.resetAccTrigger();
+
+	//only print if readAcdcBuffers
+	//successfully retreived and parsed
+	//data. 
+	if(retval == 0)
+	{
+		bool verbose = false;
+		acc.printAcdcInfo(verbose);
+	}
+	else if(retval == 1)
+	{
+		bool verbose = false;
+		acc.printAcdcInfo(verbose);
+		cout << "***Found data but got a corrupt buffer.***" << endl;
+	}
+	else
+	{
+		cout << "ACDCs never returned any data - check acdc alignment, possibly power cycle" << endl;
+	}
 
 	return 1;
 }

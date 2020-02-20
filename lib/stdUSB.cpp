@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include "stdUSB.h"
 #include <iostream>
+#include <chrono>
 #include <sstream>
 #include <bitset>
 
@@ -22,7 +23,13 @@ stdUSB::stdUSB()
     stdHandle = INVALID_HANDLE_VALUE; 
     USBFX2_VENDOR_ID = 0x6672;
     USBFX2_PRODUCT_ID = 0x2920;
-    createHandles();
+    bool retval;
+    retval = createHandles();
+    if(!retval)
+    {
+        cout << "Usb was unable to connect to USB line, exiting" << endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 stdUSB::stdUSB(uint16_t vid, uint16_t pid) 
@@ -30,7 +37,13 @@ stdUSB::stdUSB(uint16_t vid, uint16_t pid)
     stdHandle = INVALID_HANDLE_VALUE; 
     USBFX2_VENDOR_ID = vid;
     USBFX2_PRODUCT_ID = pid;
-    createHandles();
+    bool retval;
+    retval = createHandles();
+    if(!retval)
+    {
+        cout << "Usb was unable to connect to USB line, exiting" << endl;
+        exit(EXIT_FAILURE);
+    }
 }
 
 stdUSB::~stdUSB() { 
@@ -196,6 +209,7 @@ void stdUSB::printByte(unsigned int val)
  */
 bool stdUSB::sendData(unsigned int data)// throw(...)
 {
+
     if (stdHandle == INVALID_HANDLE_VALUE) return false;
 
     /* Shifted right because send value needs to be in 
@@ -212,10 +226,10 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     printByte(data);
     cout << endl;
     */
+    
 
     int retval = usb_bulk_write(stdHandle, 0x02, buff, sizeof(buff), USB_TOUT_MS);
 
-    //printf("SendData: sent %d bytes\n", retval);
 
     if (retval == 4){ //return value must be exact as the bytes transferred
       //printf("sending data to board...\n");  
@@ -245,9 +259,15 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
 
     int buff_sz = l*sizeof(unsigned short);
 
-    //cout << "Read buffer maximum size is " << buff_sz << endl;
+    //Evan using sleep statements to give the USB some time. 
+    //I have measured time of usb_bulk_read and it does not last
+    //long enough assuming 48Mbit/s data transfer. Maybe it thinks
+    //this is a super fast line? But the usb firmware is clocked at
+    //48Mbit per sec. 
+    //l-packets*4bytes per packet*8bits per byte/48Mbits per sec = ~0.6ms - 6ms depending on which. 
+    usleep(l*4.0*8.0/(48.0)); 
     int retval = usb_bulk_read(stdHandle, 0x86, (char*)pData, buff_sz, USB_TOUT_MS);
-    //cout << "Got " << retval << " bytes" << endl;
+    usleep(l*4.0*8.0/(48.0)); 
 
 
     if (retval > 0) {
@@ -256,7 +276,6 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
     } 
     else{
         *lread = retval;
-        //cout << "usb read failed with retval " << retval << endl;
         return false;
     }
 

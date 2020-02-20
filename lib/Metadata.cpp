@@ -28,12 +28,12 @@ void Metadata::printAllMetadata()
 {
 
     vector<string>::iterator kit;
-    for(kit = metadata_keys.begin(); kit != metadata_keys.end(); ++kit)
+    for(string k: metadata_keys)
     {
 
-        cout << *kit << "\t" << metadata[*kit] << "\t"; //decimal rep
+        cout << k << "\t" << metadata[k] << "\t"; //decimal rep
         stringstream ss;
-        ss << std::hex << metadata[*kit]; 
+        ss << std::hex << metadata[k]; 
         string hexstr(ss.str());
         cout << hexstr << "\t"; //hex rep
         unsigned n;
@@ -45,6 +45,54 @@ void Metadata::printAllMetadata()
     return;
 }
 
+void Metadata::writeMetadataToFile(ofstream& m, string delim)
+{
+    bool firstCount = true;
+    for(string k: metadata_keys)
+    {
+        //no space at the first key
+        if(firstCount)
+        {
+            m << metadata[k];
+            firstCount = false;
+        }
+        //space preceeding each key
+        else
+        {
+           m << delim << metadata[k]; 
+        }
+        
+    }
+    //no space at the end of the line. 
+    m << endl;
+}
+//this function prints a one line string of the metadata_keys
+//vector to an ofstream "m" with delimiters delim. used
+//in the data logging / metadata logging to ascii functions. 
+void Metadata::printKeysToFile(ofstream& m, string delim)
+{
+    bool firstCount = true;
+    for(string k: metadata_keys)
+    {
+        //no space at the first key
+        if(firstCount)
+        {
+            m << k;
+            firstCount = false;
+        }
+        //space preceeding each key
+        else
+        {
+           m << delim << k; 
+        }
+        
+    }
+    //no space at the end of the line. 
+    m << endl;
+}
+
+//prints some relevant metadat to the
+//standard cout. 
 void Metadata::standardPrint()
 {
 	vector<int> masked_channels = getMaskedChannels();
@@ -53,7 +101,7 @@ void Metadata::standardPrint()
 
 
 
-	cout << "CC_EVENT_COUNT:" << metadata["CC_EVENT_COUNT"] << ", ";
+	cout << "CC_EVENT_COUNT_LO:" << metadata["CC_EVENT_COUNT_LO"] << ", ";
 	cout << "CC_TIME (nclocks, hi:mid:lo)  " << metadata["CC_TIMESTAMP_HI"] << ":" << metadata["CC_TIMESTAMP_MID"] << ":" << metadata["CC_TIMESTAMP_LO"] << endl;
 	cout << "--------" << endl;
 	cout << "acdc trigger time (nclocks, hi:mid:lo) " << metadata["trig_time_hi"] << ":" << metadata["trig_time_mid"] << ":" << metadata["trig_time_lo"] << endl;
@@ -126,6 +174,18 @@ vector<int> Metadata::getMaskedChannels()
 
 
 
+void Metadata::printByte(ofstream& ofs, unsigned short val)
+{
+    ofs << val << ", "; //decimal
+    stringstream ss;
+    ss << std::hex << val;
+    string hexstr(ss.str());
+    ofs << hexstr << ", "; //hex
+    unsigned n;
+    ss >> n;
+    bitset<16> b(n);
+    ofs << b.to_string(); //binary
+}
 
 
 
@@ -139,12 +199,21 @@ vector<int> Metadata::getMaskedChannels()
 
 
 //two metadatas that are known externally need to be set by ACDC class.
-void Metadata::setBoardAndEvent(unsigned short board, unsigned short event)
+void Metadata::setBoardAndEvent(unsigned short board, int event)
 {
-	checkAndInsert("Event", event);
+    //there is a problem in that the map has been
+    //defined assuming all metadata are unsigned shorts. 
+    //but this only goes to 2^16 events (65536). If this happens, 
+    //restart the count at zero
+    event = event % 65536;
+	checkAndInsert("Event", (unsigned short)event);
 	checkAndInsert("Board", board);
 }
 
+int Metadata::getEventNumber()
+{
+    return (int)metadata["Event"];
+}
 
 
 
@@ -198,23 +267,21 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 	//be before the first occurance of the ac_info startword. 
 	unsigned int cc_header_start = 0x1234;
 	bit = std::find(acdcBuffer.begin(), acdcBuffer.end(), cc_header_start);
-	++bit; //so that first byte is not the cc_header_start word. 
+	bit++; //so that first byte is not the cc_header_start word. 
     int counter = 0;
     int maxAccInfo = 20; //the most bytes that would possibly be needed. 
-	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
+	for(bit = bit; bit != acdcBuffer.end(); ++bit)
 	{
 		cc_header_info.push_back(*bit);
-		//the set of packets ends with the start word as well...
-        //counter is an extra protection in case the ACC missed a packet
-        //(an error... but this will likely return false at the code protections below)
-		if(*bit == cc_header_start || counter == maxAccInfo)
+		
+        //just fill with more than enough bytes. 
+        //we will only access the relevant ones. 
+		if(counter == maxAccInfo)
 		{
 			break;
 		}
         counter++;
 	}
-
-
 
 	//I have found experimentally that sometimes
     //the ACC sends an ACDC buffer that has 8001 elements
@@ -224,8 +291,17 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //do is return and say that the metadata is nothing. 
 	if(start_indices.size() != NUM_PSEC)
 	{
+        cout << "***********************************************************" << endl;
 		cout << "In parsing ACDC buffer, found " << start_indices.size() << " matadata flag bytes." << endl;
 		cout << "Metadata for this event will likely be jarbled. Code a protection!" << endl;
+        string fnnn = "acdc-corrupt-buffer.txt";
+        cout << "Printing to file : " << fnnn << endl;
+        ofstream cb(fnnn);
+        for(unsigned short k: acdcBuffer)
+        {
+            printByte(cb, k);
+            cb << endl;
+        }
         return false;
 	}
 
@@ -435,7 +511,8 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     checkAndInsert("CC_TIMESTAMP_MID", cc_header_info[4]);
     checkAndInsert("CC_TIMESTAMP_HI", cc_header_info[5]);
     //event count is two 16 bit words, this combines them into an int
-    checkAndInsert("CC_EVENT_COUNT", (cc_header_info[1] << 16) + cc_header_info[2]);
+    checkAndInsert("CC_EVENT_COUNT_LO", cc_header_info[2]);
+    checkAndInsert("CC_EVENT_COUNT_HI", cc_header_info[1]);
     //called in firmware "BIN_COUNT_SAVE" in triggerAndTime.vhd line 112. 
     //also contained in this buffer element is bin_count_start and bin_count. 
     checkAndInsert("CC_BIN_COUNT", (cc_header_info[0] & 0x18) >> 3);
@@ -471,7 +548,8 @@ void Metadata::initializeMetadataKeys()
 	metadata_keys.push_back("Event"); metadata_keys.push_back("Board");
 	metadata_keys.push_back("CC_TIMESTAMP_HI");
 	metadata_keys.push_back("CC_TIMESTAMP_MID"); metadata_keys.push_back("CC_TIMESTAMP_LO");
-	metadata_keys.push_back("CC_EVENT_COUNT"); metadata_keys.push_back("CC_BIN_COUNT");
+	metadata_keys.push_back("CC_EVENT_COUNT_HI");metadata_keys.push_back("CC_EVENT_COUNT_LO"); 
+    metadata_keys.push_back("CC_BIN_COUNT");
 	for(int i = 0; i < NUM_PSEC; i++)
 	{
 		metadata_keys.push_back("ro_cnt"+to_string(i));
@@ -498,7 +576,7 @@ void Metadata::initializeMetadataKeys()
 
 	//event properties
 	metadata_keys.push_back("num_triggered_channels"); metadata_keys.push_back("triggered_channels_hi");
-	metadata_keys.push_back("triggered_channels_lo");metadata_keys.push_back("triggered_channels_lo");
+	metadata_keys.push_back("triggered_channels_lo");
 	metadata_keys.push_back("firmware_resets_hi");metadata_keys.push_back("firmware_resets_lo");
 	//settings (from configuration file)
 	metadata_keys.push_back("self_trig"); metadata_keys.push_back("wait_for_sys");

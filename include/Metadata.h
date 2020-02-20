@@ -4,6 +4,7 @@
 #include <string>
 #include <map>
 #include <vector>
+#include <fstream>
 
 #define NUM_PSEC 5
 #define NUM_CH 30
@@ -20,9 +21,14 @@ public:
 	bool parseBuffer(vector<unsigned short> acdcBuffer); //returns success or fail 1/0
 	vector<int> getMaskedChannels(); //returns a vector format of masked channels
 	void standardPrint(); //lite print
+	void printByte(ofstream& ofs, unsigned short val);
 	void printAllMetadata(); //full raw print. 
+	void printKeysToFile(ofstream& m, string delim); //prints a one line header of all metadata keys
+	void writeMetadataToFile(ofstream& m, string delim); //prints one long line with all metadata to the stream
 	//two metadatas that are known externally need to be set by ACDC class.
-	void setBoardAndEvent(unsigned short board, unsigned short event); 
+	void setBoardAndEvent(unsigned short board, int event); 
+	int getEventNumber();
+
 
 private:
 	map<string, unsigned short> metadata;
