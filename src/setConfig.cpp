@@ -29,7 +29,14 @@ int main(int argc, char *argv[])
 		//create a configuration object
 		//using the filename argument of constructor
 		Config conf(conffile, verbose); //automatically parses the file
-		conf.writeConfigToAcc(&acc);
+		bool success = false;
+		success = conf.writeConfigToAcc(&acc);
+		if(!success)
+		{
+			cout << "Failed setting configuration variables when sending them down USB line" << endl;
+			return 0;
+		}
+		cout << "Done setting config" << endl;
 	}
 
 

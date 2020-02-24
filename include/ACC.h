@@ -33,6 +33,7 @@ public:
 	vector<int> unsignedShortToVector(unsigned short a);
 	int getAccEventNumber(bool pullNew = false); //gets the Acc event number
 	void writeAcdcDataToFile(ofstream& d, ofstream& m); 
+	vector<int> getAlignedIndices(){return alignedAcdcIndices;} //returns vector of aligned acdc indices
 
 	
 	//-----------functions that involve usb comms
@@ -41,15 +42,24 @@ public:
 	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
 	int readAcdcBuffers(bool waitForAll = false); //reads the acdc buffers
 	int listenForAcdcData(int trigMode); //almost identical to readAcdcBuffers but intended for real data triggering
-
 	void initializeForDataReadout(int trigMode = 0);
 	void dataCollectionCleanup(int trigMode = 0); //a set of usb commands to reset boards after data logging
-	void setAccTrigInvalid(); //b004, only public because it is called in logData
 	void dumpData(); //tells ACDCs to clear their ram
+
+
+	//-----short usb send functions. found
+	//-----at the end of the cpp file. 
+	void setAccTrigInvalid(); //b004
 	void resetAccTrigger(); //b0001
 	void setFreshReadmode(); //c0001
+	void resetAcdcTrigger(); //c0010
+	void setHardwareTrigSrc(int src); //c0000 | complicated code
+	void prepSync(); //preps sync? need to read firmware to understand this
+	void makeSync(); //make sync? need to read firmware to understand this
+	void setAccTrigValid(); //b0006
 
 
+	stdUSB* getUsbStream(); //returns the private usb object
 
 private:
 	stdUSB* usb;
@@ -70,13 +80,6 @@ private:
 	void printByte(unsigned short val);
 	vector<unsigned short> sendAndRead(unsigned int command, int buffsize); //wakes the usb line, only called in constructor. 
 	bool checkUSB(); //checking usb line and returning or couting appropriately.  
-	//--0xB class of commands, the most cryptic
-	void prepSync(); //preps sync? need to read firmware to understand this
-	void makeSync(); //make sync? need to read firmware to understand this
-	void setAccTrigValid(); //b0006
-	//--end 0xB
-	
-
 	void clearAcdcs(); //memory deallocation for acdc vector. 
 	int parsePedsAndConversions(); //puts ped and LUT-scan data into ACDC objects
 };
