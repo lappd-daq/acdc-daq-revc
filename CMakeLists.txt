@@ -42,20 +42,30 @@ add_library(myusb
 add_library(Metadata
         ${LIBRARY_SOURCE_DIR}/Metadata.cpp)
 
+add_library(Config
+        ${LIBRARY_SOURCE_DIR}/Config.cpp)
+
 target_link_libraries(myusb PRIVATE usb)
 
-target_link_libraries(ACC myusb ACDC Metadata yaml-cpp)
+target_link_libraries(ACC myusb ACDC Metadata Config yaml-cpp)
 
 
 
 
 add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
-
+add_executable(setConfig ${EXECUTABLE_SOURCE_DIR}/setConfig.cpp)
+add_executable(printAcdcMetadata ${EXECUTABLE_SOURCE_DIR}/printAcdcMetadata.cpp)
 add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
 
 
 
 
 target_link_libraries(readACDC PUBLIC ACC)
+
 target_link_libraries(logData PUBLIC ACC)
+
+target_link_libraries(setConfig PUBLIC ACC Config)
+target_link_libraries(printAcdcMetadata PUBLIC ACC)
+
+
 

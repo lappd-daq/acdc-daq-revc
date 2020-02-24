@@ -93,6 +93,14 @@ bool ACC::checkUSB()
 }
 
 
+//function that returns a pointer
+//to the private ACC usb line. 
+//currently used by the Config class
+//to set configurations. 
+stdUSB* ACC::getUsbStream()
+{
+	return usb;
+}
 
 //reads ACC info buffer only. short buffer
 //that does not rely on any ACDCs to be connected. 
@@ -123,69 +131,6 @@ vector<unsigned short> ACC::readAccBuffer()
 	lastAccBuffer = v_buffer; //save as a private variable
 	return v_buffer; //also return as an option
 }
-
-
-//-----------The 0xB class of commands, the most cryptic
-
-//(1) clearing the Acc instruction in firmware
-//(2) sets Acc trigger = valid
-//(3) CC_SYNC goes to 1 which makes the
-//firmware wait 50,000 clocks before sending
-//the usb message. 
-void ACC::prepSync()
-{
-	unsigned int command = 0x1e0B0018;
-	usb->sendData(command);
-}
-
-//(1) clearing the Acc instruction in firmware
-//(2) sets Acc trigger = valid
-//(3) CC_SYNC goes to 0 which means it
-//will send the usb message immediately
-void ACC::makeSync()
-{
-	unsigned int command = 0x1e0B0010;
-	usb->sendData(command);
-}
-
-//(1) resets firmware in trigger and time
-//(2) does software reset of transeivers.vhd
-//(3) sets CC_INSTRUCTION to the command. 
-//Previously called "manage_cc_fifo", but now
-//calling it "resetAccTrigger". The software
-//reset in transeivers flags that software is
-//done reading over usb and goes to LVDS idle. 
-//Also sets SOFT_TRIG to 0 if it was at 1. Also
-//sets TRIG_OUT signal to 0. 
-void ACC::resetAccTrigger()
-{
-	unsigned int command = 0x1e0B0001;
-	usb->sendData(command);
-}
-
-//one flag that is required for
-//a signal from the ACC to 
-//be sent to trigger the ACDC
-void ACC::setAccTrigValid()
-{
-	unsigned int command = 0x1e0B0006;
-	usb->sendData(command);
-}
-
-void ACC::setAccTrigInvalid()
-{
-	unsigned int command = 0x1e0B0004;
-	usb->sendData(command);
-}
-
-void ACC::setFreshReadmode()
-{
-	unsigned int command = 0x1e0C0000;
-	usb->sendData(command);
-}
-
-
-//------------- end 0xB
 
 //this queries the Acc buffer,
 //finds which ACDCs are connected, then
@@ -348,7 +293,8 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 	
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
 	{
-		if((alignment_packet & (1 << i)))
+		//both (1<<i) and (1<<i+8) should be true if aligned & synced respectively
+		if((alignment_packet & (1 << i)) && (alignment_packet & (1 << (i + 8))))
 		{
 			//the i'th board is connected
 
@@ -967,19 +913,16 @@ void ACC::dataCollectionCleanup(int trigMode)
 	//i'm taking this directly from a USB listening
 	//mode of the old software. it may not be unique.
 	//it is cryptic and is possibly unstable.
-	unsigned int command;
 	if(trigMode == 0)
 	{
 		setAccTrigInvalid(); //b4
 		resetAccTrigger(); //b1
-		command = 0x1e0c0010; //set trig src 0. 
-		usb->sendData(command);
+		resetAcdcTrigger();
 		setFreshReadmode(); //c0
 
 		setAccTrigInvalid(); //b4
 		resetAccTrigger(); //b1
-		command = 0x1e0c0010; //set trig src 0. 
-		usb->sendData(command);
+		resetAcdcTrigger();
 		setFreshReadmode(); //c0
 	}
 	
@@ -1042,3 +985,97 @@ void ACC::testFunction()
 	usb->sendData(command);
 	sleep(3);
 }
+
+
+//-----------This class of functions are short usb
+//-----------commands that don't have a great comms
+//-----------structure. Giving them a name and their own
+//-----------function helps to organize the code. 
+
+//(1) clearing the Acc instruction in firmware
+//(2) sets Acc trigger = valid
+//(3) CC_SYNC goes to 1 which makes the
+//firmware wait 50,000 clocks before sending
+//the usb message. 
+void ACC::prepSync()
+{
+	unsigned int command = 0x1e0B0018;
+	usb->sendData(command);
+}
+
+//(1) clearing the Acc instruction in firmware
+//(2) sets Acc trigger = valid
+//(3) CC_SYNC goes to 0 which means it
+//will send the usb message immediately
+void ACC::makeSync()
+{
+	unsigned int command = 0x1e0B0010;
+	usb->sendData(command);
+}
+
+//(1) resets firmware in trigger and time
+//(2) does software reset of transeivers.vhd
+//(3) sets CC_INSTRUCTION to the command. 
+//Previously called "manage_cc_fifo", but now
+//calling it "resetAccTrigger". The software
+//reset in transeivers flags that software is
+//done reading over usb and goes to LVDS idle. 
+//Also sets SOFT_TRIG to 0 if it was at 1. Also
+//sets TRIG_OUT signal to 0. 
+void ACC::resetAccTrigger()
+{
+	unsigned int command = 0x1e0B0001;
+	usb->sendData(command);
+}
+
+//this command does a number of things
+//and the name may not be appropriate. 
+//if you think of a better name, please
+//feel free to change it. 
+void ACC::resetAcdcTrigger()
+{
+	unsigned int command = 0x1e0c0010; //set trig src 0. 
+	usb->sendData(command);
+}
+
+
+//there is an option to use one of
+//the front end boards (ACDCs) as
+//a hardware trigger source. It is
+//set via the 1e0c register (somewhat bad
+//design i think). 
+//int src:
+//0=ext, 3 = board0, 4=b1, 6=b2, 7=b3
+void ACC::setHardwareTrigSrc(int src)
+{
+	unsigned int byteSuffix;
+	byteSuffix = (1 << 3) | (1 << 4) | ((unsigned short)src << 13);
+	unsigned int command = 0x1e0c0000; 
+	command = command | byteSuffix; 
+	usb->sendData(command);
+}
+
+//one flag that is required for
+//a signal from the ACC to 
+//be sent to trigger the ACDC
+void ACC::setAccTrigValid()
+{
+	unsigned int command = 0x1e0B0006;
+	usb->sendData(command);
+}
+
+void ACC::setAccTrigInvalid()
+{
+	unsigned int command = 0x1e0B0004;
+	usb->sendData(command);
+}
+
+void ACC::setFreshReadmode()
+{
+	unsigned int command = 0x1e0C0000;
+	usb->sendData(command);
+}
+
+
+//------------- end --------------------
+

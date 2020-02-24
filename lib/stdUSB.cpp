@@ -227,6 +227,7 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     cout << endl;
     */
     
+    
 
     int retval = usb_bulk_write(stdHandle, 0x02, buff, sizeof(buff), USB_TOUT_MS);
 
