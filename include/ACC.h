@@ -45,7 +45,7 @@ public:
 	void initializeForDataReadout(int trigMode = 0);
 	void dataCollectionCleanup(int trigMode = 0); //a set of usb commands to reset boards after data logging
 	void dumpData(); //tells ACDCs to clear their ram
-
+	bool setPedestals(unsigned int ped, vector<int> boards = {})
 
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 

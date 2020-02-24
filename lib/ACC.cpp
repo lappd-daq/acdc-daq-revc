@@ -987,6 +987,58 @@ void ACC::testFunction()
 }
 
 
+
+
+//short circuits the Config - class based
+//pedestal setting procedure. This is primarily
+//used for calibration functions. Ped is in ADC counts
+//from 0 to 4096. If boards is empty, will do to all connected
+bool ACC::setPedestals(unsigned int ped, vector<int> boards)
+{
+	//default is empty vector, so do ped setting to all boards
+	if(boards.size() == 0)
+	{
+		boards = alignedAcdcIndices;
+	}
+
+	//loop over connected boards
+	int bi;
+	int numChips;
+	unsigned int command, tempWord;
+	bool failCheck;
+	for(ACDC* a: acdcs)
+	{
+		bi = a->getBoardIndex();
+		//if this isn't in the selected board list, 
+		//dont try to set a pedestal. 
+		if(std::find(boards.begin(), boards.end(), bi) == boards.end())
+		{
+			continue;
+		}
+
+		numChips = a->getNumPsec();
+		//set pedestals and thresholds
+		for(int chip = 0; chip < NUM_CHIPS; chip++)
+		{
+			chipAddress = (1 << chip) << 20; //20 magic number
+
+			//pedestal
+			command = 0x00030000; //ped setting command. 
+			tempWord = ped | (bi << 25) | chipAddress; //magic number 25. 
+			command = command | tempWord;
+			failCheck = usb->sendData(command); //set ped on that chip
+			if(!failCheck)
+			{
+				cout << "Failed setting pedestal on board " << bi << " chip " << chip << endl;
+				return false;
+			}
+	}
+
+	
+	return true;
+}
+
+
 //-----------This class of functions are short usb
 //-----------commands that don't have a great comms
 //-----------structure. Giving them a name and their own
@@ -1075,6 +1127,7 @@ void ACC::setFreshReadmode()
 	unsigned int command = 0x1e0C0000;
 	usb->sendData(command);
 }
+
 
 
 //------------- end --------------------
