@@ -7,8 +7,22 @@
 #include <algorithm>
 #include <chrono>
 #include <fstream>
+#include <atomic>
+#include <signal.h>
+#include <unistd.h>
+#include <cstring>
 
 using namespace std;
+
+//sigint handling
+std::atomic<bool> quitacc(false); //signal flag
+
+void ACC::got_signal(int)
+{
+	quitacc.store(true);
+}
+//
+
 
 
 ACC::ACC()
@@ -566,12 +580,14 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 //checks to see if there are any ACDC buffers
 //in the ram of the ACC. If waitForAll = true (false by default),
 //it will continue checking until all alignedAcdcs have sent
-//data to the ACC RAM. 
+//data to the ACC RAM. Unfortunately, the CC event number doesnt
+//increment in hardware trigger mode, so the evno is sent in 
+//explicitly to keep data files consistent. 
 //return codes:
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(bool waitForAll)
+int ACC::readAcdcBuffers(bool waitForAll, int evno)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -694,7 +710,7 @@ int ACC::readAcdcBuffers(bool waitForAll)
 				//is presently set by the Metadata.parseBuffer() member
 				//and returns "bad buffer" if there are not NUM_PSEC 
 				//number of info blocks. 
-				corruptBuffer = !(a->setLastBuffer(acdc_buffer, getAccEventNumber())); //also triggers parsing function
+				corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
 				if(corruptBuffer)
 				{
 					cout << "********* Corrupt buffer caught at ACC level ****************" << endl;
@@ -723,10 +739,13 @@ int ACC::readAcdcBuffers(bool waitForAll)
 //identical to readAcdcBuffer but does an infinite
 //loop when the trigMode is 1 (hardware trig) and
 //switches toggles waitForAll depending on trig mode. 
+//Unfortunately, the CC event number doesn't increment
+//in hardware trigger mode, so that needs to be sent
+//in explicitly via the logData function. 
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::listenForAcdcData(int trigMode)
+int ACC::listenForAcdcData(int trigMode, int evno)
 {
 
 	bool waitForAll = false;
@@ -743,12 +762,20 @@ int ACC::listenForAcdcData(int trigMode)
 		return retval;
 	}
 
-
 	//duration variables
 	auto start = chrono::steady_clock::now();
 	auto now = chrono::steady_clock::now(); //just for initialization 
 	auto printDuration = chrono::seconds(20); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
+
+
+	//setup a sigint capturer to safely
+	//reset the boards if a ctrl-c signal is found
+	struct sigaction sa;
+    memset( &sa, 0, sizeof(sa) );
+    sa.sa_handler = got_signal;
+    sigfillset(&sa.sa_mask);
+    sigaction(SIGINT,&sa,NULL);
 
 	try
 	{
@@ -761,19 +788,30 @@ int ACC::listenForAcdcData(int trigMode)
 				lastPrint = chrono::steady_clock::now();
 			}
 
+			//if sigint happens, 
+			//return value of 3 tells
+			//logger what to do. 
+			if(quitacc.load())
+			{
+				return 3;
+			}
+
+			usleep(100); //throttle, without it the USB line becomes jarbled...
+
 			//pull a new Acc buffer and parse
 			//the data-ready state indicators. 
 			checkDcPktFlag(pullNewAccBuffer);
 			checkFullRamRegisters();
 
 			//debug
-
+			/*
 			if(lastAccBuffer.size() > 4)
 			{
 				cout << "Ram/Pkt byte is: ";
 				printByte(lastAccBuffer.at(4));
 				cout << endl;
 			}
+			*/
 		
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting
@@ -785,23 +823,25 @@ int ACC::listenForAcdcData(int trigMode)
 			//example, we still want to wait. 
 			std::sort(fullRam.begin(), fullRam.end());
 			std::sort(dcPkt.begin(), dcPkt.end());
-			if(dcPkt == fullRam)
+			if(dcPkt == fullRam && dcPkt.size() > 0)
 			{
 				//all boards have finished
 				//sending data to ACC. 
 				break;
 			}
+
+			/*
+			//put some timeout condition here
+			//if desireable
+			if(check == maxChecks)
+			{
+				cout << "ACDC buffers were never sent to the ACC" << endl;
+				return 2;
+			}
+			*/
 		}
 
-		/*
-		//put some timeout condition here
-		//if desireable
-		if(check == maxChecks)
-		{
-			cout << "ACDC buffers were never sent to the ACC" << endl;
-			return 2;
-		}
-		*/
+		
 
 		//each ACDC needs to be queried individually
 		//by the ACC for its buffer. 
@@ -844,8 +884,7 @@ int ACC::listenForAcdcData(int trigMode)
 
 			//save this buffer a private member of ACDC
 			//by looping through our acdc vector
-			//and checking each index (not optimal but)
-			//who cares about 4 loop iterations. 
+			//and checking each index 
 			for(ACDC* a: acdcs)
 			{
 				if(a->getBoardIndex() == bi)
@@ -858,7 +897,7 @@ int ACC::listenForAcdcData(int trigMode)
 					//is presently set by the Metadata.parseBuffer() member
 					//and returns "bad buffer" if there are not NUM_PSEC 
 					//number of info blocks. 
-					corruptBuffer = !(a->setLastBuffer(acdc_buffer, getAccEventNumber())); //also triggers parsing function
+					corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
 					if(corruptBuffer)
 					{
 						cout << "********* got this failure mode ****************" << endl;
@@ -900,6 +939,20 @@ void ACC::initializeForDataReadout(int trigMode)
 		softwareTrigger();
 		makeSync();
 	}
+	//hardware trigger
+	else if(trigMode == 1)
+	{
+		setFreshReadmode();
+		setAccTrigInvalid();
+		setFreshReadmode();
+		resetAccTrigger();
+
+		setAccTrigInvalid();
+
+		prepSync();
+		setAccTrigValid();
+		makeSync();
+	}
 	
 	//other trigger modes soon to come
 	return;
@@ -918,6 +971,19 @@ void ACC::dataCollectionCleanup(int trigMode)
 		setAccTrigInvalid(); //b4
 		resetAccTrigger(); //b1
 		resetAcdcTrigger();
+		setFreshReadmode(); //c0
+
+		setAccTrigInvalid(); //b4
+		resetAccTrigger(); //b1
+		resetAcdcTrigger();
+		setFreshReadmode(); //c0
+	}
+
+	else if(trigMode == 1)
+	{
+		setAccTrigInvalid(); //b4
+		resetAccTrigger(); //b1
+		resetAcdcTrigger(); //c010
 		setFreshReadmode(); //c0
 
 		setAccTrigInvalid(); //b4
@@ -1078,4 +1144,3 @@ void ACC::setFreshReadmode()
 
 
 //------------- end --------------------
-

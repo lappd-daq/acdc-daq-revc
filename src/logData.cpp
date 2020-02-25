@@ -1,35 +1,37 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <string>
 #include <chrono>
-#include <signal.h>
+#include <atomic>
 #include "ACC.h"
+#include <signal.h>
+#include <unistd.h>
+#include <cstring>
 
 using namespace std;
 
 
-//please do not use this script. it has not
-//been tested nor completed.
+std::atomic<bool> quit(false); //signal flag
 
-
-//global variable for sigint capture
-bool SIGFOUND = false;
-
-void sigHandler(int s)
+void got_signal(int)
 {
-	cout << "got sigint " << s; //to remove compiler warning about unused variable
-	SIGFOUND = true;
+	quit.store(true);
 }
 
+
+//return:
+//0 if failed total collection
+//1 if succeeded total collection
 int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 {
 	//setup a sigint capturer to safely
 	//reset the boards if a ctrl-c signal is found
-	struct sigaction sigIntHandler;
-	sigIntHandler.sa_handler = sigHandler;
-	sigemptyset(&sigIntHandler.sa_mask);
-	sigIntHandler.sa_flags = 0;
-	sigaction(SIGINT, &sigIntHandler, NULL);
+	struct sigaction sa;
+    memset( &sa, 0, sizeof(sa) );
+    sa.sa_handler = got_signal;
+    sigfillset(&sa.sa_mask);
+    sigaction(SIGINT,&sa,NULL);
 
 	//initialize the ACC and ACDC objects, waking
 	//up the USB line and making sure there are no issues. 
@@ -68,7 +70,12 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 		for(int evCounter = 0; evCounter < nev; evCounter++)
 		{
 			//close gracefull if ctrl-C is thrown
-			if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
+			if(quit.load())
+			{
+				cout << "Cought a Ctrl-C, cleaning up" << endl;
+				acc.dataCollectionCleanup();
+				return 0;
+			}
 
 			cout << "On event " << evCounter << " of " << nev << "... ";
 
@@ -90,12 +97,25 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				{
 					throw("Too many corrupt events");
 				}
+
 				//close gracefull if ctrl-C is thrown
-				if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
-				eventHappened = acc.listenForAcdcData(trigMode);
+				if(quit.load())
+				{
+					cout << "Cought a Ctrl-C, cleaning up" << endl;
+					acc.dataCollectionCleanup();
+					return 0;
+				}
+				eventHappened = acc.listenForAcdcData(trigMode, evCounter);
 				if(eventHappened == 1)
 				{
 					corruptCounter++;
+				}
+				//sigint happened inside ACC class
+				if(eventHappened == 3)
+				{
+					cout << "Cought a Ctrl-C, cleaning up" << endl;
+					acc.dataCollectionCleanup();
+					return 0;
 				}
 
 			}

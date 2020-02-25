@@ -295,7 +295,9 @@ vector<unsigned short> stdUSB::safeReadData(int maxSamples)
 
     //fill buffer into a vector
     vector<unsigned short> v_buffer;
-    //cout << "Got " << samples << " samples from usbread" << endl;
+    cout << "Got " << samples << " samples from usbread" << endl;
+
+
     //loop over each element in buffer
     for(int i = 0; i < samples; i++)
     {

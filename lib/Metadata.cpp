@@ -380,7 +380,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     unsigned short asic_coincidence_min = (self_trigger_settings & 0x38) >> 3; //next 3 bits
     unsigned short channel_coincidence_min = (self_trigger_settings & 0x7C0) >> 6; //next 5 bits
     //parsing info_t_1
-    unsigned short num_triggered_channels = (info_t_1 & 0x7C00) >> 6; //the number of channels triggered 0-31
+    unsigned short num_triggered_channels = (info_t_1 & 0x7C00) >> 10; //the number of channels triggered 0-30
     unsigned short trigger_settings_0 = info_t_1 & 0x7FF; 
     unsigned short self_trig = trigger_settings_0 & 1; //is self trigger enabled, 1 or 0
     unsigned short sys_trig = (trigger_settings_0 & 2) >> 1; //is sys trig enabled, 1 or 0
@@ -476,10 +476,13 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //to when the event (all channels) have been digitized. i.e. ~4 mu-s
     unsigned short valid_to_dig_time = (last_instruct_2 & 0xFF00) >> 8; // 8 bits. 
     checkAndInsert("readout_duration", valid_to_dig_time);
+
+    //these two are called digitized event count in firmware
+    //but really they represent total event count... 
     unsigned short digitized_evt_count_lo = last_instruct_3; //16 bits counting how many events are digitized
     unsigned short digitized_evt_count_hi = last_instruct_4; //16 bits counting how many events are digitized
-    checkAndInsert("digitized_event_count_lo", digitized_evt_count_lo);
-    checkAndInsert("digitized_event_count_hi", digitized_evt_count_hi);
+    checkAndInsert("acdc_total_event_count_lo", digitized_evt_count_lo); //dont change total! See comment above. 
+    checkAndInsert("acdc_total_event_count_hi", digitized_evt_count_hi);
 
 
     //timestamp_and_instruct parsing
@@ -497,14 +500,21 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     checkAndInsert("trig_time_lo", trig_time_lo);
     checkAndInsert("trig_time_mid", trig_time_mid);
     checkAndInsert("trig_time_hi", trig_time_hi);
+
+
     //16 bit clock counter of all "events" which
     //are not necessarily digitization events. For example,
     //receiving some words from the ACC may be considered
     //an event. The details are a little fuzzy. 
-    unsigned short acdc_total_event_count_lo = t_and_i_3; //16 bit 
+
+    //these two are called "total event count" in firmware 
+    //but are really representing the number of events that are
+    //triggered using the configured trigger mode. If hardware trig
+    //mode is off, then it counts software triggers. Else, it does hardware triggers.
+    unsigned short acdc_total_event_count_lo = t_and_i_3; //16 bit.
     unsigned short acdc_total_event_count_hi = t_and_i_4; //16 bit 
-    checkAndInsert("acdc_total_event_count_lo", acdc_total_event_count_lo);
-    checkAndInsert("acdc_total_event_count_hi", acdc_total_event_count_hi);
+    checkAndInsert("digitized_event_count_lo", acdc_total_event_count_lo); //dont change digitized! see comment above
+    checkAndInsert("digitized_event_count_hi", acdc_total_event_count_hi);
 
     //CC clock count is three 16 bit words. Literally counting 40MHz clock cycles (not 125MHz, 25MHz, but 40Mhz from pll)
     checkAndInsert("CC_TIMESTAMP_LO", cc_header_info[3]);
