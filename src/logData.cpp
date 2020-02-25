@@ -38,25 +38,12 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	cout << "---Starting data logging by checking for ACC and ACDC connectivity:";
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
-	acc.softwareTrigger();
-	bool waitForAll = true; //require that all ACDC buffers be found for success. 
-	int retval = acc.readAcdcBuffers(waitForAll); //read ACDC buffer from usb, save and parse in ACDC objects
+
 
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
 
-	//only print if you actually
-	//got ACDC data. 
-	if(retval == 2)
-	{
-		cout << "Could not connect to ACDCs" << endl;
-		return 0;
-	}
-	else if(retval == 1)
-	{
-		cout << "Of the aligned ACDCs, not all sent data back to the ACC" << endl;
-		return 0;
-	}
+	
 
 	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
 	int maxCorruptCounts = 10; //if this many failed ACDC pulls occur, kill loop. 

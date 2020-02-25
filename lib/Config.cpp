@@ -365,6 +365,7 @@ bool Config::writeConfigToAcc(ACC* acc)
 				| (coinc_window << 7)
 				| boardAddress;
 		    command = command | tempWord;
+		    cout << "self trig lo" << endl;
 		    failCheck = usb->sendData(command); //set self trig lo
 		    if(!failCheck){throw("Failed setting trig config lo on board index " + to_string(bi));}
 
