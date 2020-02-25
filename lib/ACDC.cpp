@@ -109,12 +109,15 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 
 
 //looks at the last ACDC buffer and organizes
-//all of the data into a data map. 
+//all of the data into a data map. The boolean
+//argument toggles whether you want to subtract
+//pedestals and convert ADC-counts to mV live
+//or keep the data in units of raw ADC counts. 
 //retval: 
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer()
+int ACDC::parseDataFromBuffer(bool raw)
 {
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
@@ -186,10 +189,15 @@ int ACDC::parseDataFromBuffer()
 			//---these lines fill a waveform vector
 			//---that will be inserted into the data map
 			sampleValue = (double)byte; //adc counts
-			//apply a pedestal subtraction
-			sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
-			//apply a linearity corrected mV conversion
-			sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
+
+			if(raw)
+			{
+				//apply a pedestal subtraction
+				sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
+				//apply a linearity corrected mV conversion
+				sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
+			}
+			
 			//save in the vector. vector is saved in the data map when
 			//the channel count is iterated. 
 			waveform.push_back(sampleValue); 

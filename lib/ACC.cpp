@@ -1032,6 +1032,7 @@ bool ACC::setPedestals(unsigned int ped, vector<int> boards)
 				cout << "Failed setting pedestal on board " << bi << " chip " << chip << endl;
 				return false;
 			}
+		}
 	}
 
 	
