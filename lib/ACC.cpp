@@ -34,6 +34,8 @@ ACC::ACC()
 		delete usb;
 		exit(EXIT_FAILURE);
 	}
+
+	emptyUsbLine();
 }
 
 
@@ -87,6 +89,40 @@ vector<unsigned short> ACC::sendAndRead(unsigned int command, int buffsize)
 	return tempbuff;
 }
 
+//just read until data readout times out. 
+//I have found that occassionally after a reboot
+//of the boards or after a serious usb failure that
+//the constant memory size buffers get over-filled and
+//crash a raspberry pi or muddle the DAQ system. This 
+//is an attempt to clear the line and have a fresh state. 
+void ACC::emptyUsbLine()
+{
+	if(!checkUSB()) exit(EXIT_FAILURE);
+
+	int send_counter = 0; //number of usb sends
+	int max_sends = 10; //arbitrary. 
+	bool loop_breaker = false; 
+	unsigned int command = 0x1e0C0005; // a refreshing command
+	int buffsize = 100000; //400kB of memory for safety
+	vector<unsigned short> tempbuff;
+	while(!loop_breaker)
+	{
+		usb->sendData(command);
+		send_counter++;
+		tempbuff = usb->safeReadData(buffsize + 2);
+
+		//if it is exactly an ACC buffer size, success. 
+		if(tempbuff.size() == 32)
+		{
+			loop_breaker = true;
+		}
+		if(send_counter > max_sends)
+		{
+			cout << "Something wrong with USB line, please reboot" << endl;
+			loop_breaker = true;
+		}
+	}
+}
 
 bool ACC::checkUSB()
 {
@@ -748,6 +784,7 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno)
 int ACC::listenForAcdcData(int trigMode, int evno)
 {
 
+
 	bool waitForAll = false;
 	bool pullNewAccBuffer = true;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
@@ -758,15 +795,19 @@ int ACC::listenForAcdcData(int trigMode, int evno)
 	{
 		waitForAll = true;
 		int retval;
-		retval = readAcdcBuffers(waitForAll);
+		//The ACC already sent a trigger, so
+		//tell it not to send another during readout. 
+		setAccTrigInvalid();
+		retval = readAcdcBuffers(waitForAll, evno);
 		return retval;
 	}
 
 	//duration variables
-	auto start = chrono::steady_clock::now();
+	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
-	auto printDuration = chrono::seconds(20); //prints as it loops and listens
+	auto printDuration = chrono::seconds(1); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
+	auto timeoutDuration = chrono::seconds(10); // will exit and reinitialize
 
 
 	//setup a sigint capturer to safely
@@ -787,6 +828,10 @@ int ACC::listenForAcdcData(int trigMode, int evno)
 				cout << "Have been waiting for a trigger for " << chrono::duration_cast<chrono::seconds>(now - start).count() << " seconds" << endl;
 				lastPrint = chrono::steady_clock::now();
 			}
+			if(chrono::duration_cast<chrono::seconds>(now - start) > timeoutDuration)
+			{
+				return 2;
+			}
 
 			//if sigint happens, 
 			//return value of 3 tells
@@ -796,7 +841,10 @@ int ACC::listenForAcdcData(int trigMode, int evno)
 				return 3;
 			}
 
-			usleep(100); //throttle, without it the USB line becomes jarbled...
+			//throttle, without it the USB line becomes jarbled...
+			//this is also the amount of time that the trigValid = 1
+			//on the ACC, i.e. a window for events to happen. 
+			usleep(10000); 
 
 			//pull a new Acc buffer and parse
 			//the data-ready state indicators. 
@@ -804,14 +852,13 @@ int ACC::listenForAcdcData(int trigMode, int evno)
 			checkFullRamRegisters();
 
 			//debug
-			/*
+			
 			if(lastAccBuffer.size() > 4)
 			{
 				cout << "Ram/Pkt byte is: ";
 				printByte(lastAccBuffer.at(4));
 				cout << endl;
 			}
-			*/
 		
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting
@@ -830,19 +877,10 @@ int ACC::listenForAcdcData(int trigMode, int evno)
 				break;
 			}
 
-			/*
-			//put some timeout condition here
-			//if desireable
-			if(check == maxChecks)
-			{
-				cout << "ACDC buffers were never sent to the ACC" << endl;
-				return 2;
-			}
-			*/
 		}
 
 		
-
+		setAccTrigInvalid();
 		//each ACDC needs to be queried individually
 		//by the ACC for its buffer. 
 		for(int bi: fullRam)
@@ -900,12 +938,18 @@ int ACC::listenForAcdcData(int trigMode, int evno)
 					corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
 					if(corruptBuffer)
 					{
-						cout << "********* got this failure mode ****************" << endl;
+						cout << "********* got a corrupt buffer (1) ****************" << endl;
 						return 1;
 					}
 					//tells it explicitly to load the data
 					//component of the buffer into private memory. 
-					a->parseDataFromBuffer(); 
+					corruptBuffer = a->parseDataFromBuffer(); 
+					if(corruptBuffer)
+					{
+						cout << "********* got a corrupt buffer (2) ****************" << endl;
+						return 1;
+					}
+
 				}
 			}
 		}

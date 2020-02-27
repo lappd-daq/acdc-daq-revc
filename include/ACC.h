@@ -45,6 +45,7 @@ public:
 	void initializeForDataReadout(int trigMode = 0);
 	void dataCollectionCleanup(int trigMode = 0); //a set of usb commands to reset boards after data logging
 	void dumpData(); //tells ACDCs to clear their ram
+	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup. 
 
 
 	//-----short usb send functions. found

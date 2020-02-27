@@ -71,10 +71,6 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			//currently doesn't support any other mode
 			acc.initializeForDataReadout(trigMode);
 
-			//tell the ACC to not send a trigger for a moment
-			//(both trigger modes)
-			acc.setAccTrigInvalid();
-
 			int eventHappened = 2;
 			//retval of readAcdcBuffers = 0 indicates
 			//total success of pulling ACDC data. 
@@ -96,6 +92,22 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				if(eventHappened == 1)
 				{
 					corruptCounter++;
+					acc.dataCollectionCleanup();
+					acc.resetAccTrigger();
+					acc.resetAccTrigger();
+					acc.initializeForDataReadout(trigMode);
+				}
+				//this is a time-out because it seems
+				//as if the ACDCs are no longer connected. 
+				//Re-initialize
+				if(eventHappened == 2)
+				{
+					corruptCounter++;
+					cout << "Timed out, re-initializing" << endl;
+					acc.dataCollectionCleanup();
+					acc.resetAccTrigger();
+					acc.resetAccTrigger();
+					acc.initializeForDataReadout(trigMode);
 				}
 				//sigint happened inside ACC class
 				if(eventHappened == 3)
