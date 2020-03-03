@@ -75,7 +75,7 @@ bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
 {
 	lastAcdcBuffer = b;
 	bool goodBuffer = true;
-	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills data/metadata maps
+	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills metadata maps
 	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
 	return goodBuffer;
 
@@ -162,7 +162,12 @@ int ACDC::parseDataFromBuffer(bool raw)
 		if(byte == endword)
 		{
 			dataFlag = false;
-			//push the last waveform to data. 
+			//push the last waveform to data.
+			if(waveform.size() != NUM_SAMP)
+			{
+				//got a corrupt data buffer, throw event away
+				return 1;
+			} 
 			data[channelCount] = waveform;
 			waveform.clear();
 			//dont iterate channel, itl happen at
@@ -177,6 +182,11 @@ int ACDC::parseDataFromBuffer(bool raw)
 			if(sampleCount == NUM_SAMP)
 			{
 				sampleCount = 0;
+				if(waveform.size() != NUM_SAMP)
+				{
+					//got a corrupt data buffer, throw event away
+					return 1;
+				} 
 				data[channelCount] = waveform;
 				waveform.clear();
 				channelCount++;

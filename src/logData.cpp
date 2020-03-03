@@ -1,60 +1,49 @@
 #include <iostream>
 #include <fstream>
 #include <thread>
+#include <string>
 #include <chrono>
-#include <signal.h>
+#include <atomic>
 #include "ACC.h"
+#include <signal.h>
+#include <unistd.h>
+#include <cstring>
 
 using namespace std;
 
 
-//please do not use this script. it has not
-//been tested nor completed.
+std::atomic<bool> quit(false); //signal flag
 
-
-//global variable for sigint capture
-bool SIGFOUND = false;
-
-void sigHandler(int s)
+void got_signal(int)
 {
-	cout << "got sigint " << s; //to remove compiler warning about unused variable
-	SIGFOUND = true;
+	quit.store(true);
 }
 
+
+//return:
+//0 if failed total collection
+//1 if succeeded total collection
 int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 {
 	//setup a sigint capturer to safely
 	//reset the boards if a ctrl-c signal is found
-	struct sigaction sigIntHandler;
-	sigIntHandler.sa_handler = sigHandler;
-	sigemptyset(&sigIntHandler.sa_mask);
-	sigIntHandler.sa_flags = 0;
-	sigaction(SIGINT, &sigIntHandler, NULL);
+	struct sigaction sa;
+    memset( &sa, 0, sizeof(sa) );
+    sa.sa_handler = got_signal;
+    sigfillset(&sa.sa_mask);
+    sigaction(SIGINT,&sa,NULL);
 
 	//initialize the ACC and ACDC objects, waking
 	//up the USB line and making sure there are no issues. 
 	cout << "---Starting data logging by checking for ACC and ACDC connectivity:";
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
-	acc.softwareTrigger();
-	bool waitForAll = true; //require that all ACDC buffers be found for success. 
-	int retval = acc.readAcdcBuffers(waitForAll); //read ACDC buffer from usb, save and parse in ACDC objects
+
 
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
 
-	//only print if you actually
-	//got ACDC data. 
-	if(retval == 2)
-	{
-		cout << "Could not connect to ACDCs" << endl;
-		return 0;
-	}
-	else if(retval == 1)
-	{
-		cout << "Of the aligned ACDCs, not all sent data back to the ACC" << endl;
-		return 0;
-	}
+	
 
 	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
 	int maxCorruptCounts = 10; //if this many failed ACDC pulls occur, kill loop. 
@@ -68,7 +57,12 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 		for(int evCounter = 0; evCounter < nev; evCounter++)
 		{
 			//close gracefull if ctrl-C is thrown
-			if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
+			if(quit.load())
+			{
+				cout << "Cought a Ctrl-C, cleaning up" << endl;
+				acc.dataCollectionCleanup();
+				return 0;
+			}
 
 			cout << "On event " << evCounter << " of " << nev << "... ";
 
@@ -76,10 +70,6 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			//send a software trigger if trigMode = 0
 			//currently doesn't support any other mode
 			acc.initializeForDataReadout(trigMode);
-
-			//tell the ACC to not send a trigger for a moment
-			//(both trigger modes)
-			acc.setAccTrigInvalid();
 
 			int eventHappened = 2;
 			//retval of readAcdcBuffers = 0 indicates
@@ -90,12 +80,41 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				{
 					throw("Too many corrupt events");
 				}
+
 				//close gracefull if ctrl-C is thrown
-				if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
-				eventHappened = acc.listenForAcdcData(trigMode);
+				if(quit.load())
+				{
+					cout << "Cought a Ctrl-C, cleaning up" << endl;
+					acc.dataCollectionCleanup();
+					return 0;
+				}
+				eventHappened = acc.listenForAcdcData(trigMode, evCounter);
 				if(eventHappened == 1)
 				{
 					corruptCounter++;
+					acc.dataCollectionCleanup();
+					acc.resetAccTrigger();
+					acc.resetAccTrigger();
+					acc.initializeForDataReadout(trigMode);
+				}
+				//this is a time-out because it seems
+				//as if the ACDCs are no longer connected. 
+				//Re-initialize
+				if(eventHappened == 2)
+				{
+					corruptCounter++;
+					cout << "Timed out, re-initializing" << endl;
+					acc.dataCollectionCleanup();
+					acc.resetAccTrigger();
+					acc.resetAccTrigger();
+					acc.initializeForDataReadout(trigMode);
+				}
+				//sigint happened inside ACC class
+				if(eventHappened == 3)
+				{
+					cout << "Cought a Ctrl-C, cleaning up" << endl;
+					acc.dataCollectionCleanup();
+					return 0;
 				}
 
 			}
