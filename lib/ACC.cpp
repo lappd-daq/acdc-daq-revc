@@ -219,7 +219,7 @@ int ACC::parsePedsAndConversions()
 		//otherwise, parse the file. 
 		else
 		{
-			cout << "Will write parsing function later" << endl;
+			a->readPedsFromFile(ifped);
 		}
 
 		if(!(bool)iflin)
@@ -236,7 +236,7 @@ int ACC::parsePedsAndConversions()
 		//otherwise, parse the file. 
 		else
 		{
-			cout << "Will write parsing function later" << endl;
+			a->readConvsFromFile(iflin);
 		}
 		ifped.close();
 		iflin.close();
@@ -567,11 +567,13 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 //in the ram of the ACC. If waitForAll = true (false by default),
 //it will continue checking until all alignedAcdcs have sent
 //data to the ACC RAM. 
+//"raw" will subtract ped and convert from LUT calibration
+//if set to false. 
 //return codes:
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(bool waitForAll)
+int ACC::readAcdcBuffers(bool waitForAll, bool raw)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -703,7 +705,7 @@ int ACC::readAcdcBuffers(bool waitForAll)
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
 				int retval;//to catch corrupt buffers
-				retval = a->parseDataFromBuffer(); 
+				retval = a->parseDataFromBuffer(raw); 
 				if(retval == 1)
 				{
 					cout << "********* Corrupt buffer caught at ACDC parser level ****************" << endl;
@@ -723,10 +725,12 @@ int ACC::readAcdcBuffers(bool waitForAll)
 //identical to readAcdcBuffer but does an infinite
 //loop when the trigMode is 1 (hardware trig) and
 //switches toggles waitForAll depending on trig mode. 
+//"raw" will subtract ped and convert from LUT calibration
+//if set to false. 
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::listenForAcdcData(int trigMode)
+int ACC::listenForAcdcData(int trigMode, bool raw)
 {
 
 	bool waitForAll = false;
@@ -866,7 +870,7 @@ int ACC::listenForAcdcData(int trigMode)
 					}
 					//tells it explicitly to load the data
 					//component of the buffer into private memory. 
-					a->parseDataFromBuffer(); 
+					a->parseDataFromBuffer(raw); 
 				}
 			}
 		}
@@ -1004,7 +1008,7 @@ bool ACC::setPedestals(unsigned int ped, vector<int> boards)
 	//loop over connected boards
 	int bi;
 	int numChips;
-	unsigned int command, tempWord;
+	unsigned int command, tempWord, chipAddress;
 	bool failCheck;
 	for(ACDC* a: acdcs)
 	{
@@ -1018,7 +1022,7 @@ bool ACC::setPedestals(unsigned int ped, vector<int> boards)
 
 		numChips = a->getNumPsec();
 		//set pedestals and thresholds
-		for(int chip = 0; chip < NUM_CHIPS; chip++)
+		for(int chip = 0; chip < numChips; chip++)
 		{
 			chipAddress = (1 << chip) << 20; //20 magic number
 
