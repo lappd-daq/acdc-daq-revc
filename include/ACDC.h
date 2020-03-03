@@ -35,10 +35,17 @@ public:
 	bool setLastBuffer(vector<unsigned short> b, int eventNumber = 0); //sets metadata buffer, returns false if bad buffer
 	void setPeds(map<int, vector<double>>& p){peds = p;} //sets pedestal map
 	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
-	int parseDataFromBuffer(); //parses only the psec data component of the ACDC buffer
+	void setData(map<int, vector<double>>& d){data = d;} //sets data map
+	int parseDataFromBuffer(bool raw = false); //parses only the psec data component of the ACDC buffer
 	void writeDataToFile(ofstream& d, ofstream& m); //writes data and metadata to filestream
 	void writeRawBufferToFile();
 	void printByte(ofstream& ofs, unsigned short val);
+	void writePedsToFile(ofstream& ofs);
+	void readPedsFromFile(ifstream& ifs);
+	void writeConvsToFile(ofstream& ofs);
+	void readConvsFromFile(ifstream& ifs);
+	map<int, vector<double>> readDataFromFile(ifstream& ifs, int evno); //takes a datafile and loads the data member with evno's data. 
+
 
 
 

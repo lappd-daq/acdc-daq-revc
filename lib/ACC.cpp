@@ -269,7 +269,7 @@ int ACC::parsePedsAndConversions()
 		//otherwise, parse the file. 
 		else
 		{
-			cout << "Will write parsing function later" << endl;
+			a->readPedsFromFile(ifped);
 		}
 
 		if(!(bool)iflin)
@@ -286,7 +286,7 @@ int ACC::parsePedsAndConversions()
 		//otherwise, parse the file. 
 		else
 		{
-			cout << "Will write parsing function later" << endl;
+			a->readConvsFromFile(iflin);
 		}
 		ifped.close();
 		iflin.close();
@@ -619,11 +619,13 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 //data to the ACC RAM. Unfortunately, the CC event number doesnt
 //increment in hardware trigger mode, so the evno is sent in 
 //explicitly to keep data files consistent. 
+//"raw" will subtract ped and convert from LUT calibration
+//if set to false. 
 //return codes:
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(bool waitForAll, int evno)
+int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -755,7 +757,7 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno)
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
 				int retval;//to catch corrupt buffers
-				retval = a->parseDataFromBuffer(); 
+				retval = a->parseDataFromBuffer(raw); 
 				if(retval == 1)
 				{
 					cout << "********* Corrupt buffer caught at ACDC parser level ****************" << endl;
@@ -778,10 +780,12 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno)
 //Unfortunately, the CC event number doesn't increment
 //in hardware trigger mode, so that needs to be sent
 //in explicitly via the logData function. 
+//"raw" will subtract ped and convert from LUT calibration
+//if set to false. 
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::listenForAcdcData(int trigMode, int evno)
+int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 {
 
 
@@ -943,13 +947,12 @@ int ACC::listenForAcdcData(int trigMode, int evno)
 					}
 					//tells it explicitly to load the data
 					//component of the buffer into private memory. 
-					corruptBuffer = a->parseDataFromBuffer(); 
+					corruptBuffer = a->parseDataFromBuffer(raw); 
 					if(corruptBuffer)
 					{
 						cout << "********* got a corrupt buffer (2) ****************" << endl;
 						return 1;
 					}
-
 				}
 			}
 		}
@@ -1097,6 +1100,59 @@ void ACC::testFunction()
 }
 
 
+
+
+//short circuits the Config - class based
+//pedestal setting procedure. This is primarily
+//used for calibration functions. Ped is in ADC counts
+//from 0 to 4096. If boards is empty, will do to all connected
+bool ACC::setPedestals(unsigned int ped, vector<int> boards)
+{
+	//default is empty vector, so do ped setting to all boards
+	if(boards.size() == 0)
+	{
+		boards = alignedAcdcIndices;
+	}
+
+	//loop over connected boards
+	int bi;
+	int numChips;
+	unsigned int command, tempWord, chipAddress;
+	bool failCheck;
+	for(ACDC* a: acdcs)
+	{
+		bi = a->getBoardIndex();
+		//if this isn't in the selected board list, 
+		//dont try to set a pedestal. 
+		if(std::find(boards.begin(), boards.end(), bi) == boards.end())
+		{
+			continue;
+		}
+
+		numChips = a->getNumPsec();
+		//set pedestals and thresholds
+		for(int chip = 0; chip < numChips; chip++)
+		{
+			chipAddress = (1 << chip) << 20; //20 magic number
+
+			//pedestal
+			command = 0x00030000; //ped setting command. 
+			tempWord = ped | (bi << 25) | chipAddress; //magic number 25. 
+			command = command | tempWord;
+			failCheck = usb->sendData(command); //set ped on that chip
+			if(!failCheck)
+			{
+				cout << "Failed setting pedestal on board " << bi << " chip " << chip << endl;
+				return false;
+			}
+		}
+	}
+
+	
+	return true;
+}
+
+
 //-----------This class of functions are short usb
 //-----------commands that don't have a great comms
 //-----------structure. Giving them a name and their own
@@ -1186,5 +1242,3 @@ void ACC::setFreshReadmode()
 	usb->sendData(command);
 }
 
-
-//------------- end --------------------
