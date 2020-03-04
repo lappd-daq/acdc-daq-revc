@@ -47,7 +47,9 @@ add_library(Config
 
 target_link_libraries(myusb PRIVATE usb)
 
-target_link_libraries(ACC myusb ACDC Metadata Config yaml-cpp)
+target_link_libraries(ACC myusb ACDC)
+target_link_libraries(ACDC Metadata)
+target_link_libraries(Config ACC myusb yaml-cpp)
 
 
 
