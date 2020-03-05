@@ -8,6 +8,7 @@ using namespace std;
 #include <iomanip>
 #include <sstream>
 #include <math.h>
+#include "stdUSB.h"
 #include "yaml-cpp/yaml.h"
 
 using namespace std;
@@ -135,7 +136,7 @@ bool Config::parseConfigFile(bool verbose) {
 						for (int c = 0; c < NUM_CHIPS; c++) 
 						{
 							pedestal[board][c] = chips->second.as<unsigned int>();
-							if (verbose) {cout << "Pedestal  on board " << board << " chip " << c << " set to " << pedestal[board][c] << " ADC counts " << endl;}
+							if (verbose) {cout << "Pedestal on board " << board << " chip " << c << " set to " << pedestal[board][c] << " ADC counts " << endl;}
 						}
 						break; // short-circuit the chip loop
 					} 
@@ -143,37 +144,37 @@ bool Config::parseConfigFile(bool verbose) {
 					{
 						chip = chips->first.as<int>();
 						pedestal[board][chip] = chips->second.as<unsigned int>();
-						if (verbose) {cout << "Pedestal  on board " << board << " chip " << chip << " set to " << pedestal[board][chip] << " ADC counts " << endl; }
+						if (verbose) {cout << "Pedestal on board " << board << " chip " << chip << " set to " << pedestal[board][chip] << " ADC counts " << endl; }
 					}
 				}
 
 			}
-		}
 
-		if (yamlconf["threshold"]) 
-		{
-			//thresholds node
-			YAML::Node thresholds = acdc_conf["threshold"];
-			//look to comments above in pedestal section. this is identical
-			for (YAML::const_iterator thresh = thresholds.begin(); thresh != thresholds.end(); ++thresh) 
+			if (acdc_conf["threshold"]) 
 			{
-				board = thresh->first.as<int>();
-				for (YAML::const_iterator chips = thresh->second.begin(); chips != thresh->second.end(); ++chips) 
+				//thresholds node
+				YAML::Node thresholds = acdc_conf["threshold"];
+				//look to comments above in pedestal section. this is identical
+				for (YAML::const_iterator thresh = thresholds.begin(); thresh != thresholds.end(); ++thresh) 
 				{
-					if (chips->first.as<string>() == "all") 
+					board = thresh->first.as<int>();
+					for (YAML::const_iterator chips = thresh->second.begin(); chips != thresh->second.end(); ++chips) 
 					{
-						for (int c = 0; c < NUM_CHIPS; c++) 
+						if (chips->first.as<string>() == "all") 
 						{
-							threshold[board][c] = chips->second.as<unsigned int>();
-							if (verbose) {cout << "Threshold on board " << board << " chip " << c << " set to " << threshold[board][c] << " ADC counts " << endl; }
+							for (int c = 0; c < NUM_CHIPS; c++) 
+							{
+								threshold[board][c] = chips->second.as<unsigned int>();
+								if (verbose) {cout << "Threshold on board " << board << " chip " << c << " set to " << threshold[board][c] << " ADC counts " << endl; }
+							}
+							break; // Short-circuit
+						} 
+						else 
+						{
+							chip = chips->first.as<int>();
+							threshold[board][chip] = chips->second.as<unsigned int>();
+							if (verbose) {cout << "Threshold on board " << board << " chip " << chip << " set to " << pedestal[board][chip] << " ADC counts " << endl;}
 						}
-						break; // Short-circuit
-					} 
-					else 
-					{
-						chip = chips->first.as<int>();
-						threshold[board][chip] = chips->second.as<unsigned int>();
-						if (verbose) {cout << "Threshold on board " << board << " chip " << chip << " set to " << pedestal[board][chip] << " ADC counts " << endl;}
 					}
 				}
 			}
@@ -315,6 +316,100 @@ bool Config::writeConfigToAcc(ACC* acc)
 {
 	cout << "Writing the configuration settings to the ACC" << endl;
 
+	//first, make sure the ACDCs have a fresh trigger mode, 0
+	acc->resetAcdcTrigger();
+	vector<int> acdcIndices = acc->getAlignedIndices();
+	unsigned int command;
+	unsigned int tempWord;
+	unsigned int boardAddress; //pretty high byte indexing the board 
+	unsigned int chipAddress;
+	bool failCheck = false;
+
+	//now we can write directly to the usb line inside this class
+	stdUSB* usb = acc->getUsbStream(); 
+
+	//this is taken directly from the old software
+	//which has all of this written in explicitly. 
+	//Here is some dirtiness of the organization of
+	//the acc/acdc firmware. See programmers manual
+	try
+	{
+		for(int bi: acdcIndices)
+		{
+			cout << "Setting configurations for board " << bi << endl;
+			boardAddress = ((1 << bi) << 25); //25 offset is where the ACC interprets these bytes. 
+
+			cout << "Setting trigger settings" << endl;
+			//set self trigger mask 
+			command = 0x00060000; //lo component
+			tempWord = 0x00007FFF & trig_mask[bi]; //picking out low component
+			command = tempWord | command | boardAddress;
+			failCheck = usb->sendData(command); //lo trig
+			if(!failCheck){throw("Failed setting trig mask lo on board index " + to_string(bi));}
+			command = 0x00068000; //hi component
+			tempWord = (0x3FFF8000 & trig_mask[bi]) >> 15; //picking out hi component
+			command = tempWord | command | boardAddress; 
+			failCheck = usb->sendData(command); //hi trig
+			if(!failCheck){throw("Failed setting trig mask hi on board index " + to_string(bi));}
+
+
+			//self_trigger_lo
+			command = 0x00070000;
+			tempWord = (use_trig_valid << 6)
+				| (use_coinc << 5)
+				| (sma_trig_on_fe[bi] << 4) 
+				| (trig_sign[bi] << 3)
+				| (rate_only << 2) 
+				| (wait_for_sys << 1)
+				| trig_enable[bi] 
+				| (coinc_window << 7)
+				| boardAddress;
+		    command = command | tempWord;
+		    cout << "self trig lo" << endl;
+		    failCheck = usb->sendData(command); //set self trig lo
+		    if(!failCheck){throw("Failed setting trig config lo on board index " + to_string(bi));}
+
+		    //self_trigger_hi
+		    command = 0x00078000;
+		    tempWord = (coinc_num_ch << 6)
+				| (coinc_num_asic << 3) 
+				| coinc_pulsew
+				| boardAddress;
+			command = (command | (1 << 11)) | tempWord;
+			failCheck = usb->sendData(command); //set self trig hi
+			if(!failCheck){throw("Failed setting trig config hi on board index " + to_string(bi));}
+
+			cout << "Setting pedestals and thresholds" << endl;
+			//set pedestals and thresholds
+			for(int chip = 0; chip < NUM_CHIPS; chip++)
+			{
+				chipAddress = (1 << chip) << 20; //20 magic number
+
+				//pedestal
+				command = 0x00030000;
+				tempWord = pedestal[bi][chip] | boardAddress | chipAddress;
+				command = command | tempWord;
+				failCheck = usb->sendData(command); //set ped on that chip
+				if(!failCheck){throw("Failed setting pedestal on board index " + to_string(bi) + " chip index " + to_string(chip));}
+
+				//threshold
+				command = 0x00080000;
+				tempWord = threshold[bi][chip] | boardAddress | chipAddress;
+				command = command | tempWord;
+				failCheck = usb->sendData(command); //set thresh on that chip
+				if(!failCheck){throw("Failed setting threshold on board index " + to_string(bi) + " chip index " + to_string(chip));}
+			}
+		}
+
+		cout << "Setting trigger source" << endl;
+		//set trigger mode
+		acc->setHardwareTrigSrc(hrdw_trig_src);
+	}
+	catch(string message)
+	{
+		cout << message << endl;
+		return false;
+	}
 
 	
 	return true;

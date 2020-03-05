@@ -228,6 +228,9 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     */
     
 
+    
+    
+
     int retval = usb_bulk_write(stdHandle, 0x02, buff, sizeof(buff), USB_TOUT_MS);
 
 
@@ -295,6 +298,8 @@ vector<unsigned short> stdUSB::safeReadData(int maxSamples)
     //fill buffer into a vector
     vector<unsigned short> v_buffer;
     //cout << "Got " << samples << " samples from usbread" << endl;
+
+
     //loop over each element in buffer
     for(int i = 0; i < samples; i++)
     {

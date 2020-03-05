@@ -108,11 +108,11 @@ void Metadata::standardPrint()
 	cout << "acdc total event count: " << (metadata["acdc_total_event_count_hi"]*pow(2, 16) + metadata["acdc_total_event_count_lo"]) << endl;
 	cout << "acdc digitized event count: " << (metadata["digitized_event_count_hi"]*pow(2, 16) + metadata["digitized_event_count_lo"]) << endl;
 	cout << "self-trig masked channels: ";
-
+    cout << std::hex << ((metadata["trig_mask_hi"] << 16) + metadata["trig_mask_lo"]) << "; ";
 	vector<int>::iterator it;
-	for(it = masked_channels.begin(); it != masked_channels.end(); ++it)
+	for(int c: masked_channels)
 	{
-		cout << to_string(*it) << ",";
+		cout << std::dec << c << ",";
 	}
 
 	cout << endl;
@@ -152,19 +152,19 @@ vector<int> Metadata::getMaskedChannels()
 
 	//check to make sure the elements exist. if they
 	//dont, then metadata hasnt been parsed yet.
-	if(metadata.count("trig_mask_hi") == 0 || metadata.count("trig_mas_lo") == 0)
+	if(metadata.count("trig_mask_hi") == 0 || metadata.count("trig_mask_lo") == 0)
 	{
 		return masked_channels; //return empty vector
 	}
 
     unsigned long mask = (metadata["trig_mask_hi"] << 16) + metadata["trig_mask_lo"];
-    for(int i = 1; i <= NUM_CH; i++)
+    for(int i = 0; i < NUM_CH; i++)
     {
         //logic operate on the i'th bit.
         //if it is 0, it is a masked channel
         if((mask & (1 << i)) == 0)
         {
-            masked_channels.push_back(i);
+            masked_channels.push_back(i+1);
         }
     }
 
@@ -293,7 +293,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 	{
         cout << "***********************************************************" << endl;
 		cout << "In parsing ACDC buffer, found " << start_indices.size() << " matadata flag bytes." << endl;
-		cout << "Metadata for this event will likely be jarbled. Code a protection!" << endl;
+		cout << "Metadata for this event will likely be jarbled. Please throw this out!" << endl;
         string fnnn = "acdc-corrupt-buffer.txt";
         cout << "Printing to file : " << fnnn << endl;
         ofstream cb(fnnn);
@@ -375,21 +375,21 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     unsigned short info_t_3 = ac_info[3][5]; //and info_t_4 is unused in firmware (see psec4_trigger_global)
     //parsing info_t_0
     unsigned short bin_count_save = info_t_0 & 0x0F;
-    unsigned short self_trigger_settings = info_t_0 & 0xFFF0; //11 bit word 
+    unsigned short self_trigger_settings = (info_t_0 & 0xFFF0) >> 4; //12 bit word 
     unsigned short cc_trigger_width = self_trigger_settings & 0x7; //first 3 bits
-    unsigned short asic_coincidence_min = self_trigger_settings & 0x38; //next 3 bits
-    unsigned short channel_coincidence_min = self_trigger_settings & 0x7C0; //next 5 bits
+    unsigned short asic_coincidence_min = (self_trigger_settings & 0x38) >> 3; //next 3 bits
+    unsigned short channel_coincidence_min = (self_trigger_settings & 0x7C0) >> 6; //next 5 bits
     //parsing info_t_1
-    unsigned short num_triggered_channels = info_t_1 & 0x7C00; //the number of channels triggered 0-31
+    unsigned short num_triggered_channels = (info_t_1 & 0x7C00) >> 10; //the number of channels triggered 0-30
     unsigned short trigger_settings_0 = info_t_1 & 0x7FF; 
     unsigned short self_trig = trigger_settings_0 & 1; //is self trigger enabled, 1 or 0
-    unsigned short sys_trig = trigger_settings_0 & 2; //is sys trig enabled, 1 or 0
-    unsigned short rate_only = trigger_settings_0 & 4; //is rate counting mode enabled, 1 or 0
-    unsigned short trigger_sign = trigger_settings_0 & 8; //1 for rising edge, 0 for falling
-    unsigned short onboard_acdc_sma_trig = trigger_settings_0 & 16; //use the onboard sma as a trigger signal
-    unsigned short use_coincidence = trigger_settings_0 & 32; //use coincidence between channels as a condition
-    unsigned short use_trig_valid_as_reset = trigger_settings_0 & 64; //reset ACDC on trig valid
-    unsigned short coincidence_window = trigger_settings_0 & 0x3C0; //coincidence window in number of clocks
+    unsigned short sys_trig = (trigger_settings_0 & 2) >> 1; //is sys trig enabled, 1 or 0
+    unsigned short rate_only = (trigger_settings_0 & 4) >> 2; //is rate counting mode enabled, 1 or 0
+    unsigned short trigger_sign = (trigger_settings_0 & 8) >> 3; //1 for rising edge, 0 for falling
+    unsigned short onboard_acdc_sma_trig = (trigger_settings_0 & 16) >> 4; //use the onboard sma as a trigger signal
+    unsigned short use_coincidence = (trigger_settings_0 & 32) >> 5; //use coincidence between channels as a condition
+    unsigned short use_trig_valid_as_reset = (trigger_settings_0 & 64) >> 6; //reset ACDC on trig valid
+    unsigned short coincidence_window = (trigger_settings_0 & 0x780) >> 7; //coincidence window in number of clocks
 
     checkAndInsert("bin_count", bin_count_save);
     checkAndInsert("num_triggered_channels", num_triggered_channels);
@@ -427,7 +427,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     unsigned short triggered_channels_hi = info_s_1 & 0x1FFF; //second set of 14 channels
     checkAndInsert("triggered_channels_lo", triggered_channels_lo);
     checkAndInsert("triggered_channels_hi", triggered_channels_hi);
-    unsigned short sma_bin_count_save_lo = info_s_1 & 0x6000; //not sure, but has to do with sma trigger. 
+    unsigned short sma_bin_count_save_lo = (info_s_1 & 0x6000) >> 13; //not sure, but has to do with sma trigger. 
     //I think this is when ACC sends a trigger signal but the 
     //ACDC did not self trigger (i.e. in wait_for_sys mode)
     //good for characterizing efficiency
@@ -453,7 +453,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     unsigned short self_trigger_mask_hi = evt_count_4 & 0x1FFF; //second set of 14 channels
     checkAndInsert("trig_mask_hi", self_trigger_mask_hi);
     checkAndInsert("trig_mask_lo", self_trigger_mask_lo);
-    unsigned short sma_bin_count_save_hi = evt_count_4 & 0x6000; //second two bits of sma bin count save
+    unsigned short sma_bin_count_save_hi = (evt_count_4 & 0x6000) >> 13; //second two bits of sma bin count save
     //combine the sma_bin_count_saves
     unsigned short sma_bin_count_save = (sma_bin_count_save_hi << 2) + sma_bin_count_save_lo;
     checkAndInsert("sma_bin_count", sma_bin_count_save);
@@ -474,12 +474,15 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     checkAndInsert("readout_time_hi", latched_dig_time_hi);
     //I think this is the time from when a trigger signal is registered
     //to when the event (all channels) have been digitized. i.e. ~4 mu-s
-    unsigned short valid_to_dig_time = last_instruct_2 & 0xFF00; // 8 bits. 
+    unsigned short valid_to_dig_time = (last_instruct_2 & 0xFF00) >> 8; // 8 bits. 
     checkAndInsert("readout_duration", valid_to_dig_time);
+
+    //these two are called digitized event count in firmware
+    //but really they represent total event count... 
     unsigned short digitized_evt_count_lo = last_instruct_3; //16 bits counting how many events are digitized
     unsigned short digitized_evt_count_hi = last_instruct_4; //16 bits counting how many events are digitized
-    checkAndInsert("digitized_event_count_lo", digitized_evt_count_lo);
-    checkAndInsert("digitized_event_count_hi", digitized_evt_count_hi);
+    checkAndInsert("acdc_total_event_count_lo", digitized_evt_count_lo); //dont change total! See comment above. 
+    checkAndInsert("acdc_total_event_count_hi", digitized_evt_count_hi);
 
 
     //timestamp_and_instruct parsing
@@ -497,14 +500,21 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     checkAndInsert("trig_time_lo", trig_time_lo);
     checkAndInsert("trig_time_mid", trig_time_mid);
     checkAndInsert("trig_time_hi", trig_time_hi);
+
+
     //16 bit clock counter of all "events" which
     //are not necessarily digitization events. For example,
     //receiving some words from the ACC may be considered
     //an event. The details are a little fuzzy. 
-    unsigned short acdc_total_event_count_lo = t_and_i_3; //16 bit 
+
+    //these two are called "total event count" in firmware 
+    //but are really representing the number of events that are
+    //triggered using the configured trigger mode. If hardware trig
+    //mode is off, then it counts software triggers. Else, it does hardware triggers.
+    unsigned short acdc_total_event_count_lo = t_and_i_3; //16 bit.
     unsigned short acdc_total_event_count_hi = t_and_i_4; //16 bit 
-    checkAndInsert("acdc_total_event_count_lo", acdc_total_event_count_lo);
-    checkAndInsert("acdc_total_event_count_hi", acdc_total_event_count_hi);
+    checkAndInsert("digitized_event_count_lo", acdc_total_event_count_lo); //dont change digitized! see comment above
+    checkAndInsert("digitized_event_count_hi", acdc_total_event_count_hi);
 
     //CC clock count is three 16 bit words. Literally counting 40MHz clock cycles (not 125MHz, 25MHz, but 40Mhz from pll)
     checkAndInsert("CC_TIMESTAMP_LO", cc_header_info[3]);

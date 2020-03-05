@@ -1,6 +1,7 @@
 #include "ACDC.h"
 #include <bitset>
 #include <sstream>
+#include <fstream>
 
 using namespace std;
 
@@ -74,7 +75,7 @@ bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
 {
 	lastAcdcBuffer = b;
 	bool goodBuffer = true;
-	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills data/metadata maps
+	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills metadata maps
 	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
 	return goodBuffer;
 
@@ -109,12 +110,15 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 
 
 //looks at the last ACDC buffer and organizes
-//all of the data into a data map. 
+//all of the data into a data map. The boolean
+//argument toggles whether you want to subtract
+//pedestals and convert ADC-counts to mV live
+//or keep the data in units of raw ADC counts. 
 //retval: 
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer()
+int ACDC::parseDataFromBuffer(bool raw)
 {
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
@@ -158,7 +162,12 @@ int ACDC::parseDataFromBuffer()
 		if(byte == endword)
 		{
 			dataFlag = false;
-			//push the last waveform to data. 
+			//push the last waveform to data.
+			if(waveform.size() != NUM_SAMP)
+			{
+				//got a corrupt data buffer, throw event away
+				return 1;
+			} 
 			data[channelCount] = waveform;
 			waveform.clear();
 			//dont iterate channel, itl happen at
@@ -173,6 +182,11 @@ int ACDC::parseDataFromBuffer()
 			if(sampleCount == NUM_SAMP)
 			{
 				sampleCount = 0;
+				if(waveform.size() != NUM_SAMP)
+				{
+					//got a corrupt data buffer, throw event away
+					return 1;
+				} 
 				data[channelCount] = waveform;
 				waveform.clear();
 				channelCount++;
@@ -186,10 +200,15 @@ int ACDC::parseDataFromBuffer()
 			//---these lines fill a waveform vector
 			//---that will be inserted into the data map
 			sampleValue = (double)byte; //adc counts
-			//apply a pedestal subtraction
-			sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
-			//apply a linearity corrected mV conversion
-			sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
+
+			if(!raw)
+			{	
+				//apply a pedestal subtraction
+				sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
+				//apply a linearity corrected mV conversion
+				sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
+			}
+			
 			//save in the vector. vector is saved in the data map when
 			//the channel count is iterated. 
 			waveform.push_back(sampleValue); 
@@ -202,6 +221,8 @@ int ACDC::parseDataFromBuffer()
 	return 0;
 
 }
+
+
 
 
 //writes data from the presently stored event
@@ -237,6 +258,216 @@ void ACDC::writeDataToFile(ofstream& d, ofstream& m)
 
 
 
+
+
+//writes pedestals to file in a new
+//file format relative to the old software. 
+//<channel> <sample 1> <sample 2> ...
+//<channel> ...
+//samples in ADC counts. 
+void ACDC::writePedsToFile(ofstream& ofs)
+{
+	string delim = " ";
+
+	map<int, vector<double>>::iterator mit;
+	vector<double>::iterator vit;
+	vector<double> tempwav; //ped data
+	int ch; //channel
+	for(mit = peds.begin(); mit != peds.end(); ++mit)
+	{
+		tempwav = mit->second;
+		ch = mit->first;
+
+		
+		ofs << ch << delim;//print channel to file with a delim
+		for(vit = tempwav.begin(); vit != tempwav.end(); ++vit)
+		{
+			ofs << *vit << delim; //print ped value for that sample 
+		}
+		ofs << endl;
+	}
+
+	return;
+	
+}
+
+
+//reads pedestals to file in a new
+//file format relative to the old software. 
+//<channel> <sample 1> <sample 2> ...
+//<channel> ...
+//samples in ADC counts. 
+void ACDC::readPedsFromFile(ifstream& ifs)
+{
+	char delim = ' '; //in between ADC counts
+	map<int, vector<double>> tempPeds;//temporary holder for the new pedestal map
+
+	//temporary variables for line parsing
+	string lineFromFile; //full line
+	string adcCountStr; //string representing adc counts of ped
+	int ch; //int for the current channel key
+	vector<double> tempWav; //ped wav temporary 
+	bool isChannel; //is this character the channel key
+
+	//loop over each line of file
+	while(getline(ifs, lineFromFile))
+	{
+		stringstream line(lineFromFile); //stream of characters delimited
+		isChannel = true; //first character is the channel key
+		tempWav.clear(); //fresh vector
+		//loop over each sample index
+		while(getline(line, adcCountStr, delim))
+		{
+			if(isChannel)
+			{
+				ch = stoi(adcCountStr); //channel key for a while
+				isChannel = false;
+				continue; //go to next delimited word (start of adcCounts)
+			}
+			tempWav.push_back(stod(adcCountStr)); //pedestal adcCounts
+		}
+
+		//now set this vector to the appropriate ped map element
+		tempPeds.insert(pair<int, vector<double>>(ch, tempWav));
+	}
+
+	//call public member of this class to set the pedestal map
+	setPeds(tempPeds);
+	return;
+}
+
+
+//writes LUT conversions to file in a new
+//file format relative to the old software. 
+//<channel> <sample 1> <sample 2> ...
+//<channel> ...
+//samples in ADC counts. 
+void ACDC::writeConvsToFile(ofstream& ofs)
+{
+	string delim = " ";
+
+	map<int, vector<double>>::iterator mit;
+	vector<double>::iterator vit;
+	vector<double> tempwav; //conv data
+	int ch; //channel
+	for(mit = conv.begin(); mit != conv.end(); ++mit)
+	{
+		tempwav = mit->second;
+		ch = mit->first;
+
+		
+		ofs << ch << delim;//print channel to file with a delim
+		for(vit = tempwav.begin(); vit != tempwav.end(); ++vit)
+		{
+			ofs << *vit << delim; //print conv value for that sample 
+		}
+		ofs << endl;
+	}
+
+	return;
+	
+}
+
+
+//reads LUT conversions to file in a new
+//file format relative to the old software. 
+//<channel> <sample 1> <sample 2> ...
+//<channel> ...
+//samples in ADC counts. 
+void ACDC::readConvsFromFile(ifstream& ifs)
+{
+	char delim = ' '; //in between ADC counts
+	map<int, vector<double>> tempConvs;//temporary holder for the new conversion map
+
+	//temporary variables for line parsing
+	string lineFromFile; //full line
+	string adcCountStr; //string representing adc counts of conv
+	int ch; //int for the current channel key
+	vector<double> tempWav; //conv wav temporary 
+	bool isChannel; //is this character the channel key
+
+	//loop over each line of file
+	while(getline(ifs, lineFromFile))
+	{
+		stringstream line(lineFromFile); //stream of characters delimited
+		isChannel = true; //first character is the channel key
+		tempWav.clear(); //fresh vector
+		//loop over each sample index
+		while(getline(line, adcCountStr, delim))
+		{
+			if(isChannel)
+			{
+				ch = stoi(adcCountStr); //channel key for a while
+				isChannel = false;
+				continue; //go to next delimited word (start of adcCounts)
+			}
+			tempWav.push_back(stod(adcCountStr)); //conversions in adcCounts
+		}
+
+		//now set this vector to the appropriate conv map element
+		tempConvs.insert(pair<int, vector<double>>(ch, tempWav));
+	}
+
+	//call public member of this class to set the conversion map
+	setConv(tempConvs);
+	return;
+}
+
+
+//takes a datafile and loads the data member with evno's data. 
+//this is used for minor analysis codes independent of some
+//ACC. It is somewhat inefficient. 
+map<int, vector<double>> ACDC::readDataFromFile(vector<string> fileLines, int evno)
+{
+	map<int, vector<double>> returnData;
+
+	string word;
+	int ch; //channel curent
+	int ev; //event number current
+	int bo; //board index present in file
+	char delim = ' ';
+
+	//Inefficient loop through 
+	//a vector to find the right event and board. 
+	for(string line: fileLines)
+	{
+		stringstream ssline(line); //the current line in the file
+		getline(ssline, word, delim); //first word is the event
+		ev = stoi(word);
+		getline(ssline, word, delim);
+		bo = stoi(word); //board is 2nd word
+		getline(ssline, word, delim);
+		ch = stoi(word); //channel is third word;
+		//we are on an acceptable line
+		if(ev == evno && bo == boardIndex)
+		{
+			vector<double> tempwav;
+			//get all of the adc counts in the channel
+			while(getline(ssline, word, delim))
+			{
+				tempwav.push_back(stod(word));
+			}
+			//error check
+			if(tempwav.size() != NUM_SAMP)
+			{
+				cout << "In reading data, found an event that has not the expected number of samples: " << tempwav.size() << endl;
+			}
+			returnData.insert(pair<int, vector<double>>(ch, tempwav));
+		}
+	}
+
+	//error checking
+	if(returnData.size() != NUM_CH)
+	{
+		cout << "In reading data, found an event with different number of channels than expected: " << returnData.size() << endl;
+	}
+
+	setData(returnData);
+	return returnData;
+
+	
+
+}
 
 
 
