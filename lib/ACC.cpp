@@ -41,6 +41,7 @@ ACC::ACC()
 
 ACC::~ACC()
 {
+	cout << "Calling acc destructor" << endl;
 	clearAcdcs();
 	delete usb;
 }
@@ -802,7 +803,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 		//The ACC already sent a trigger, so
 		//tell it not to send another during readout. 
 		setAccTrigInvalid();
-		retval = readAcdcBuffers(waitForAll, evno);
+		retval = readAcdcBuffers(waitForAll, evno, raw);
 		return retval;
 	}
 

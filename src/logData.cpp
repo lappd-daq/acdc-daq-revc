@@ -71,6 +71,10 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			//currently doesn't support any other mode
 			acc.initializeForDataReadout(trigMode);
 
+			//tell the ACC to not send a trigger for a moment
+			//(both trigger modes)
+			acc.setAccTrigInvalid();
+
 			int eventHappened = 2;
 			//retval of readAcdcBuffers = 0 indicates
 			//total success of pulling ACDC data. 
@@ -127,7 +131,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			
 			end = chrono::steady_clock::now();
 			cout << "Found an event after waiting for a trigger. ";
-			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. " << endl;
+			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
 
 			cout << "Writing the event to file" << endl;
 			//writes to file. assumes no new AccBuffer 

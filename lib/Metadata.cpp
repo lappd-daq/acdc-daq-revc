@@ -293,7 +293,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 	{
         cout << "***********************************************************" << endl;
 		cout << "In parsing ACDC buffer, found " << start_indices.size() << " matadata flag bytes." << endl;
-		cout << "Metadata for this event will likely be jarbled. Code a protection!" << endl;
+		cout << "Metadata for this event will likely be jarbled. Please throw this out!" << endl;
         string fnnn = "acdc-corrupt-buffer.txt";
         cout << "Printing to file : " << fnnn << endl;
         ofstream cb(fnnn);

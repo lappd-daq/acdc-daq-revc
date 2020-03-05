@@ -201,8 +201,8 @@ int ACDC::parseDataFromBuffer(bool raw)
 			//---that will be inserted into the data map
 			sampleValue = (double)byte; //adc counts
 
-			if(raw)
-			{
+			if(!raw)
+			{	
 				//apply a pedestal subtraction
 				sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
 				//apply a linearity corrected mV conversion
@@ -417,20 +417,19 @@ void ACDC::readConvsFromFile(ifstream& ifs)
 //takes a datafile and loads the data member with evno's data. 
 //this is used for minor analysis codes independent of some
 //ACC. It is somewhat inefficient. 
-map<int, vector<double>> ACDC::readDataFromFile(ifstream& ifs, int evno)
+map<int, vector<double>> ACDC::readDataFromFile(vector<string> fileLines, int evno)
 {
 	map<int, vector<double>> returnData;
 
-	string line;
 	string word;
 	int ch; //channel curent
 	int ev; //event number current
 	int bo; //board index present in file
 	char delim = ' ';
 
-	//find the point when the event number
-	//equals the event we want to save.
-	while(getline(ifs, line))
+	//Inefficient loop through 
+	//a vector to find the right event and board. 
+	for(string line: fileLines)
 	{
 		stringstream ssline(line); //the current line in the file
 		getline(ssline, word, delim); //first word is the event
@@ -439,30 +438,6 @@ map<int, vector<double>> ACDC::readDataFromFile(ifstream& ifs, int evno)
 		bo = stoi(word); //board is 2nd word
 		getline(ssline, word, delim);
 		ch = stoi(word); //channel is third word;
-		if(ev > evno)
-		{
-			//start back at beginning of file
-			//set the ifstream line pointer to the beginning
-			ifs.seekg(0, ifs.beg);
-			getline(ifs, line); //first line is a header, throw it out. 
-			continue;
-		}
-		if(ev == evno && ch != 1)
-		{
-			//start back at beginning of file
-			//set the ifstream line pointer to the beginning
-			ifs.seekg(0, ifs.beg);
-			getline(ifs, line); //first line is a header, throw it out. 
-			continue;
-		}
-		if(ev == evno && bo != boardIndex)
-		{
-			//start back at beginning of file
-			//set the ifstream line pointer to the beginning
-			ifs.seekg(0, ifs.beg);
-			getline(ifs, line); //first line is a header, throw it out. 
-			continue;
-		}
 		//we are on an acceptable line
 		if(ev == evno && bo == boardIndex)
 		{
@@ -478,12 +453,6 @@ map<int, vector<double>> ACDC::readDataFromFile(ifstream& ifs, int evno)
 				cout << "In reading data, found an event that has not the expected number of samples: " << tempwav.size() << endl;
 			}
 			returnData.insert(pair<int, vector<double>>(ch, tempwav));
-
-			//if we've reached the final channel
-			if(ch == NUM_CH)
-			{
-				break;
-			}
 		}
 	}
 
