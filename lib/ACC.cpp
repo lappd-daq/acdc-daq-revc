@@ -1153,6 +1153,32 @@ bool ACC::setPedestals(unsigned int ped, vector<int> boards)
 	return true;
 }
 
+//toggles the calibration input line switches that the
+//ACDCs have on board. 0xFF selects all boards for this toggle. 
+//Similar for channel mask, except channels are ganged in pairs of
+//2 for hardware reasons. So 0x0001 is channels 1 and 2 enabled. 
+void ACC::toggleCal(int onoff, unsigned int boardmask, unsigned int channelmask)
+{
+	unsigned int command = 0x00020000;
+	unsigned int boardAddress = boardmask;
+	//this is because we only have 4 boards in firmware.
+	//change this when 8 board functionality is good. 
+	boardAddress = boardAddress & 0xF; 
+
+	command = command | (boardAddress << 25);
+
+	//the firmware just uses the channel mask to toggle
+	//switch lines. So if the cal is off, all channel lines
+	//are set to be off. Else, uses channel mask
+	if(onoff == 1)
+	{
+		command = command | channelmask;
+	}
+
+	usb->sendData(command);
+
+}
+
 
 //-----------This class of functions are short usb
 //-----------commands that don't have a great comms
