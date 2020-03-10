@@ -40,7 +40,7 @@ public:
 	
 	//-----------functions that involve usb comms
 	//(see cpp declaration for more comments above functions)
-	void createAcdcs(); //creates ACDC objects, explicitly querying both buffers
+	int createAcdcs(); //creates ACDC objects, explicitly querying both buffers
 	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
 	void toggleCal(int onoff, unsigned int boardmask = 0xFF, unsigned int channelmask = 0xFFFF); //toggles calibration input switch on boards
 	int readAcdcBuffers(bool waitForAll = false, int evno = 0, bool raw = false); //reads the acdc buffers

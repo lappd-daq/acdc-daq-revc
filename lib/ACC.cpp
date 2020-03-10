@@ -194,9 +194,10 @@ vector<unsigned short> ACC::readAccBuffer()
 //the following info:
 //Which ACDCs are LVDS aligned?
 //Are there events in ACC ram and which ACDCs?
-//"Digitizing start flag and DC_PKT" which are presently
-//unknown to me -Evan (see packetUSB.vhd line 225)
-void ACC::createAcdcs()
+//retval: 
+//1 if there are ACDCs connected
+//0 if none. 
+int ACC::createAcdcs()
 {
 	//loads a ACC buffer into private member
 	readAccBuffer(); 
@@ -204,6 +205,12 @@ void ACC::createAcdcs()
 	//parses the last acc buffer to 
 	//see which ACDCs are aligned. 
 	whichAcdcsConnected(); 
+
+	//if there are no ACDCs, return 0
+	if(alignedAcdcIndices.size() == 0)
+	{
+		return 0;
+	}
 	
 	//clear the acdc vector
 	clearAcdcs();
@@ -609,7 +616,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 
 	//send the command
 	unsigned int command = 0x000E0000; 
-	command = command | mask | (1 << 5) | (bin << 4); //currently not including bin-setting functionality
+	command = command | mask | (1 << 5) | (bin << 4); 
 
 	usb->sendData(command);
 }
