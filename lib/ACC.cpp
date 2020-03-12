@@ -228,6 +228,7 @@ int ACC::createAcdcs()
 
 	parsePedsAndConversions(); //load pedestals and LUT conversion factors onto ACDC objects.
 
+	return 1;
 }
 
 //If the pedestals were set, and an ADC-counts to mV lineary scan
@@ -597,10 +598,6 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 		boards = alignedAcdcIndices;
 	}
 
-	cout << "Sending a software trigger to boards ";
-	for(int bi: boards) cout << bi << ", ";
-	cout << endl;
-
 	//turn the board vector into a binary form
 	//(0110), unsigned int mask. 
 	unsigned short mask = vectorToUnsignedShort(boards);
@@ -701,6 +698,15 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 		return 2;
 	}
 
+
+	//----corrupt buffer checks begin
+	//sometimes the ACDCs dont send back good
+	//data. It is unclear why, but we would
+	//just rather throw this event away. At
+	//the end, the function will return based
+	//on whether it finds any corrupt buffers.
+	vector<bool> corruptBufferChecks;
+
 	//each ACDC needs to be queried individually
 	//by the ACC for its buffer. 
 	for(int bi: boardsReadyForRead)
@@ -715,35 +721,9 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 		//responds. 
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 
-
-		//----corrupt buffer checks begin
-		//sometimes the ACDCs dont send back good
-		//data. It is unclear why, but we would
-		//just rather throw this event away. 
-		bool corruptBuffer = false;
-		if(acdc_buffer.size() == 0)
-		{
-			corruptBuffer = true;
-		}
-		int nonzerocount = 0;
-		//if the first 20 bytes are all 0's, it is corrupt...
-		for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
-		{
-			if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
-		}
-		if(nonzerocount == 0) {corruptBuffer = true;}
-
-		if(corruptBuffer)
-		{
-			return 1;
-		}
-		//----corrupt buffer checks end. 
-
-
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
-		//and checking each index (not optimal but)
-		//who cares about 4 loop iterations. 
+		//and checking each index
 		for(ACDC* a: acdcs)
 		{
 			if(a->getBoardIndex() == bi)
@@ -756,27 +736,42 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 				//is presently set by the Metadata.parseBuffer() member
 				//and returns "bad buffer" if there are not NUM_PSEC 
 				//number of info blocks. 
+				bool corruptBuffer = false;
 				corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
+				corruptBufferChecks.push_back(corruptBuffer); //true or false.
 				if(corruptBuffer)
 				{
-					cout << "********* Corrupt buffer caught at ACC level ****************" << endl;
-					return 1;
+					//a corrupt buffer at metadata level can sometimes mean that data is still 
+					//good. therefore, I do not add a corruptBufferChecks.push_back(true) line. 
+					//however, you may find down the road that the actual psec data is corrupt as
+					//well. I have not been able to measure this yet. 
+					cout << "********* Corrupt buffer caught at metadata level ****************" << endl;
 				}
+
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
 				int retval;//to catch corrupt buffers
 				retval = a->parseDataFromBuffer(raw); 
 				if(retval == 1)
 				{
-					cout << "********* Corrupt buffer caught at ACDC parser level ****************" << endl;
+					cout << "********* Corrupt buffer caught at PSEC data level ****************" << endl;
+					corruptBufferChecks.push_back(true);
 					a->writeRawBufferToFile();
-					return 1;
 				}
 
 			}
 		}
 	}
 
+	//if any of the corrupt buffer checks return
+	//true, then return integer 1 to flag that downstream. 
+	for(bool c: corruptBufferChecks)
+	{
+		if(c == true)
+		{
+			return 1;
+		}
+	}
 
 	return 0;
 }
@@ -864,13 +859,14 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			checkFullRamRegisters();
 
 			//debug
-			
+			/*
 			if(lastAccBuffer.size() > 4)
 			{
 				cout << "Ram/Pkt byte is: ";
 				printByte(lastAccBuffer.at(4));
 				cout << endl;
 			}
+			*/
 		
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting
@@ -1273,6 +1269,41 @@ void ACC::setAccTrigInvalid()
 void ACC::setFreshReadmode()
 {
 	unsigned int command = 0x1e0C0000;
+	usb->sendData(command);
+}
+
+
+//------------reset functions
+
+//the lightest reset. does not
+//try to realign LVDS, does not try
+//to reset ACDCs, just tries to wake the
+//USB chip. 
+void ACC::usbWakeup()
+{
+	unsigned int command = 0x00040EFF;
+	usb->sendData(command);
+}
+
+//This is sent down to the ACDCs
+//and has them individually reset their
+//timestamps, dll, self-trigger, etc. 
+void ACC::resetACDCs()
+{
+	unsigned int command = 0x1e04F000;
+	usb->sendData(command);
+}
+
+//reset ACDCs and realign, closest thing to power cycle
+void ACC::hardReset()
+{
+	unsigned int command = 0x1e040FFF;
+	usb->sendData(command);
+}
+
+void ACC::alignLVDS()
+{
+	unsigned int command = 0x000D0000;
 	usb->sendData(command);
 }
 

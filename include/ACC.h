@@ -63,6 +63,12 @@ public:
 	void makeSync(); //make sync? need to read firmware to understand this
 	void setAccTrigValid(); //b0006
 
+	//--reset functions
+	void usbWakeup(); //40EFF;
+	void resetACDCs(); //4F000;
+	void hardReset(); //reset ACDCs and realign, closest thing to power cycle
+	void alignLVDS();
+
 
 	stdUSB* getUsbStream(); //returns the private usb object
 

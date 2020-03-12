@@ -159,13 +159,14 @@ int ACDC::parseDataFromBuffer(bool raw)
 			continue;
 		}
 		
-		if(byte == endword)
+		if(byte == endword && dataFlag)
 		{
 			dataFlag = false;
 			//push the last waveform to data.
 			if(waveform.size() != NUM_SAMP)
 			{
 				//got a corrupt data buffer, throw event away
+				cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (1)" << endl;
 				return 1;
 			} 
 			data[channelCount] = waveform;
@@ -185,6 +186,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 				if(waveform.size() != NUM_SAMP)
 				{
 					//got a corrupt data buffer, throw event away
+					cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (2)" << endl;
 					return 1;
 				} 
 				data[channelCount] = waveform;

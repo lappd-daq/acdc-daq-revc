@@ -221,6 +221,9 @@ int Metadata::getEventNumber()
 //takes the full acdcBuffer as input. 
 //splits it into a map[psec4][vector<unsigned shorts>]
 //which is then parsed and organized in this class. 
+//Returns:
+//false if a corrupt buffer happened
+//true if all good. 
 bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 {
 	//if the buffer is 0 length (i.e. bad usb comms)
@@ -289,6 +292,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //and missing PSEC metadata (startwords). This event
     //needs to be thrown away really, but here all I can 
     //do is return and say that the metadata is nothing. 
+    bool corruptBuffer = false;
 	if(start_indices.size() != NUM_PSEC)
 	{
         cout << "***********************************************************" << endl;
@@ -302,23 +306,14 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
             printByte(cb, k);
             cb << endl;
         }
-        return false;
+        corruptBuffer = true;
 	}
 
-    //aparently this can happen, have not had enough 
-    //trials to debug. 
-    if(start_indices.size() == 0)
-    {
-        for(unsigned short v: acdcBuffer)
-        {
-            cout << std::hex << v << endl;
-        }
-        return false;
-    }
 
 	//loop through each startword index and store metadata. 
 	int chip_count = 0;
 	unsigned short endword = 0xFACE; //end of info buffer. 
+    unsigned short endoffile = 0x4321;
 	for(int i: start_indices)
 	{
 		//re-use buffer iterator from above
@@ -327,7 +322,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 		//while we are not at endword, 
 		//append elements to ac_info
 		vector<unsigned short> infobytes;
-		while(*bit != endword)
+		while(*bit != endword && *bit != endoffile && infobytes.size() < 20)
 		{
 			infobytes.push_back(*bit);
 			++bit;
@@ -335,6 +330,21 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 		ac_info.insert(pair<int, vector<unsigned short>>(chip_count, infobytes));
 		chip_count++;
 	}
+
+    //Here is where bad access errors could occur. 
+    //It is presently coded such that if there are 
+    //more ba11 bytes than NUM_PSEC (sometimes a bug
+    //that happens at firmware level), nothing will go wrong
+    //but this function will return a corruptBuffer flag at the end. 
+    //However, if there are less than NUM_SEC ba11 sets of words
+    //in the ac_info vector, we will have an access error and need
+    //to return now. 
+    if(ac_info.size() < NUM_PSEC)
+    {
+        return !corruptBuffer;
+    }
+
+
 
 	//-----start the rutheless decoding of the 
 	//-----acdc firmware and acc firmware packets. 
@@ -391,6 +401,11 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     unsigned short use_trig_valid_as_reset = (trigger_settings_0 & 64) >> 6; //reset ACDC on trig valid
     unsigned short coincidence_window = (trigger_settings_0 & 0x780) >> 7; //coincidence window in number of clocks
 
+    //4 bits where 0000 represents the first
+    //1/10th of a buffer, 0001 represents the second, 
+    //up until 1000 (no 1001 is set in firmware, that
+    //is the reset value). It is incremented by an 
+    //asynchronous clock at 400 MHz (10 x master clock). 
     checkAndInsert("bin_count", bin_count_save);
     checkAndInsert("num_triggered_channels", num_triggered_channels);
     checkAndInsert("self_trig", self_trig);
@@ -415,7 +430,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     checkAndInsert("self_trig_reset_duration_lo", self_trig_reset_time_lo);
     checkAndInsert("self_trig_reset_duration_hi", self_trig_reset_time_hi);
 
-    //pasing of info_s
+    //parsing of info_s
     unsigned short info_s_0 = ac_info[0][6];
     unsigned short info_s_1 = ac_info[1][6];
     unsigned short info_s_2 = ac_info[2][6];
@@ -527,7 +542,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //also contained in this buffer element is bin_count_start and bin_count. 
     checkAndInsert("CC_BIN_COUNT", (cc_header_info[0] & 0x18) >> 3);
 
-	return true;
+	return !corruptBuffer;
 }
 
 

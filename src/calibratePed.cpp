@@ -107,7 +107,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	
 
 	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
-	int maxCorruptCounts = 10; //if this many failed ACDC pulls occur, kill loop. 
+	int maxCorruptCounts = 1000; //if this many failed ACDC pulls occur, kill loop. 
 	bool raw = true; //to not apply the already text-loaded pedestals to the data acquisition
 	//duration variables
 	auto start = chrono::steady_clock::now();
@@ -145,6 +145,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			{
 				if(corruptCounter >= maxCorruptCounts)
 				{
+					cout << "Too many corrupt buffers" << endl;
 					throw("Too many corrupt events");
 				}
 
