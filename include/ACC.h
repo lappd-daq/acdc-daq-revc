@@ -40,9 +40,9 @@ public:
 	
 	//-----------functions that involve usb comms
 	//(see cpp declaration for more comments above functions)
-	void createAcdcs(); //creates ACDC objects, explicitly querying both buffers
+	int createAcdcs(); //creates ACDC objects, explicitly querying both buffers
 	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
-
+	void toggleCal(int onoff, unsigned int boardmask = 0xFF, unsigned int channelmask = 0xFFFF); //toggles calibration input switch on boards
 	int readAcdcBuffers(bool waitForAll = false, int evno = 0, bool raw = false); //reads the acdc buffers
 	int listenForAcdcData(int trigMode, int evno = 0, bool raw = false); //almost identical to readAcdcBuffers but intended for real data triggering
 	void initializeForDataReadout(int trigMode = 0);
@@ -63,6 +63,13 @@ public:
 	void makeSync(); //make sync? need to read firmware to understand this
 	void setAccTrigValid(); //b0006
 
+	//--reset functions
+	void usbWakeup(); //40EFF;
+	void resetACDCs(); //4F000;
+	void hardReset(); //reset ACDCs and realign, closest thing to power cycle
+	void alignLVDS();
+
+	stdUSB* getUsbStream(); //returns the private usb object
 
 	stdUSB* getUsbStream(); //returns the private usb object
 

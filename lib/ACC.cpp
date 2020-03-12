@@ -194,9 +194,10 @@ vector<unsigned short> ACC::readAccBuffer()
 //the following info:
 //Which ACDCs are LVDS aligned?
 //Are there events in ACC ram and which ACDCs?
-//"Digitizing start flag and DC_PKT" which are presently
-//unknown to me -Evan (see packetUSB.vhd line 225)
-void ACC::createAcdcs()
+//retval: 
+//1 if there are ACDCs connected
+//0 if none. 
+int ACC::createAcdcs()
 {
 	//loads a ACC buffer into private member
 	readAccBuffer(); 
@@ -204,6 +205,12 @@ void ACC::createAcdcs()
 	//parses the last acc buffer to 
 	//see which ACDCs are aligned. 
 	whichAcdcsConnected(); 
+
+	//if there are no ACDCs, return 0
+	if(alignedAcdcIndices.size() == 0)
+	{
+		return 0;
+	}
 	
 	//clear the acdc vector
 	clearAcdcs();
@@ -221,6 +228,7 @@ void ACC::createAcdcs()
 
 	parsePedsAndConversions(); //load pedestals and LUT conversion factors onto ACDC objects.
 
+	return 1;
 }
 
 //If the pedestals were set, and an ADC-counts to mV lineary scan
@@ -590,10 +598,6 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 		boards = alignedAcdcIndices;
 	}
 
-	cout << "Sending a software trigger to boards ";
-	for(int bi: boards) cout << bi << ", ";
-	cout << endl;
-
 	//turn the board vector into a binary form
 	//(0110), unsigned int mask. 
 	unsigned short mask = vectorToUnsignedShort(boards);
@@ -609,7 +613,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 
 	//send the command
 	unsigned int command = 0x000E0000; 
-	command = command | mask | (1 << 5) | (bin << 4); //currently not including bin-setting functionality
+	command = command | mask | (1 << 5) | (bin << 4); 
 
 	usb->sendData(command);
 }
@@ -694,6 +698,15 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 		return 2;
 	}
 
+
+	//----corrupt buffer checks begin
+	//sometimes the ACDCs dont send back good
+	//data. It is unclear why, but we would
+	//just rather throw this event away. At
+	//the end, the function will return based
+	//on whether it finds any corrupt buffers.
+	vector<bool> corruptBufferChecks;
+
 	//each ACDC needs to be queried individually
 	//by the ACC for its buffer. 
 	for(int bi: boardsReadyForRead)
@@ -708,35 +721,9 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 		//responds. 
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 
-
-		//----corrupt buffer checks begin
-		//sometimes the ACDCs dont send back good
-		//data. It is unclear why, but we would
-		//just rather throw this event away. 
-		bool corruptBuffer = false;
-		if(acdc_buffer.size() == 0)
-		{
-			corruptBuffer = true;
-		}
-		int nonzerocount = 0;
-		//if the first 20 bytes are all 0's, it is corrupt...
-		for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
-		{
-			if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
-		}
-		if(nonzerocount == 0) {corruptBuffer = true;}
-
-		if(corruptBuffer)
-		{
-			return 1;
-		}
-		//----corrupt buffer checks end. 
-
-
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
-		//and checking each index (not optimal but)
-		//who cares about 4 loop iterations. 
+		//and checking each index
 		for(ACDC* a: acdcs)
 		{
 			if(a->getBoardIndex() == bi)
@@ -749,27 +736,43 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 				//is presently set by the Metadata.parseBuffer() member
 				//and returns "bad buffer" if there are not NUM_PSEC 
 				//number of info blocks. 
+				bool corruptBuffer = false;
 				corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
+				corruptBufferChecks.push_back(corruptBuffer); //true or false.
+
 				if(corruptBuffer)
 				{
-					cout << "********* Corrupt buffer caught at ACC level ****************" << endl;
-					return 1;
+					//a corrupt buffer at metadata level can sometimes mean that data is still 
+					//good. therefore, I do not add a corruptBufferChecks.push_back(true) line. 
+					//however, you may find down the road that the actual psec data is corrupt as
+					//well. I have not been able to measure this yet. 
+					cout << "********* Corrupt buffer caught at metadata level ****************" << endl;
 				}
+
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
 				int retval;//to catch corrupt buffers
 				retval = a->parseDataFromBuffer(raw); 
 				if(retval == 1)
 				{
-					cout << "********* Corrupt buffer caught at ACDC parser level ****************" << endl;
+					cout << "********* Corrupt buffer caught at PSEC data level ****************" << endl;
+					corruptBufferChecks.push_back(true);
 					a->writeRawBufferToFile();
-					return 1;
 				}
 
 			}
 		}
 	}
 
+	//if any of the corrupt buffer checks return
+	//true, then return integer 1 to flag that downstream. 
+	for(bool c: corruptBufferChecks)
+	{
+		if(c == true)
+		{
+			return 1;
+		}
+	}
 
 	return 0;
 }
@@ -857,13 +860,14 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			checkFullRamRegisters();
 
 			//debug
-			
+			/*
 			if(lastAccBuffer.size() > 4)
 			{
 				cout << "Ram/Pkt byte is: ";
 				printByte(lastAccBuffer.at(4));
 				cout << endl;
 			}
+			*/
 		
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting
@@ -1153,6 +1157,31 @@ bool ACC::setPedestals(unsigned int ped, vector<int> boards)
 	return true;
 }
 
+//toggles the calibration input line switches that the
+//ACDCs have on board. 0xFF selects all boards for this toggle. 
+//Similar for channel mask, except channels are ganged in pairs of
+//2 for hardware reasons. So 0x0001 is channels 1 and 2 enabled. 
+void ACC::toggleCal(int onoff, unsigned int boardmask, unsigned int channelmask)
+{
+	unsigned int command = 0x00020000;
+	unsigned int boardAddress = boardmask;
+	//this is because we only have 4 boards in firmware.
+	//change this when 8 board functionality is good. 
+	boardAddress = boardAddress & 0xF; 
+
+	command = command | (boardAddress << 25);
+
+	//the firmware just uses the channel mask to toggle
+	//switch lines. So if the cal is off, all channel lines
+	//are set to be off. Else, uses channel mask
+	if(onoff == 1)
+	{
+		command = command | channelmask;
+	}
+
+	usb->sendData(command);
+
+}
 
 //-----------This class of functions are short usb
 //-----------commands that don't have a great comms
@@ -1240,6 +1269,41 @@ void ACC::setAccTrigInvalid()
 void ACC::setFreshReadmode()
 {
 	unsigned int command = 0x1e0C0000;
+	usb->sendData(command);
+}
+
+
+//------------reset functions
+
+//the lightest reset. does not
+//try to realign LVDS, does not try
+//to reset ACDCs, just tries to wake the
+//USB chip. 
+void ACC::usbWakeup()
+{
+	unsigned int command = 0x00040EFF;
+	usb->sendData(command);
+}
+
+//This is sent down to the ACDCs
+//and has them individually reset their
+//timestamps, dll, self-trigger, etc. 
+void ACC::resetACDCs()
+{
+	unsigned int command = 0x1e04F000;
+	usb->sendData(command);
+}
+
+//reset ACDCs and realign, closest thing to power cycle
+void ACC::hardReset()
+{
+	unsigned int command = 0x1e040FFF;
+	usb->sendData(command);
+}
+
+void ACC::alignLVDS()
+{
+	unsigned int command = 0x000D0000;
 	usb->sendData(command);
 }
 

@@ -18,7 +18,10 @@ using namespace std;
 //by the DACs on-board. It does so by
 //taking a lot of software trigger data
 //and averaging each sample's measured
-//voltage over all events. The data is then
+//voltage over all events. During the
+//pedestal measurement, the calibration switches
+//are enabled - i.e. it measures on the calibration
+//lines and not the signal input lines. The data is then
 //stored in an ascii text file and re-loaded
 //during real data-taking. These pedestals are
 //subtracted live during data-taking. 
@@ -91,6 +94,11 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
 
+	//For the pedestal calibration, we want to use only
+	//the calibration input lines. I'm assuming no signals
+	//are coming in through this onboard sma. change this if you
+	//need to. toggleCal(on/off = 1/0, all boards default, all channels default)
+	acc.toggleCal(0);
 
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
@@ -98,7 +106,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	
 
 	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
-	int maxCorruptCounts = 10; //if this many failed ACDC pulls occur, kill loop. 
+	int maxCorruptCounts = 1000; //if this many failed ACDC pulls occur, kill loop. 
 	bool raw = true; //to not apply the already text-loaded pedestals to the data acquisition
 	//duration variables
 	auto start = chrono::steady_clock::now();
@@ -113,6 +121,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			{
 				cout << "Cought a Ctrl-C, cleaning up" << endl;
 				acc.dataCollectionCleanup();
+				//reset the calibration line switch.
+				acc.toggleCal(0);
 				return 0;
 			}
 
@@ -134,6 +144,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			{
 				if(corruptCounter >= maxCorruptCounts)
 				{
+					cout << "Too many corrupt buffers" << endl;
 					throw("Too many corrupt events");
 				}
 
@@ -142,6 +153,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				{
 					cout << "Cought a Ctrl-C, cleaning up" << endl;
 					acc.dataCollectionCleanup();
+					//reset the calibration line switch.
+					acc.toggleCal(0);
 					return 0;
 				}
 				eventHappened = acc.listenForAcdcData(trigMode, evCounter, raw);
@@ -170,6 +183,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				{
 					cout << "Cought a Ctrl-C, cleaning up" << endl;
 					acc.dataCollectionCleanup();
+					//reset the calibration line switch.
+					acc.toggleCal(0);
 					return 0;
 				}
 
@@ -196,6 +211,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	{
 		cout << mechanism << endl;
 		acc.dataCollectionCleanup();
+		//reset the calibration line switch.
+		acc.toggleCal(0);
 		return 0;
 	}
 
@@ -205,6 +222,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	acc.dataCollectionCleanup();
 	cout << "Found " << corruptCounter << " number of corrupt buffers during acquisition" << endl;
 
+	//reset the calibration line switch.
+	acc.toggleCal(0);
 	return 1;
 }
 
