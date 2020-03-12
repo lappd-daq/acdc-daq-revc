@@ -49,7 +49,7 @@ public:
 	void dataCollectionCleanup(int trigMode = 0); //a set of usb commands to reset boards after data logging
 	void dumpData(); //tells ACDCs to clear their ram
 	bool setPedestals(unsigned int ped, vector<int> boards = {});
-  	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
+  void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
 
 
 	//-----short usb send functions. found
@@ -69,6 +69,7 @@ public:
 	void hardReset(); //reset ACDCs and realign, closest thing to power cycle
 	void alignLVDS();
 
+	stdUSB* getUsbStream(); //returns the private usb object
 
 	stdUSB* getUsbStream(); //returns the private usb object
 

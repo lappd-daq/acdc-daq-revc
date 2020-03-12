@@ -100,7 +100,6 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	//need to. toggleCal(on/off = 1/0, all boards default, all channels default)
 	acc.toggleCal(0);
 
-
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
 
@@ -225,7 +224,6 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 
 	//reset the calibration line switch.
 	acc.toggleCal(0);
-
 	return 1;
 }
 

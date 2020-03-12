@@ -739,6 +739,7 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 				bool corruptBuffer = false;
 				corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
 				corruptBufferChecks.push_back(corruptBuffer); //true or false.
+
 				if(corruptBuffer)
 				{
 					//a corrupt buffer at metadata level can sometimes mean that data is still 
@@ -1181,7 +1182,6 @@ void ACC::toggleCal(int onoff, unsigned int boardmask, unsigned int channelmask)
 	usb->sendData(command);
 
 }
-
 
 //-----------This class of functions are short usb
 //-----------commands that don't have a great comms

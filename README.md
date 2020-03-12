@@ -13,6 +13,7 @@ $ sudo apt install libusb-dev cmake
 gcc/g++ version optimally is >7.1 
 cmake version is >3.1
 
+
 ## Usage
 
 To make and use the functions, issue the following commands
@@ -153,8 +154,9 @@ to be written
 ### calibrateLinearity
 to be written
 
-### setupLVDS
-to be written. 
+### alignLVDS
+Sends an align LVDS command to the ACC and does nothing else. 
+
 
 ### Metadata Descriptions
 Please find a description of each metadata key in the Metadata.cpp::parseBuffer function. This will also point to locations in firmware where metadata words are clarified. 
