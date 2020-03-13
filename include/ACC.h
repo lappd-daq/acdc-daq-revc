@@ -69,7 +69,6 @@ public:
 	void resetACDCs(); //4F000;
 	void hardReset(); //reset ACDCs and realign, closest thing to power cycle
 	void alignLVDS();
-
 	stdUSB* getUsbStream(); //returns the private usb object
 
 private:

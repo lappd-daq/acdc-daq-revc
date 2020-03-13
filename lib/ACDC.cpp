@@ -168,6 +168,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 				//got a corrupt data buffer, throw event away
 				cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (1)" << endl;
 				data.clear();
+
 				return 1;
 			} 
 			data[channelCount] = waveform;

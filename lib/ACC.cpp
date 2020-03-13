@@ -887,7 +887,6 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 				cout << endl;
 			}
 			*/
-			
 		
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting

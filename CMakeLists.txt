@@ -68,6 +68,7 @@ add_executable(testFunction ${EXECUTABLE_SOURCE_DIR}/testFunction.cpp)
 
 
 
+
 target_link_libraries(readACDC PUBLIC ACC)
 target_link_libraries(logData PUBLIC ACC)
 target_link_libraries(setConfig PUBLIC ACC Config)
