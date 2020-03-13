@@ -98,7 +98,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	//the calibration input lines. I'm assuming no signals
 	//are coming in through this onboard sma. change this if you
 	//need to. toggleCal(on/off = 1/0, all boards default, all channels default)
-	acc.toggleCal(0);
+	acc.toggleCal(1);
 
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
@@ -174,6 +174,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					corruptCounter++;
 					cout << "Timed out, re-initializing" << endl;
 					acc.dataCollectionCleanup();
+					acc.softReconstructor();
+					acc.createAcdcs();
 					acc.resetAccTrigger();
 					acc.resetAccTrigger();
 					acc.initializeForDataReadout(trigMode);

@@ -167,6 +167,8 @@ int ACDC::parseDataFromBuffer(bool raw)
 			{
 				//got a corrupt data buffer, throw event away
 				cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (1)" << endl;
+				data.clear();
+
 				return 1;
 			} 
 			data[channelCount] = waveform;
@@ -187,6 +189,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 				{
 					//got a corrupt data buffer, throw event away
 					cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (2)" << endl;
+					data.clear();
 					return 1;
 				} 
 				data[channelCount] = waveform;
@@ -195,7 +198,8 @@ int ACDC::parseDataFromBuffer(bool raw)
 			}
 			if(channelCount > NUM_CH)
 			{
-				//we are done here. 
+				//we are done here.
+				channelCount--; //reset to = NUM_CH 
 				break; //could also be continue.
 			}
 
@@ -218,6 +222,15 @@ int ACDC::parseDataFromBuffer(bool raw)
 			continue;
 		}
 		
+	}
+
+	//depending on the type of corrupt buffer, the above loop
+	//will happily record fewer than NUM_CH. 
+	if(channelCount != NUM_CH)
+	{
+		cout << "Got a corrupt buffer with " << channelCount << " number of channels " << endl;
+		data.clear();
+		return 1;
 	}
 
 	return 0;

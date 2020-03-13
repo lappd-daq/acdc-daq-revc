@@ -46,6 +46,23 @@ ACC::~ACC()
 	delete usb;
 }
 
+void ACC::softReconstructor()
+{
+	clearAcdcs();
+	delete usb;
+	usb = new stdUSB();
+
+	if(!usb->isOpen())
+	{
+		cout << "Usb was unable to connect to ACC" << endl;
+		delete usb;
+		exit(EXIT_FAILURE);
+	}
+
+	emptyUsbLine();
+
+}
+
 
 //sometimes it makes sense to repeatedly send
 //a usb command until a response is sent back. 
@@ -119,7 +136,8 @@ void ACC::emptyUsbLine()
 		}
 		if(send_counter > max_sends)
 		{
-			cout << "Something wrong with USB line, please reboot" << endl;
+			cout << "Something wrong with USB line, waking it up" << endl;
+			usbWakeup();
 			loop_breaker = true;
 		}
 	}
@@ -792,6 +810,7 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 {
 
+	cout << "Trigger mode: " << trigMode << endl;
 
 	bool waitForAll = false;
 	bool pullNewAccBuffer = true;
@@ -852,7 +871,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			//throttle, without it the USB line becomes jarbled...
 			//this is also the amount of time that the trigValid = 1
 			//on the ACC, i.e. a window for events to happen. 
-			usleep(10000); 
+			usleep(100000); 
 
 			//pull a new Acc buffer and parse
 			//the data-ready state indicators. 
