@@ -13,7 +13,6 @@ $ sudo apt install libusb-dev cmake
 gcc/g++ version optimally is >7.1 
 cmake version is >3.1
 
-
 ## Usage
 
 To make and use the functions, issue the following commands
@@ -95,7 +94,6 @@ during the data logging.
 Now you are ready for data logging. See the logData description, and descriptions
 of other commands below. 
 
-
 ## Commands
 
 There are executables available after building the project. Below is a list of them
@@ -117,6 +115,7 @@ $ ./bin/setConfig [<filename>] [-v]
 **Parameters**
 
 If no parameters set, will set the default (trig off) settings 
+
 1. (optional) filename - the filename of the config file with its yaml tag and relative path. 
 2. (optional) verbose flag - if provided, will show verbose output
 
@@ -156,7 +155,6 @@ to be written
 
 ### alignLVDS
 Sends an align LVDS command to the ACC and does nothing else. 
-
 
 ### Metadata Descriptions
 Please find a description of each metadata key in the Metadata.cpp::parseBuffer function. This will also point to locations in firmware where metadata words are clarified. 

@@ -9,6 +9,7 @@
 #include <unistd.h>
 #include <atomic>
 
+
 using namespace std;
 //This function should be run
 //every time new pedestals are
@@ -18,11 +19,6 @@ using namespace std;
 //by the DACs on-board. It does so by
 //taking a lot of software trigger data
 //and averaging each sample's measured
-//voltage over all events. During the
-//pedestal measurement, the calibration switches
-//are enabled - i.e. it measures on the calibration
-//lines and not the signal input lines. The data is then
-//stored in an ascii text file and re-loaded
 //during real data-taking. These pedestals are
 //subtracted live during data-taking. 
 
@@ -35,7 +31,6 @@ void got_signal(int)
 {
 	quit.store(true);
 }
-
 
 
 
@@ -215,6 +210,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 		acc.dataCollectionCleanup();
 		//reset the calibration line switch.
 		acc.toggleCal(0);
+
 		return 0;
 	}
 
@@ -223,6 +219,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	//clean up at the end
 	acc.dataCollectionCleanup();
 	cout << "Found " << corruptCounter << " number of corrupt buffers during acquisition" << endl;
+
 
 	//reset the calibration line switch.
 	acc.toggleCal(0);
@@ -249,6 +246,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 	//this is because getline throws the line
 	//away and you cant go back. 
 	vector<string> fileLines; 
+
 	//loop through all lines and look
 	//at board indices. 
 	while(getline(dataifs, line))
@@ -286,7 +284,6 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 		}
 	}
 
-
 	//create acdc objects for each active board in the dataset
 	vector<ACDC*> acdcs;
 	for(int bi: activeBoards)
@@ -295,7 +292,6 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 		temp->setBoardIndex(bi);
 		acdcs.push_back(temp);
 	}
-
 
 	int totEventsRead; //counts number of events actually read for avg ped calibration.
 	map<int, vector<double>>::iterator mit; //general purpose map iterator
@@ -306,6 +302,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 	{
 		map<int, vector<double>> avgPed;
 		cout << "On acdc " << a->getBoardIndex() << endl;
+
 		totEventsRead = 0;
 		//loop over all events. 
 		for(int evno = 0; evno < maxEvent; evno++)
@@ -376,6 +373,7 @@ int main() {
 	string pedtag = CALIBRATION_DIRECTORY;
 	string tag = PED_TAG;
 	pedtag += tag; //file to ultimately save avg
+
 
 	//open files that will hold the most-recent PED data. 
 	ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites

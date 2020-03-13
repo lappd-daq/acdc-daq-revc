@@ -406,6 +406,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //up until 1000 (no 1001 is set in firmware, that
     //is the reset value). It is incremented by an 
     //asynchronous clock at 400 MHz (10 x master clock). 
+
     checkAndInsert("bin_count", bin_count_save);
     checkAndInsert("num_triggered_channels", num_triggered_channels);
     checkAndInsert("self_trig", self_trig);

@@ -71,10 +71,6 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			//currently doesn't support any other mode
 			acc.initializeForDataReadout(trigMode);
 
-			//tell the ACC to not send a trigger for a moment
-			//(both trigger modes)
-			acc.setAccTrigInvalid();
-
 			int eventHappened = 2;
 			//retval of readAcdcBuffers = 0 indicates
 			//total success of pulling ACDC data. 

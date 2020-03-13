@@ -757,7 +757,6 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 				bool corruptBuffer = false;
 				corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
 				corruptBufferChecks.push_back(corruptBuffer); //true or false.
-
 				if(corruptBuffer)
 				{
 					//a corrupt buffer at metadata level can sometimes mean that data is still 
@@ -809,9 +808,6 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 //2 = no data found
 int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 {
-
-	cout << "Trigger mode: " << trigMode << endl;
-
 	bool waitForAll = false;
 	bool pullNewAccBuffer = true;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
@@ -872,6 +868,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			//this is also the amount of time that the trigValid = 1
 			//on the ACC, i.e. a window for events to happen. 
 			usleep(100000); 
+
 
 			//pull a new Acc buffer and parse
 			//the data-ready state indicators. 
@@ -1201,6 +1198,7 @@ void ACC::toggleCal(int onoff, unsigned int boardmask, unsigned int channelmask)
 	usb->sendData(command);
 
 }
+
 
 //-----------This class of functions are short usb
 //-----------commands that don't have a great comms
