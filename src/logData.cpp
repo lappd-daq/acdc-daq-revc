@@ -46,7 +46,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	
 
 	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
-	int maxCorruptCounts = 10; //if this many failed ACDC pulls occur, kill loop. 
+	int maxCorruptCounts = 1000; //if this many failed ACDC pulls occur, kill loop. 
 
 	//duration variables
 	auto start = chrono::steady_clock::now();
@@ -78,6 +78,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			{
 				if(corruptCounter >= maxCorruptCounts)
 				{
+					cout << "Too many corrupt buffers" << endl;
 					throw("Too many corrupt events");
 				}
 
@@ -105,6 +106,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					corruptCounter++;
 					cout << "Timed out, re-initializing" << endl;
 					acc.dataCollectionCleanup();
+					acc.softReconstructor();
+					acc.createAcdcs();
 					acc.resetAccTrigger();
 					acc.resetAccTrigger();
 					acc.initializeForDataReadout(trigMode);
@@ -127,7 +130,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			
 			end = chrono::steady_clock::now();
 			cout << "Found an event after waiting for a trigger. ";
-			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. " << endl;
+			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
 
 			cout << "Writing the event to file" << endl;
 			//writes to file. assumes no new AccBuffer 

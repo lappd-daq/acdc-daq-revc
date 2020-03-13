@@ -83,14 +83,14 @@ bool stdUSB::createHandles(int device_count) {
     if (stdHandle == INVALID_HANDLE_VALUE) {
         cout << "Failed to open device. handle=" << stdHandle << endl;
         return false;
-    }
-    
+    } 
+
     retval = usb_set_configuration(stdHandle, CNFNO);
 
     if (retval != 0) {
         cout << "Failed to set USB Configuration " << CNFNO << ". Return value: " << retval << endl;
         return false;
-    }        
+    }       
     
     retval = usb_claim_interface(stdHandle, INTFNO);
 

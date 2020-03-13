@@ -59,17 +59,26 @@ add_executable(setConfig ${EXECUTABLE_SOURCE_DIR}/setConfig.cpp)
 add_executable(printAcdcMetadata ${EXECUTABLE_SOURCE_DIR}/printAcdcMetadata.cpp)
 add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
 add_executable(calibratePed ${EXECUTABLE_SOURCE_DIR}/calibratePed.cpp)
+add_executable(calEnable ${EXECUTABLE_SOURCE_DIR}/calEnable.cpp)
+add_executable(reset ${EXECUTABLE_SOURCE_DIR}/reset.cpp)
+add_executable(alignLVDS ${EXECUTABLE_SOURCE_DIR}/alignLVDS.cpp)
+add_executable(testFunction ${EXECUTABLE_SOURCE_DIR}/testFunction.cpp)
+
+
 
 
 
 
 target_link_libraries(readACDC PUBLIC ACC)
-
 target_link_libraries(logData PUBLIC ACC)
-
 target_link_libraries(setConfig PUBLIC ACC Config)
 target_link_libraries(printAcdcMetadata PUBLIC ACC)
 target_link_libraries(calibratePed PUBLIC ACC)
+target_link_libraries(calEnable PUBLIC ACC)
+target_link_libraries(reset PUBLIC ACC)
+target_link_libraries(alignLVDS PUBLIC ACC)
+target_link_libraries(testFunction PUBLIC ACC)
+
 
 
 

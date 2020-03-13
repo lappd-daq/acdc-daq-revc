@@ -44,7 +44,9 @@ public:
 	void readPedsFromFile(ifstream& ifs);
 	void writeConvsToFile(ofstream& ofs);
 	void readConvsFromFile(ifstream& ifs);
-	map<int, vector<double>> readDataFromFile(ifstream& ifs, int evno); //takes a datafile and loads the data member with evno's data. 
+
+	map<int, vector<double>> readDataFromFile(vector<string>, int evno); //takes a datafile and loads the data member with evno's data. 
+
 
 
 

@@ -4,6 +4,11 @@
 #include <string>
 #include <sstream>
 #include <algorithm>
+#include <cstring>
+#include <signal.h>
+#include <unistd.h>
+#include <atomic>
+
 
 using namespace std;
 //This function should be run
@@ -14,20 +19,17 @@ using namespace std;
 //by the DACs on-board. It does so by
 //taking a lot of software trigger data
 //and averaging each sample's measured
-//voltage over all events. The data is then
-//stored in an ascii text file and re-loaded
 //during real data-taking. These pedestals are
 //subtracted live during data-taking. 
 
 
 
-//global variable for sigint capture
-bool SIGFOUND = false;
 
-void sigHandler(int s)
+std::atomic<bool> quit(false); //signal flag
+
+void got_signal(int)
 {
-	cout << "got sigint " << s; //to remove compiler warning about unused variable
-	SIGFOUND = true;
+	quit.store(true);
 }
 
 
@@ -75,45 +77,32 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 
 	//setup a sigint capturer to safely
 	//reset the boards if a ctrl-c signal is found
-	struct sigaction sigIntHandler;
-	sigIntHandler.sa_handler = sigHandler;
-	sigemptyset(&sigIntHandler.sa_mask);
-	sigIntHandler.sa_flags = 0;
-	sigaction(SIGINT, &sigIntHandler, NULL);
+	struct sigaction sa;
+    memset( &sa, 0, sizeof(sa) );
+    sa.sa_handler = got_signal;
+    sigfillset(&sa.sa_mask);
+    sigaction(SIGINT,&sa,NULL);
 
 	//initialize the ACC and ACDC objects, waking
 	//up the USB line and making sure there are no issues. 
-	cout << "---Starting pedestal calibration logging by checking for ACC and ACDC connectivity:";
+	cout << "---Starting data logging by checking for ACC and ACDC connectivity:";
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
-	acc.softwareTrigger();
-	bool waitForAll = true; //require that all ACDC buffers be found for success. 
-	int retval = acc.readAcdcBuffers(waitForAll); //read ACDC buffer from usb, save and parse in ACDC objects
+
+	//For the pedestal calibration, we want to use only
+	//the calibration input lines. I'm assuming no signals
+	//are coming in through this onboard sma. change this if you
+	//need to. toggleCal(on/off = 1/0, all boards default, all channels default)
+	acc.toggleCal(1);
 
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
-	//only print if you actually
-	//got ACDC data. 
-	if(retval == 2)
-	{
-		cout << "Could not connect to ACDCs" << endl;
-		return 0;
-	}
-	else if(retval == 1)
-	{
-		cout << "Of the aligned ACDCs, not all sent data back to the ACC" << endl;
-		return 0;
-	}
-
-
-
 
 	
-	
+
 	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
-	int maxCorruptCounts = 10; //if this many failed ACDC pulls occur, kill loop. 
-	bool raw = true; //this forces pedestals and conversion to not be subtracted during data logging
-
+	int maxCorruptCounts = 1000; //if this many failed ACDC pulls occur, kill loop. 
+	bool raw = true; //to not apply the already text-loaded pedestals to the data acquisition
 	//duration variables
 	auto start = chrono::steady_clock::now();
 	auto end = chrono::steady_clock::now(); //just for initialization
@@ -123,7 +112,14 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 		for(int evCounter = 0; evCounter < nev; evCounter++)
 		{
 			//close gracefull if ctrl-C is thrown
-			if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
+			if(quit.load())
+			{
+				cout << "Cought a Ctrl-C, cleaning up" << endl;
+				acc.dataCollectionCleanup();
+				//reset the calibration line switch.
+				acc.toggleCal(0);
+				return 0;
+			}
 
 			cout << "On event " << evCounter << " of " << nev << "... ";
 
@@ -143,14 +139,50 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			{
 				if(corruptCounter >= maxCorruptCounts)
 				{
+					cout << "Too many corrupt buffers" << endl;
 					throw("Too many corrupt events");
 				}
+
 				//close gracefull if ctrl-C is thrown
-				if(SIGFOUND){throw("Ctrl-C detected, closing nicely");}
-				eventHappened = acc.listenForAcdcData(trigMode, raw);
+				if(quit.load())
+				{
+					cout << "Cought a Ctrl-C, cleaning up" << endl;
+					acc.dataCollectionCleanup();
+					//reset the calibration line switch.
+					acc.toggleCal(0);
+					return 0;
+				}
+				eventHappened = acc.listenForAcdcData(trigMode, evCounter, raw);
 				if(eventHappened == 1)
 				{
 					corruptCounter++;
+					acc.dataCollectionCleanup();
+					acc.resetAccTrigger();
+					acc.resetAccTrigger();
+					acc.initializeForDataReadout(trigMode);
+				}
+				//this is a time-out because it seems
+				//as if the ACDCs are no longer connected. 
+				//Re-initialize
+				if(eventHappened == 2)
+				{
+					corruptCounter++;
+					cout << "Timed out, re-initializing" << endl;
+					acc.dataCollectionCleanup();
+					acc.softReconstructor();
+					acc.createAcdcs();
+					acc.resetAccTrigger();
+					acc.resetAccTrigger();
+					acc.initializeForDataReadout(trigMode);
+				}
+				//sigint happened inside ACC class
+				if(eventHappened == 3)
+				{
+					cout << "Cought a Ctrl-C, cleaning up" << endl;
+					acc.dataCollectionCleanup();
+					//reset the calibration line switch.
+					acc.toggleCal(0);
+					return 0;
 				}
 
 			}
@@ -163,7 +195,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 			
 			end = chrono::steady_clock::now();
 			cout << "Found an event after waiting for a trigger. ";
-			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. " << endl;
+			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
 
 			cout << "Writing the event to file" << endl;
 			//writes to file. assumes no new AccBuffer 
@@ -176,6 +208,9 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	{
 		cout << mechanism << endl;
 		acc.dataCollectionCleanup();
+		//reset the calibration line switch.
+		acc.toggleCal(0);
+
 		return 0;
 	}
 
@@ -185,6 +220,9 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	acc.dataCollectionCleanup();
 	cout << "Found " << corruptCounter << " number of corrupt buffers during acquisition" << endl;
 
+
+	//reset the calibration line switch.
+	acc.toggleCal(0);
 	return 1;
 }
 
@@ -204,11 +242,17 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 	int counter;
 	int maxEvent; //highest event number in datafile
 	getline(dataifs, line); //first line is a header, throw it out. 
+	// a vector holding every line of the file. 
+	//this is because getline throws the line
+	//away and you cant go back. 
+	vector<string> fileLines; 
+
 	//loop through all lines and look
 	//at board indices. 
 	while(getline(dataifs, line))
 	{
-		stringstream ssline(line);
+		fileLines.push_back(line); //save this line for later use.
+		stringstream ssline(line); //stream parsing object
 		counter = 0;
 		while(getline(ssline, word, delim))
 		{
@@ -257,6 +301,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 	for(ACDC* a: acdcs)
 	{
 		map<int, vector<double>> avgPed;
+		cout << "On acdc " << a->getBoardIndex() << endl;
 
 		totEventsRead = 0;
 		//loop over all events. 
@@ -266,7 +311,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 			//(either starting from beginning or
 			//the present line to find an event-number
 			//to board number match.)
-			map<int, vector<double>> tempPed = a->readDataFromFile(dataifs, evno);
+			map<int, vector<double>> tempPed = a->readDataFromFile(fileLines, evno);
 			//did data reading fail? would produce empty map
 			if(tempPed.size() == 0)
 			{
@@ -308,7 +353,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 			ofsAvgPed << ch << delim;//print channel to file with a delim
 			for(vit = tempwav.begin(); vit != tempwav.end(); ++vit)
 			{
-				ofsAvgPed << *vit << delim; //print ped value for that sample 
+				ofsAvgPed << (*vit/totEventsRead) << delim; //print ped value for that sample 
 			}
 			ofsAvgPed << endl;
 		}
@@ -321,11 +366,14 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 
 int main() {
 
-	ACC acc; //blank acc object just to get cal directory global variables
-	string datafn = acc.getCalDirectory() + "last_ped_calibration_data.acdc";
-	string metafn = acc.getCalDirectory() + "last_ped_calibration_data.meta";
-	string pedtag = acc.getCalDirectory() + acc.getPedTag(); //file to ultimately save avg
-	acc.~ACC(); //kill the object. 
+	string datafn = CALIBRATION_DIRECTORY;
+	datafn += "last_ped_calibration_data.acdc";
+	string metafn = CALIBRATION_DIRECTORY;
+	metafn += "last_ped_calibration_data.meta";
+	string pedtag = CALIBRATION_DIRECTORY;
+	string tag = PED_TAG;
+	pedtag += tag; //file to ultimately save avg
+
 
 	//open files that will hold the most-recent PED data. 
 	ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
