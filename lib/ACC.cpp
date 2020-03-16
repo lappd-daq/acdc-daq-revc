@@ -663,6 +663,11 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 		//the data-ready state indicators. 
 		checkDcPktFlag(pullNewAccBuffer);
 		checkFullRamRegisters();
+		if(alignedAcdcIndices.size() == 0)
+		{
+			cout << "No ACDCs were LVDS aligned" << endl;
+			return 2;
+		}
 
 		//debug
 		/*
@@ -884,6 +889,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 				cout << endl;
 			}
 			*/
+			
 		
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting
@@ -1198,6 +1204,22 @@ void ACC::toggleCal(int onoff, unsigned int boardmask, unsigned int channelmask)
 	usb->sendData(command);
 
 }
+
+
+void ACC::setLed(bool EN)
+{
+  if(EN != false)
+    {
+      unsigned int command = 0x1e0A0001;
+      usb->sendData(command);
+    }
+  else
+    {
+      unsigned int command = 0x1e0A0000;
+      usb->sendData(command);
+    }
+}
+
 
 
 //-----------This class of functions are short usb

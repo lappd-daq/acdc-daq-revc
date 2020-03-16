@@ -171,6 +171,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 
 				return 1;
 			} 
+			//cout << "Channel " << channelCount << " gets " << waveform.size() << " samples " << endl;
 			data[channelCount] = waveform;
 			waveform.clear();
 			//dont iterate channel, itl happen at
@@ -192,6 +193,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 					data.clear();
 					return 1;
 				} 
+				//cout << "Channel " << channelCount << " gets " << waveform.size() << " samples " << endl;
 				data[channelCount] = waveform;
 				waveform.clear();
 				channelCount++;

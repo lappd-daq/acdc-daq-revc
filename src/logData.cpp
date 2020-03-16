@@ -38,6 +38,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	cout << "---Starting data logging by checking for ACC and ACDC connectivity:";
 	ACC acc;
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
+	acc.setLed(false);
 
 
 	acc.resetAccTrigger();

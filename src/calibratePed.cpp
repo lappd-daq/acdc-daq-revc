@@ -94,6 +94,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	//are coming in through this onboard sma. change this if you
 	//need to. toggleCal(on/off = 1/0, all boards default, all channels default)
 	acc.toggleCal(1);
+	acc.setLed(false);
 
 	acc.resetAccTrigger();
 	acc.resetAccTrigger();
