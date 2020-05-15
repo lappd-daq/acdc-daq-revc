@@ -13,6 +13,24 @@ $ sudo apt install libusb-dev cmake
 gcc/g++ version optimally is >7.1 
 cmake version is >3.1
 
+
+###USB configuration
+This software and readme assumes that the USB chip on the ACC has been given firmware. An indicator of this is that a ```lsusb``` command will return a device with ID 6672:2920. If it does not, please e-mail ejangelico@uchicago.edu and pull up Appendix E of the document found at address http://lappddocs.uchicago.edu/documents/316/sendit 
+
+Another configuration step required for most systems is to give proper permissions for the USB device port. These permissions may be set for future boots of the OS using the udev rules. With sudo status, edit the file ```/etc/udev/rules.d/80-local.rules``` or any ```.rules``` extension filename with the following:
+
+```
+SUBSYSTEM=="usb", ENV{DEVTYPE}=="usb_device",SYSFS{idVendor}=="6672" , SYSFS{idProduct}=="2920", MODE="0666"
+```
+
+and then run the following command or restart the computer:
+
+```bash
+sudo udevadm control --reload-rules
+```
+
+
+
 ## Usage
 
 To make and use the functions, issue the following commands
@@ -23,6 +41,7 @@ $ cmake --build build -- -j4
 
 Where `-j4` specifies the number of cores available to multi-thread the process. This will create a directory `build/` 
 with the proper build files and then use those to compile and link the libraries and executables.
+
 
 After this any command can be issued, for example
 
@@ -51,6 +70,7 @@ $ ./bin/readACDC
 
 If you have an issue, often a reboot of the boards is a good idea. 
 
+*Linearity scan described in this paragraph is not yet implemented, but is a necessary next step.* 
 If you have not yet used the ACDC boards in the configuration as connected
 to the ACC, a linearity calibration should be performed as well. This measures
 the conversion from ADC counts to mV by setting pedestal DACs over the full range
@@ -147,14 +167,20 @@ $ ./bin/calEnable <on/off> [<board mask>] [<channel mask>]
 2. board mask - binary format, example 00001011 toggles boards 0, 1, and 3 to the specified calibraiton mode. 
 3. channel mask - hex format, example 0x0001 connects channels 1 and 2 to cal line, 0xFFFF connects all channels to cal line. 
 
-### ledEnable
-to be written
+### setLed
+The LEDs on the ACDC boards may be toggled on or off. Their default values may also be set in firmware. The present default is on. This macro function toggles them for all boards. 
+```bash
+$ ./bin/setLed <1/0> 
+```
+**Parameters**
+1. 1 or 0, 1 will set all LEDs on, 0 will set all LEDs off
+
 
 ### calibrateLinearity
 to be written
 
 ### alignLVDS
-Sends an align LVDS command to the ACC and does nothing else. 
+Sends an align LVDS command to the ACC and does nothing else. It is not known to have much effect on resetting the state of communication between the ACDCs and ACC. This function is slightly historical, coming from the previous communication scheme which required frequent re-alignment. 
 
 ### Metadata Descriptions
 Please find a description of each metadata key in the Metadata.cpp::parseBuffer function. This will also point to locations in firmware where metadata words are clarified. 
