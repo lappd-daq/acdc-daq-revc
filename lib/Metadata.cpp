@@ -481,15 +481,19 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     unsigned short last_instruct_3 = ac_info[3][8];
     unsigned short last_instruct_4 = ac_info[4][8];
     //this timestamp "latched_dig_time" is the time at
-    //which the last digitized trigger was digitized
+    //which the last digitized trigger was digitized. 
+    //This quantity minus the trig_time found below
+    //is consistently 3 clock cycles. 
     unsigned short latched_dig_time_lo = last_instruct_0; //16 bit
     unsigned short latched_dig_time_mid = last_instruct_1; //16 bit
     unsigned short latched_dig_time_hi = last_instruct_2 & 0xFF; //8 bits
     checkAndInsert("readout_time_lo", latched_dig_time_lo);
     checkAndInsert("readout_time_mid", latched_dig_time_mid);
     checkAndInsert("readout_time_hi", latched_dig_time_hi);
+
     //I think this is the time from when a trigger signal is registered
     //to when the event (all channels) have been digitized. i.e. ~4 mu-s
+    //but this quantity experimentally varies from 1-250 clock cycles. 
     unsigned short valid_to_dig_time = (last_instruct_2 & 0xFF00) >> 8; // 8 bits. 
     checkAndInsert("readout_duration", valid_to_dig_time);
 

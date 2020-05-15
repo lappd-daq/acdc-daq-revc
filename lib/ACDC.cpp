@@ -128,7 +128,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 		return 2;
 	}
 
-	if(peds.size() == 0 || conv.size() == 0)
+	if((peds.size() == 0 || conv.size() == 0) && !raw)
 	{
 		cout << "Found no pedestal or LUT conversion data but was told to parse data." << endl;
 		cout << "Please check the ACC class for an initialization of this calibration data" << endl;
@@ -171,6 +171,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 
 				return 1;
 			} 
+			//cout << "Channel " << channelCount << " gets " << waveform.size() << " samples " << endl;
 			data[channelCount] = waveform;
 			waveform.clear();
 			//dont iterate channel, itl happen at
@@ -192,6 +193,7 @@ int ACDC::parseDataFromBuffer(bool raw)
 					data.clear();
 					return 1;
 				} 
+				//cout << "Channel " << channelCount << " gets " << waveform.size() << " samples " << endl;
 				data[channelCount] = waveform;
 				waveform.clear();
 				channelCount++;

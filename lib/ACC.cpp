@@ -6,6 +6,7 @@
 #include <thread>
 #include <algorithm>
 #include <chrono>
+#include <thread>
 #include <fstream>
 #include <atomic>
 #include <signal.h>
@@ -136,7 +137,7 @@ void ACC::emptyUsbLine()
 		}
 		if(send_counter > max_sends)
 		{
-			cout << "Something wrong with USB line, waking it up" << endl;
+			cout << "Something wrong with USB line, waking it up. got " << tempbuff.size() << " words" << endl;
 			usbWakeup();
 			loop_breaker = true;
 		}
@@ -194,7 +195,7 @@ vector<unsigned short> ACC::readAccBuffer()
 		cout << "(5) Repeat if needed" << endl;
 		cout << "Trying USB reset before closing... " << endl;
 		usb->reset();
-		sleep(1);
+		std::this_thread::sleep_for(chrono::seconds(1));
 		exit(EXIT_FAILURE);
 	}
 	lastAccBuffer = v_buffer; //save as a private variable
@@ -663,6 +664,11 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 		//the data-ready state indicators. 
 		checkDcPktFlag(pullNewAccBuffer);
 		checkFullRamRegisters();
+		if(alignedAcdcIndices.size() == 0)
+		{
+			cout << "No ACDCs were LVDS aligned" << endl;
+			return 2;
+		}
 
 		//debug
 		/*
@@ -830,7 +836,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 	auto now = chrono::steady_clock::now(); //just for initialization 
 	auto printDuration = chrono::seconds(1); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
-	auto timeoutDuration = chrono::seconds(10); // will exit and reinitialize
+	auto timeoutDuration = chrono::seconds(8); // will exit and reinitialize
 
 
 	//setup a sigint capturer to safely
@@ -867,8 +873,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			//throttle, without it the USB line becomes jarbled...
 			//this is also the amount of time that the trigValid = 1
 			//on the ACC, i.e. a window for events to happen. 
-			usleep(100000); 
-
+			std::this_thread::sleep_for(chrono::milliseconds(2)); 
 
 			//pull a new Acc buffer and parse
 			//the data-ready state indicators. 
@@ -884,7 +889,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 				cout << endl;
 			}
 			*/
-		
+
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting
 			//it's USB write flag. 
@@ -908,8 +913,11 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 		setAccTrigInvalid();
 		//each ACDC needs to be queried individually
 		//by the ACC for its buffer. 
+
+		vector<bool> corruptBufferChecks;
 		for(int bi: fullRam)
 		{
+			cout << "Board " << bi << ", ";
 			unsigned int command = 0x1e0C0000; //base command for set readmode
 			command = command | (unsigned int)(bi + 1); //which board to read
 
@@ -921,29 +929,6 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 
 
-			//----corrupt buffer checks begin
-			//sometimes the ACDCs dont send back good
-			//data. It is unclear why, but we would
-			//just rather throw this event away. 
-			bool corruptBuffer = false;
-			if(acdc_buffer.size() == 0)
-			{
-				corruptBuffer = true;
-			}
-			int nonzerocount = 0;
-			//if the first 20 bytes are all 0's, it is corrupt...
-			for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
-			{
-				if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
-			}
-			if(nonzerocount == 0) {corruptBuffer = true;}
-
-			if(corruptBuffer)
-			{
-				return 1;
-			}
-			//----corrupt buffer checks end. 
-
 
 			//save this buffer a private member of ACDC
 			//by looping through our acdc vector
@@ -952,6 +937,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			{
 				if(a->getBoardIndex() == bi)
 				{
+					bool corruptBuffer = false;
 					//set the buffer that we just read. 
 					//There is a string of bool returning
 					//functions that checks if the buffer is corrupt
@@ -961,20 +947,32 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 					//and returns "bad buffer" if there are not NUM_PSEC 
 					//number of info blocks. 
 					corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
+					corruptBufferChecks.push_back(corruptBuffer);
 					if(corruptBuffer)
 					{
-						cout << "********* got a corrupt buffer (1) ****************" << endl;
-						return 1;
+						cout << "********* Corrupt buffer caught at metadata level ****************" << endl;
 					}
 					//tells it explicitly to load the data
 					//component of the buffer into private memory. 
-					corruptBuffer = a->parseDataFromBuffer(raw); 
-					if(corruptBuffer)
+					int retval;
+					retval = a->parseDataFromBuffer(raw); 
+					if(retval == 1)
 					{
-						cout << "********* got a corrupt buffer (2) ****************" << endl;
-						return 1;
+						cout << "********* Corrupt buffer caught at PSEC data level (2) ****************" << endl;
+						corruptBufferChecks.push_back(true);
+						a->writeRawBufferToFile();	
 					}
 				}
+			}
+		}
+
+		//if any of the corrupt buffer checks return
+		//true, then return integer 1 to flag that downstream. 
+		for(bool c: corruptBufferChecks)
+		{
+			if(c == true)
+			{
+				return 1;
 			}
 		}
 	}
@@ -983,6 +981,9 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 		cout << mechanism << endl;
 		return 2;
 	}
+
+
+
 	
 	return 0;
 }
@@ -1111,13 +1112,13 @@ void ACC::testFunction()
 	unsigned int command;
 	command = 0x1e0a0001;
 	usb->sendData(command);
-	sleep(3);
+	std::this_thread::sleep_for(chrono::seconds(3));
 	command = 0x1e0a0000;
 	usb->sendData(command);
-	sleep(3);
+	std::this_thread::sleep_for(chrono::seconds(3));
 	command = 0x1e0a0001;
 	usb->sendData(command);
-	sleep(3);
+	std::this_thread::sleep_for(chrono::seconds(3));
 }
 
 
@@ -1198,6 +1199,23 @@ void ACC::toggleCal(int onoff, unsigned int boardmask, unsigned int channelmask)
 	usb->sendData(command);
 
 }
+
+
+void ACC::setLed(bool EN)
+{
+  if(EN != false)
+    {
+      unsigned int command = 0x1e0A0001;
+      usb->sendData(command);
+    }
+  else
+    {
+      unsigned int command = 0x1e0A0000;
+      usb->sendData(command);
+    }
+}
+
+
 
 
 //-----------This class of functions are short usb

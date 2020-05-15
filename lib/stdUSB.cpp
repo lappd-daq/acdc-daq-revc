@@ -12,6 +12,7 @@
 #include <stdio.h>
 #include "stdUSB.h"
 #include <iostream>
+#include <thread>
 #include <chrono>
 #include <sstream>
 #include <bitset>
@@ -262,15 +263,16 @@ bool stdUSB::readData(unsigned short * pData, int l, int* lread)// throw(...)
 
     int buff_sz = l*sizeof(unsigned short);
 
-    //Evan using sleep statements to give the USB some time. 
+    //Evan using std::this_thread::sleep_for statements to give the USB some time. 
     //I have measured time of usb_bulk_read and it does not last
     //long enough assuming 48Mbit/s data transfer. Maybe it thinks
     //this is a super fast line? But the usb firmware is clocked at
     //48Mbit per sec. 
     //l-packets*4bytes per packet*8bits per byte/48Mbits per sec = ~0.6ms - 6ms depending on which. 
-    usleep(l*4.0*8.0/(48.0)); 
+    int waitTime = l*3*4*8/48; //microseconds
+    std::this_thread::sleep_for(std::chrono::microseconds(waitTime)); 
     int retval = usb_bulk_read(stdHandle, 0x86, (char*)pData, buff_sz, USB_TOUT_MS);
-    usleep(l*4.0*8.0/(48.0)); 
+    std::this_thread::sleep_for(std::chrono::microseconds(waitTime)); 
 
 
     if (retval > 0) {
