@@ -37,7 +37,13 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	//up the USB line and making sure there are no issues. 
 	cout << "---Starting data logging by checking for ACC and ACDC connectivity:";
 	ACC acc;
-	acc.createAcdcs(); //detect ACDCs and create ACDC objects
+	int retval;
+	retval = acc.createAcdcs(); //detect ACDCs and create ACDC objects
+	if(retval == 0)
+	{
+		cout << "No acdcs were aligned at time of loggin" << endl;
+		return 0;
+	}
 	acc.setLed(false);
 
 
