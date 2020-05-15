@@ -875,7 +875,6 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 			//on the ACC, i.e. a window for events to happen. 
 			std::this_thread::sleep_for(chrono::milliseconds(2)); 
 
-
 			//pull a new Acc buffer and parse
 			//the data-ready state indicators. 
 			checkDcPktFlag(pullNewAccBuffer);
@@ -890,8 +889,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 				cout << endl;
 			}
 			*/
-			
-		
+
 			//check which ACDCs have both gotten a trigger
 			//and have filled the ACC ram, thus starting
 			//it's USB write flag. 
@@ -1216,6 +1214,7 @@ void ACC::setLed(bool EN)
       usb->sendData(command);
     }
 }
+
 
 
 

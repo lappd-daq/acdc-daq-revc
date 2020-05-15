@@ -14,5 +14,6 @@ int main()
 	acc.alignLVDS();
 	std::this_thread::sleep_for(1s);
 
+
 	return 0;
 }

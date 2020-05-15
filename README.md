@@ -14,6 +14,7 @@ gcc/g++ version optimally is >7.1
 cmake version is >3.1
 
 
+
 ###USB configuration
 This software and readme assumes that the USB chip on the ACC has been given firmware. An indicator of this is that a ```lsusb``` command will return a device with ID 6672:2920. If it does not, please e-mail ejangelico@uchicago.edu and pull up Appendix E of the document found at address http://lappddocs.uchicago.edu/documents/316/sendit 
 
@@ -28,7 +29,6 @@ and then run the following command or restart the computer:
 ```bash
 sudo udevadm control --reload-rules
 ```
-
 
 
 ## Usage
@@ -69,6 +69,7 @@ $ ./bin/readACDC
 ```
 
 If you have an issue, often a reboot of the boards is a good idea. 
+
 
 *Linearity scan described in this paragraph is not yet implemented, but is a necessary next step.* 
 If you have not yet used the ACDC boards in the configuration as connected
@@ -159,9 +160,11 @@ if a switch is toggled, the inputs of the signal lines are connected to
 a common trace routed to an on-board SMA jack. There are a number of switches, 
 routed such that a single switch toggles 2 channels to be on this common calibration line. 
 
+
 ```bash
 $ ./bin/calEnable <on/off> [<board mask>] [<channel mask>]
 ```
+
 **Parameters**
 1. on/off - 1 or 0 interpreted as ints. 1 means that the lines are connected to the calibration line (disconnected from samtec)
 2. board mask - binary format, example 00001011 toggles boards 0, 1, and 3 to the specified calibraiton mode. 
@@ -175,12 +178,12 @@ $ ./bin/setLed <1/0>
 **Parameters**
 1. 1 or 0, 1 will set all LEDs on, 0 will set all LEDs off
 
-
 ### calibrateLinearity
 to be written
 
 ### alignLVDS
 Sends an align LVDS command to the ACC and does nothing else. It is not known to have much effect on resetting the state of communication between the ACDCs and ACC. This function is slightly historical, coming from the previous communication scheme which required frequent re-alignment. 
+
 
 ### Metadata Descriptions
 Please find a description of each metadata key in the Metadata.cpp::parseBuffer function. This will also point to locations in firmware where metadata words are clarified. 
