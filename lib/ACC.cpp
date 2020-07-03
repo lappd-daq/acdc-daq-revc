@@ -371,21 +371,9 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
 	{
 		//both (1<<i) and (1<<i+8) should be true if aligned & synced respectively
-		if((alignment_packet & (1 << i)) && (alignment_packet & (1 << (i + 8))))
+		if((alignment_packet & (1 << i)))
 		{
 			//the i'th board is connected
-
-			//protection against a NASTY error I saw
-			//due to a bad ACC buffer. We will need to investigate
-			//but for now I am protecting against seg faults. 
-			if(i > 3)
-			{
-				//return with no connected boards
-				connectedBoards.clear();
-				alignedAcdcIndices = connectedBoards;
-				return connectedBoards;
-			}
-
 			connectedBoards.push_back(i);
 		}
 	}
