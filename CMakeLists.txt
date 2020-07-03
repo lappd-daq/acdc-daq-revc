@@ -63,6 +63,7 @@ add_executable(calEnable ${EXECUTABLE_SOURCE_DIR}/calEnable.cpp)
 add_executable(reset ${EXECUTABLE_SOURCE_DIR}/reset.cpp)
 add_executable(alignLVDS ${EXECUTABLE_SOURCE_DIR}/alignLVDS.cpp)
 add_executable(testFunction ${EXECUTABLE_SOURCE_DIR}/testFunction.cpp)
+add_executable(debug ${EXECUTABLE_SOURCE_DIR}/debug.cpp)
 
 
 
@@ -78,6 +79,7 @@ target_link_libraries(calEnable PUBLIC ACC)
 target_link_libraries(reset PUBLIC ACC)
 target_link_libraries(alignLVDS PUBLIC ACC)
 target_link_libraries(testFunction PUBLIC ACC)
+target_link_libraries(debug PUBLIC myusb)
 
 
 

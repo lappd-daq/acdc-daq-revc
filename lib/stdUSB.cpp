@@ -221,11 +221,11 @@ bool stdUSB::sendData(unsigned int data)// throw(...)
     buff[2] = data >> 16;
     buff[3] = data >> 24;
    
-    /*
-    cout << "Data is: ";
+    
+    cout << "Sending data: ";
     printByte(data);
     cout << endl;
-    */
+    
     
 
     
@@ -297,7 +297,7 @@ vector<unsigned short> stdUSB::safeReadData(int maxSamples)
 
     //fill buffer into a vector
     vector<unsigned short> v_buffer;
-    //cout << "Got " << samples << " samples from usbread" << endl;
+    cout << "Got " << samples << " samples from usbread" << endl;
 
 
     //loop over each element in buffer
