@@ -1,5 +1,6 @@
 #include "ACC.h"
 #include <iostream>
+#include <unistd.h>
 
 using namespace std;
 
@@ -22,7 +23,7 @@ int main(int argc, char *argv[])
 			if(arg == "hard")
 			{
 				acc.hardReset();
-				sleep(5);
+				usleep(1000000);
 				acc.usbWakeup();
 			}
 			else if(arg == "usb")

@@ -57,51 +57,63 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-	usleep(100000);
 
 	//number of 16 bit words to allocate memory for usb read
-	int usbReadBufferMax = 10000;
-
+	int usbReadBufferMax = 50;
+	int readflag; //argument specifying the read option.
+	stringstream ss1;
+	unsigned int cmd;
+	ss1 << argv[argc-1];
+	ss1 >> std::hex >> cmd;
+	readflag = (int)cmd;
+	//done formatting the readflag argument
 
 	//if there is only one command
 	if(argc == 2)
 	{
 		cout << "In this loop " << endl;
-		unsigned int cmd;
 		stringstream ss;
 		ss << argv[1]; //parse char* into stringstream
 		ss >> std::hex >> cmd; //interpret as a hex code
 		usb->sendData(cmd); //send it down the usb line. 
 		//wait a moment, very long compared to usb transfer
-		usleep(300);
 		vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
 		printReadBuffer(retval);
 		cout << "Printed read buffer" << endl;
 		return 0;
 	}
-
-	//loop over the number of args.
-	for(int i = 1; i < (argc - 1); i++)
+	else if(argc > 2 && !(readflag == 0 || readflag == 1))
 	{
-		unsigned int cmd;
-		stringstream ss;
-		ss << argv[i]; //parse char* into stringstream
-		ss >> std::hex >> cmd; //interpret as a hex code
-		usb->sendData(cmd); //send it down the usb line. 
-		usleep(300);
-		//the final argument tells us whether to read 
-		//in between commands or only read at the end. 
-		if(atoi(argv[argc-1]) == 1)
+		cout << "For multiple messages, the last argument must be 0 or 1" << endl;
+		return 0;
+	}
+	else
+	{
+		//loop over the number of args.
+		for(int i = 1; i < (argc - 1); i++)
+		{
+			stringstream ss;
+			ss << argv[i]; //parse char* into stringstream
+			ss >> std::hex >> cmd; //interpret as a hex code
+			usb->sendData(cmd); //send it down the usb line. 
+			//the final argument tells us whether to read 
+			//in between commands or only read at the end. 
+			if(readflag == 1)
+			{
+				vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
+				printReadBuffer(retval);
+			}
+		}
+
+		//otherwise (0 or anything else on last argument)
+		//read out at the end
+		if(readflag == 0)
 		{
 			vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
 			printReadBuffer(retval);
 		}
 	}
-
-	//otherwise (0 or anything else on last argument)
-	//read out at the end
-	vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
-	printReadBuffer(retval);
+	
 
 
 	return 0;

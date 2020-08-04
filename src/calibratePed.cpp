@@ -169,7 +169,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					corruptCounter++;
 					cout << "Timed out, re-initializing" << endl;
 					acc.dataCollectionCleanup();
-					acc.softReconstructor();
+					//acc.softReconstructor();
 					acc.createAcdcs();
 					acc.resetAccTrigger();
 					acc.resetAccTrigger();
