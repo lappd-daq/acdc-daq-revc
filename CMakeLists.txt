@@ -26,6 +26,7 @@ set_property(TARGET yaml-cpp PROPERTY IMPORTED_LOCATION ${binary_dir}/libyaml-cp
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${source_dir}/include)
+include_directories(${source_dir}/local/include)
 
 
 add_compile_options(-g -Wall -Wextra -Wpedantic -fstack-protector)
@@ -45,11 +46,10 @@ add_library(Metadata
 add_library(Config
         ${LIBRARY_SOURCE_DIR}/Config.cpp)
 
-target_link_libraries(myusb PRIVATE usb)
-
 target_link_libraries(ACC myusb ACDC)
 target_link_libraries(ACDC Metadata)
 target_link_libraries(Config ACC myusb yaml-cpp)
+target_link_libraries(myusb PUBLIC usb-1.0)
 
 
 

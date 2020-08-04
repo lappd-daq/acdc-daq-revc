@@ -34,8 +34,6 @@ ACC::ACC()
 		delete usb;
 		exit(EXIT_FAILURE);
 	}
-
-	emptyUsbLine();
 }
 
 
@@ -46,22 +44,6 @@ ACC::~ACC()
 	delete usb;
 }
 
-void ACC::softReconstructor()
-{
-	clearAcdcs();
-	delete usb;
-	usb = new stdUSB();
-
-	if(!usb->isOpen())
-	{
-		cout << "Usb was unable to connect to ACC" << endl;
-		delete usb;
-		exit(EXIT_FAILURE);
-	}
-
-	emptyUsbLine();
-
-}
 
 
 //sometimes it makes sense to repeatedly send
@@ -71,77 +53,37 @@ vector<unsigned short> ACC::sendAndRead(unsigned int command, int buffsize)
 {
 	if(!checkUSB()) exit(EXIT_FAILURE);
 
-	int send_counter = 0; //number of usb sends
-	int max_sends = 10; //arbitrary. 
+	int read_counter = 0; //number of usb sends
+	int max_reads = 40; //arbitrary. 
 	bool loop_breaker = false; 
 	
 	vector<unsigned short> tempbuff;
+
+	//only sending once.
+	usb->sendData(command);
 	while(!loop_breaker)
 	{
-		usb->sendData(command);
-		send_counter++;
-		tempbuff = usb->safeReadData(buffsize + 2);
+		tempbuff = usb->safeReadData(buffsize);
 
-		//this is a BAD failure that I have seen happen
-		//if the USB line is flooded by the ACC. The 
-		//result is that some c++ memory has been overwritten
-		//(calloc buffer doesn't allocate enough bytes). 
-		//You need to continue with a crazy large buffsize to
-		//clear the USB line or multiple things will crash. 
-		if((int)tempbuff.size() > buffsize + 2)
-		{
-			buffsize = 10*buffsize; //big enough to hold a whole ACDC buffer
-			continue;
-		}
 		//if the buffer is non-zero size, then
 		//we got a message back. break the loop
 		if(tempbuff.size() > 0)
 		{
 			loop_breaker = true;
 		}
-		if(send_counter == max_sends)
+		if(read_counter == max_reads)
 		{
 			loop_breaker = true;
 		}
+
+		//otherwise it reads again.
+		read_counter++;
 	}
+
 	return tempbuff;
 }
 
-//just read until data readout times out. 
-//I have found that occassionally after a reboot
-//of the boards or after a serious usb failure that
-//the constant memory size buffers get over-filled and
-//crash a raspberry pi or muddle the DAQ system. This 
-//is an attempt to clear the line and have a fresh state. 
-void ACC::emptyUsbLine()
-{
-	if(!checkUSB()) exit(EXIT_FAILURE);
 
-	int send_counter = 0; //number of usb sends
-	int max_sends = 10; //arbitrary. 
-	bool loop_breaker = false; 
-	unsigned int command = 0x1e0C0005; // a refreshing command
-	int buffsize = 100000; //400kB of memory for safety
-	vector<unsigned short> tempbuff;
-	while(!loop_breaker)
-	{
-		usb->sendData(command);
-		send_counter++;
-		tempbuff = usb->safeReadData(buffsize + 2);
-
-		//if it is exactly an ACC buffer size, success. 
-		if(tempbuff.size() == 32)
-		{
-			loop_breaker = true;
-		}
-		if(send_counter > max_sends)
-		{
-			cout << "Something wrong with USB line, waking it up" << endl;
-			usbWakeup();
-			loop_breaker = true;
-		}
-	}
-}
 
 bool ACC::checkUSB()
 {
@@ -182,6 +124,7 @@ vector<unsigned short> ACC::readAccBuffer()
 	unsigned int command = 0x1e0C0005; 
 	//is OK to just pound the ACC with the
 	//command until it responds. in a loop function "sendAndRead"
+
 	vector<unsigned short> v_buffer = sendAndRead(command, CC_BUFFERSIZE);
 	if(v_buffer.size() == 0)
 	{
@@ -191,10 +134,9 @@ vector<unsigned short> ACC::readAccBuffer()
 		cout << "(3) Turn on ACC" << endl;
 		cout << "(4) Plug in USB" << endl;
 		cout << "(5) Wait for green ACC LED to turn off" << endl;
-		cout << "(5) Repeat if needed" << endl;
+		cout << "(6) Repeat if needed" << endl;
 		cout << "Trying USB reset before closing... " << endl;
 		usb->reset();
-		sleep(1);
 		exit(EXIT_FAILURE);
 	}
 	lastAccBuffer = v_buffer; //save as a private variable
@@ -244,7 +186,7 @@ int ACC::createAcdcs()
 		acdcs.push_back(temp);
 	}
 
-	parsePedsAndConversions(); //load pedestals and LUT conversion factors onto ACDC objects.
+	//parsePedsAndConversions(); //load pedestals and LUT conversion factors onto ACDC objects.
 
 	return 1;
 }
@@ -386,7 +328,7 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 //returns map[board][is ram full]
 vector<int> ACC::checkFullRamRegisters(bool pullNew)
 {
-	if(pullNew ||lastAccBuffer.size() == 0)
+	if(pullNew || lastAccBuffer.size() == 0)
 	{
 		readAccBuffer();
 	}
@@ -636,12 +578,12 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
+int ACC::readAcdcBuffers(int evno, bool raw)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
 	//that ACDCs have sent data to the ACC
-	int maxChecks = 15; //will give up after this many
+	int maxChecks = 100; //will wait for LVDS transfer to finish over this many loops
 	int check = 0;
 	bool pullNewAccBuffer = true;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
@@ -653,49 +595,43 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 		checkFullRamRegisters();
 
 		//debug
-		/*
+		
 		if(lastAccBuffer.size() > 4)
 		{
 			cout << "Ram/Pkt byte is: ";
 			printByte(lastAccBuffer.at(4));
 			cout << endl;
 		}
-		*/
+		
 	
 		//check which ACDCs have both gotten a trigger
 		//and have filled the ACC ram, thus starting
 		//it's USB write flag. 
 		unsigned short fr = vectorToUnsignedShort(fullRam);
 		unsigned short dc = vectorToUnsignedShort(dcPkt);
-		//a vector of indices that have both flags = 1
-		boardsReadyForRead = unsignedShortToVector(fr & dc); 
 
-		if(waitForAll)
+		//if no boards have started transmitting ACDC data,
+		//then no need to continue. 
+		if(dc == 0)
 		{
-			if(boardsReadyForRead.size() != alignedAcdcIndices.size())
-			{
-				//have not gotten all ACDC data
-				check++;
-			}
-			else
-			{
-				//found them all. 
-				break;
-			}
+			cout << "Tried reading ACDC data but none had been told to send data" << endl;
+			cout << "Try sending a trigger first." << endl;
+			break;
 		}
-		else
+
+		//if the boards that have started transmitting data
+		//have finished transmitting data. 
+		if(fr == dc)
 		{
-			if(boardsReadyForRead.size() == 0)
-			{
-				//have not gotten any ACDC data
-				check++;
-			}
-			else
-			{
-				//found at least 1 ACDC data
-				break;
-			}
+			boardsReadyForRead = unsignedShortToVector(fr & dc); 
+			break;
 		}
+
+		if(check >= maxChecks)
+		{
+			break;
+		}
+		check++;	
 	}
 
 	if(check == maxChecks)
@@ -717,7 +653,7 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 	//by the ACC for its buffer. 
 	for(int bi: boardsReadyForRead)
 	{
-		unsigned int command = 0x1e0C0000; //base command for set readmode
+		unsigned int command = 0x000C0000; //base command for set readmode
 		command = command | (unsigned int)(bi + 1); //which board to read
 
 		//send 
@@ -796,7 +732,6 @@ int ACC::readAcdcBuffers(bool waitForAll, int evno, bool raw)
 //2 = no data found
 int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 {
-	bool waitForAll = false;
 	bool pullNewAccBuffer = true;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
 
@@ -804,12 +739,11 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 	//if the trigMode is software
 	if(trigMode == 0)
 	{
-		waitForAll = true;
 		int retval;
 		//The ACC already sent a trigger, so
 		//tell it not to send another during readout. 
 		setAccTrigInvalid();
-		retval = readAcdcBuffers(waitForAll, evno, raw);
+		retval = readAcdcBuffers(evno, raw);
 		return retval;
 	}
 
@@ -1092,20 +1026,122 @@ void ACC::writeAcdcDataToFile(ofstream& d, ofstream& m)
 }
 
 
-
-void ACC::testFunction()
+//at the moment is a port of the readACDC funciton
+//without corrupt buffer checking and with the right
+//software trigger signal. 
+int ACC::testFunction()
 {
 
-	unsigned int command;
-	command = 0x1e0a0001;
-	usb->sendData(command);
-	sleep(3);
-	command = 0x1e0a0000;
-	usb->sendData(command);
-	sleep(3);
-	command = 0x1e0a0001;
-	usb->sendData(command);
-	sleep(3);
+
+	//send a software trigger
+	unsigned int cmd = 0x1e0A0007;
+	usb->sendData(cmd);
+
+	//First, loop and look for 
+	//a fullRam flag on ACC indicating
+	//that ACDCs have sent data to the ACC
+	int maxChecks = 1000; //will wait for LVDS transfer to finish over this many loops
+	int check = 0;
+	bool pullNewAccBuffer = true;
+	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
+	while(check < maxChecks)
+	{
+		//pull a new Acc buffer and parse
+		//the data-ready state indicators. 
+		checkDcPktFlag(pullNewAccBuffer);
+		checkFullRamRegisters();
+
+		//debug
+		/*
+		if(lastAccBuffer.size() > 4)
+		{
+			cout << "Ram/Pkt byte is: ";
+			printByte(lastAccBuffer.at(4));
+			cout << endl;
+		}
+		*/
+		
+	
+		//check which ACDCs have both gotten a trigger
+		//and have filled the ACC ram, thus starting
+		//it's USB write flag. 
+		unsigned short fr = vectorToUnsignedShort(fullRam);
+		unsigned short dc = vectorToUnsignedShort(dcPkt);
+
+		//if no boards have started transmitting ACDC data,
+		//then no need to continue. 
+		if(dc == 0)
+		{
+			cout << "Tried reading ACDC data but none had been told to send data" << endl;
+			cout << "Try sending a trigger first." << endl;
+			break;
+		}
+
+		//if the boards that have started transmitting data
+		//have finished transmitting data. 
+		if(fr == dc)
+		{
+			boardsReadyForRead = unsignedShortToVector(fr & dc); 
+			break;
+		}
+
+		if(check >= maxChecks)
+		{
+			break;
+		}
+		check++;	
+	}
+
+	if(check == maxChecks)
+	{
+		cout << "ACDC buffers were never sent to the ACC" << endl;
+		return 2;
+	}
+
+
+	//each ACDC needs to be queried individually
+	//by the ACC for its buffer. 
+	for(int bi: boardsReadyForRead)
+	{
+		unsigned int command = 0x000C0000; //base command for set readmode
+		command = command | (unsigned int)(bi + 1); //which board to read
+
+		//send 
+		usb->sendData(command);
+		//read only once. sometimes the buffer comes up empty. 
+		//made a choice not to pound it with a loop until it
+		//responds. 
+		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE);
+		//just throw it away, we will repeat. 
+
+
+		/*
+		//uncomment if you would like to print the buffer to file
+		int count = 0;
+		ofstream tempof("output", ios_base::trunc);
+		for(unsigned short k: acdc_buffer)
+		{
+			tempof << k << ", "; //decimal
+			stringstream ss;
+			ss << std::hex << k;          
+			string hexstr(ss.str());
+			tempof << hexstr << ", "; //hex
+			unsigned n;
+			ss >> n;
+			bitset<16> b(n);
+			tempof << b.to_string(); //binary
+			tempof << "   " << count << "th byte" << endl;
+			count++;
+		}
+
+		cout << "size of acdc_buffer is " << acdc_buffer.size() << endl;
+		*/
+
+	}
+
+
+
+	return 0;
 }
 
 

@@ -9,7 +9,7 @@ StdUSB libusb implementation used here uses same function interface with native 
 
 *****/
 
-#include <usb.h>
+#include <libusb-1.0/libusb.h>
 #include <vector>
 
 using namespace std;
@@ -36,7 +36,7 @@ public:
     //bool sendData(unsigned short data);
     bool sendData(unsigned int data);
 
-    bool readData(unsigned short *pData, int l, int *lread);
+    int readData(unsigned char *pData, int *lread);
 
     void writeAndReadNothing();
 
@@ -49,14 +49,12 @@ public:
     vector<unsigned short> safeReadData(int maxSamples); //allocates memory properly for reading
 
 private:
-    struct usb_device* init(int device_count);
-
+    struct libusb_device* init(int device_count);
+    struct libusb_device_handle *stdHandle;
     /* USBFX2 device descriptions */
     uint16_t USBFX2_VENDOR_ID; //0x090c;
     uint16_t USBFX2_PRODUCT_ID; //0x1000;
-
-protected:
-    struct usb_dev_handle *stdHandle;
+   
 };
 
 #endif
