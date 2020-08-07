@@ -70,17 +70,6 @@ void ACDC::convertMaskToChannels()
 }
 
 
-
-bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
-{
-	lastAcdcBuffer = b;
-	bool goodBuffer = true;
-	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills metadata maps
-	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
-	return goodBuffer;
-
-}
-
 //utility for debugging
 void ACDC::writeRawBufferToFile()
 {
@@ -115,17 +104,25 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 //pedestals and convert ADC-counts to mV live
 //or keep the data in units of raw ADC counts. 
 //retval: 
-//2: other error
-//1: corrupt buffer 
-//0: all good
-int ACDC::parseDataFromBuffer(bool raw)
+//0: success
+//1: zero size of ACDC buffer
+//2: no peds or conversion data.
+//3: no end word in buffer
+//4: Not the same psec start indices as end indices
+//5: Not the same psec end indices as metadata end indices
+//6: Not NUM_PSEC worth of chip data.
+//7: Some chip returned the wrong number of samples, needs to be NUM_CH_PER_CHIP*NUM_SAMP
+int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 {
+
+	lastAcdcBuffer = b; //store the raw buffer for safe keeping
+
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
 	if(lastAcdcBuffer.size() == 0)
 	{
-		cout << "You tried to parse ACDC data without pulling/setting an ACDC buffer" << endl;
-		return 2;
+		cout << "The last ACDC buffer has zero size! See ACDC:parseDataFromBuffer" << endl;
+		return 1;
 	}
 
 	if(peds.size() == 0 || conv.size() == 0)
@@ -135,104 +132,138 @@ int ACDC::parseDataFromBuffer(bool raw)
 		return 2;
 	}
 
-	//clear the data map prior.
-	data.clear();
+	//definitions of words. must match firmware data format.
+	unsigned short endword = 0x4321;
+	unsigned short psec_frame_start = 0xF005;
+	unsigned short psec_postamble_start = 0xBA11;
+	unsigned short metadata_end_word = 0xFACE;
 
-	//word that indicates the data is
-	//about to start for each psec chip.
-	unsigned short startword = 0xF005; 
-	unsigned short endword = 0xBA11; //just for safety, uses the 256 sample rule. 
-	int channelCount = 0; //iterates every 256 samples and when a startword is found 
-	int sampleCount = 0; //for checking if we hit 256 samples. 
-	double sampleValue = 0.0; //temporary holder for the sample in ADC-counts/mV
-	bool dataFlag = false; //if we are currently on psec-data bytes. 
-	vector<double> waveform; //the current channel's data as a vector of doubles. 
-	//a for loop through the whole buffer and save states
-	for(unsigned short byte: lastAcdcBuffer)
+
+	vector<int> psec_start_indices; //start of psec data blocks.
+	vector<int> psec_end_indices; //end of psec data blocks
+	vector<int> metadata_end_indices; //end of metadata blocks
+	int total_end_index = 0; //end of total buffer, defines where trigger data lives
+
+
+	//find indices of flags in the data buffer.
+	for(int i = 0; i < (int)b.size(); i++)
 	{
-		if(byte == startword && !dataFlag)
-		{
-			//re-initialize for a new PSEC chip
-			dataFlag = true;
-			sampleCount = 0;
-			channelCount++;
-			continue;
-		}
-		
-		if(byte == endword && dataFlag)
-		{
-			dataFlag = false;
-			//push the last waveform to data.
-			if(waveform.size() != NUM_SAMP)
-			{
-				//got a corrupt data buffer, throw event away
-				cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (1)" << endl;
-				data.clear();
+		if(b.at(i) == psec_frame_start) {psec_start_indices.push_back(i);}
+		if(b.at(i) == psec_postamble_start && b.at(i-1) != psec_postamble_start) {psec_end_indices.push_back(i);}
+		if(b.at(i) == metadata_end_word) {metadata_end_indices.push_back(i);}
+		if(b.at(i) == endword) {total_end_index = i;}
+	}
 
-				return 1;
-			} 
-			data[channelCount] = waveform;
-			waveform.clear();
-			//dont iterate channel, itl happen at
-			//the startword if statement. 
-			continue;
-		}
+	//-----------error management-------------//
+	//another way would be to collect all errors and return
+	//a vector of int error codes.
+	if(total_end_index == 0)
+	{
+		cout << "No end word found in acdc buffer" << endl;
+		return 3;
+	}
+	else if(psec_end_indices.size() != psec_start_indices.size())
+	{
+		cout << "Not the same psec start indices as end indices: " << psec_end_indices.size() << " and " << psec_start_indices.size() << endl;
+		return 4;
+	}
+	else if(psec_end_indices.size() != metadata_end_indices.size())
+	{
+		cout << "Not the same psec end indices as metadata end indices: " << psec_end_indices.size() << " and " << metadata_end_indices.size() << endl;
+		return 5;
+	}
+	else if((int)psec_end_indices.size() != NUM_PSEC)
+	{
+		cout << "Got " << (int)psec_end_indices.size() << " chip's worth of data when expecting " << NUM_PSEC << endl;
+		return 6;
+	}
+	//-----------end error management--------//
 
-		if(dataFlag)
+
+	//raw data separated and indexed by psec chip number
+	map<int, vector<unsigned short>> rawPsec;
+	map<int, vector<unsigned short>> rawMeta;
+	//special set of 10 or so words with some local
+	//info from the ACC.
+	vector<unsigned short> cc_header_info; 
+
+	//blockify the buffer based on the found indices
+	//by making a new vector that takes a chunk of the
+	//raw buffer using vector iterators.
+	for(int i = 0; i < (int)psec_end_indices.size(); i++)
+	{
+
+		vector<unsigned short>::const_iterator first = b.begin() + psec_start_indices.at(i) + 1;
+		vector<unsigned short>::const_iterator last = b.begin() + psec_end_indices.at(i);
+		vector<unsigned short> tempVec(first, last);
+		rawPsec[i] = tempVec; //chip i's data is tempVec
+	}
+
+	//do the same for metadata
+	for(int i = 0; i < (int)psec_end_indices.size(); i++)
+	{
+
+		vector<unsigned short>::const_iterator first = b.begin() + psec_end_indices.at(i) + 1;
+		vector<unsigned short>::const_iterator last = b.begin() + metadata_end_indices.at(i);
+		vector<unsigned short> tempVec(first, last);
+		rawMeta[i] = tempVec; //chip i's data is tempVec
+	}
+
+	//similar for cc_header_info
+	vector<unsigned short>::const_iterator first = b.begin();
+	vector<unsigned short>::const_iterator last = b.begin() + psec_start_indices.at(0);
+	vector<unsigned short> tempVec(first, last);
+	cc_header_info = tempVec; 
+
+
+
+	//restructure chip waveform data
+	//to be indexed by channel. also apply
+	//pedestal and linearity corrections.
+	data.clear(); //the map indexed by channel
+	int channelNo = 1; //count this as we loop
+	for(int chip = 0; chip < NUM_PSEC; chip++)
+	{
+		vector<unsigned short> chipData = rawPsec[chip];
+		int lastVal = (int)chipData.at(0); //just used for firmware development
+		//make sure there is 256 samples per channel!
+		if((int)chipData.size() != NUM_SAMP*NUM_CH_PER_CHIP)
 		{
-			//here is where we assume every
-			//channel to have NUM_SAMP samples. 
-			if(sampleCount == NUM_SAMP)
+			cout << "Didn't get 256 samples per channel on chip " << chip << endl;
+			cout << "Got a total of " << chipData.size() << " when expecting " << NUM_SAMP*NUM_CH_PER_CHIP << endl;
+			//return 7;
+		}
+		for(int i = 0; i < NUM_CH_PER_CHIP; i++)
+		{
+			vector<unsigned short>::const_iterator first = chipData.begin() + i*NUM_SAMP;
+			vector<unsigned short>::const_iterator last = chipData.begin() + (i+1)*NUM_SAMP;
+			vector<unsigned short> tempVec(first, last);
+
+			vector<double> waveform; //the double-cast, rescaled data
+			for(int samp = 0; samp < (int)tempVec.size(); samp++)
 			{
-				sampleCount = 0;
-				if(waveform.size() != NUM_SAMP)
+				//pedestal is a constant offset.
+				//conversion (linearity) is a multiplicative scale
+				waveform.push_back((tempVec.at(samp) - peds[channelNo][samp])*conv[channelNo][samp]);
+
+				//checks on chronological order
+				if(samp != 0 && lastVal + 1 != tempVec.at(samp))
 				{
-					//got a corrupt data buffer, throw event away
-					cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (2)" << endl;
-					data.clear();
-					return 1;
-				} 
-				data[channelCount] = waveform;
-				waveform.clear();
-				channelCount++;
+					cout << "Chronological issue at chip " << chip << " sample " << samp << endl;
+					cout << "Last val: " << lastVal << ", this val " << tempVec.at(samp) << endl;
+					return 7;
+				}
+				lastVal = tempVec.at(samp);
 			}
-			if(channelCount > NUM_CH)
-			{
-				//we are done here.
-				channelCount--; //reset to = NUM_CH 
-				break; //could also be continue.
-			}
-
-			//---these lines fill a waveform vector
-			//---that will be inserted into the data map
-			sampleValue = (double)byte; //adc counts
-
-			if(!raw)
-			{	
-				//apply a pedestal subtraction
-				sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
-				//apply a linearity corrected mV conversion
-				sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
-			}
-			
-			//save in the vector. vector is saved in the data map when
-			//the channel count is iterated. 
-			waveform.push_back(sampleValue); 
-			sampleCount++;
-			continue;
+			data[channelNo] = waveform;
+			channelNo++;
 		}
-		
 	}
 
-	//depending on the type of corrupt buffer, the above loop
-	//will happily record fewer than NUM_CH. 
-	if(channelCount != NUM_CH)
-	{
-		cout << "Got a corrupt buffer with " << channelCount << " number of channels " << endl;
-		data.clear();
-		return 1;
-	}
-
+	//parse the metadata buffer blocks in the Metadata class.
+	meta.parseBuffer(rawMeta, cc_header_info);
+	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
+	
 	return 0;
 
 }

@@ -32,14 +32,18 @@ int main(int argc, char *argv[])
 	vector<chrono::microseconds> looptimes; 
 	auto start = chrono::high_resolution_clock::now();
 	auto end = chrono::high_resolution_clock::now(); //just for initialization
+	int corruptBufferCount = 0;
 	for(int i = 0; i < niter; i++)
 	{
 		start = chrono::high_resolution_clock::now();	
-		acc.testFunction();
+		int cbc = acc.testFunction();
+		corruptBufferCount = corruptBufferCount + cbc;
 		end = chrono::high_resolution_clock::now();	
 		looptimes.push_back(chrono::duration_cast<chrono::microseconds>(end - start));
 	}
+
 	
+	cout << "Got " << corruptBufferCount << " corrupt buffers of " << niter << " iterations " << endl;
 
 	//make a little python file with a list of the times. 
 	string fn = string(argv[2]) + ".py";

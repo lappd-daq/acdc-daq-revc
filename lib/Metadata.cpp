@@ -12,11 +12,6 @@ Metadata::Metadata()
 	initializeMetadataKeys();
 }
 
-Metadata::Metadata(vector<unsigned short> acdcBuffer)
-{
-	initializeMetadataKeys();
-	parseBuffer(acdcBuffer);
-}
 
 Metadata::~Metadata()
 {
@@ -218,133 +213,13 @@ int Metadata::getEventNumber()
 
 
 
-//takes the full acdcBuffer as input. 
-//splits it into a map[psec4][vector<unsigned shorts>]
-//which is then parsed and organized in this class. 
-//Returns:
-//false if a corrupt buffer happened
-//true if all good. 
-bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
+//looks at pre-parsed ACDC buffer data. The ACDC::parseDataFromBuffer
+//sorts based on flags into chip indexed map of vector<unsigned shorts> 
+//ac_info[chip][index in buffer]
+//cc_header_info is the beginning of the ACDC raw buffer corresponding
+//to some info on the ACC local buffer.
+int Metadata::parseBuffer(map<int, vector<unsigned short>> ac_info, vector<unsigned short> cc_header_info)
 {
-	//if the buffer is 0 length (i.e. bad usb comms)
-	//return doing nothing
-	if(acdcBuffer.size() == 0) return false;
-	
-
-	//byte that indicates the metadata of
-	//each psec chip is about to follow. 
-	const unsigned short startword = 0xBA11; 
-
-	//to hold data temporarily. local to this function. 
-	//this is used to match to my old convention
-	//from the old software (which took a while just)
-	//to type out properly. 
-	//ac_info[chip][index in buffer]
-	map<int, vector<unsigned short>> ac_info;
-
-	//this is the header to the ACDC buffer that
-	//the ACC appends at the beginning, found in
-	//packetUSB.vhd. 
-	vector<unsigned short> cc_header_info;
-
-	
-	//indices of elements in the acdcBuffer
-	//that correspond to the byte ba11
-	vector<int> start_indices; 
-	vector<unsigned short>::iterator bit;
-
-	//loop through the data and find locations of startwords. 
-    //this can be made more efficient if you are having efficiency problems.
-	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
-	{
-		//the iterator is at an element with startword value. 
-		//push the index (integer, from std::distance) to a vector. 
-        if(*bit == startword)
-        {
-             start_indices.push_back(std::distance(acdcBuffer.begin(), bit));
-        }
-	}
-
-	//re-use this iterator to fill the cc_header_info vector
-	//which starts with the first occurance of 1234. This will
-	//be before the first occurance of the ac_info startword. 
-	unsigned int cc_header_start = 0x1234;
-	bit = std::find(acdcBuffer.begin(), acdcBuffer.end(), cc_header_start);
-	bit++; //so that first byte is not the cc_header_start word. 
-    int counter = 0;
-    int maxAccInfo = 20; //the most bytes that would possibly be needed. 
-	for(bit = bit; bit != acdcBuffer.end(); ++bit)
-	{
-		cc_header_info.push_back(*bit);
-		
-        //just fill with more than enough bytes. 
-        //we will only access the relevant ones. 
-		if(counter == maxAccInfo)
-		{
-			break;
-		}
-        counter++;
-	}
-
-	//I have found experimentally that sometimes
-    //the ACC sends an ACDC buffer that has 8001 elements
-    //(correct) but has BAD data, i.e. with extra ADC samples
-    //and missing PSEC metadata (startwords). This event
-    //needs to be thrown away really, but here all I can 
-    //do is return and say that the metadata is nothing. 
-    bool corruptBuffer = false;
-	if(start_indices.size() != NUM_PSEC)
-	{
-        cout << "***********************************************************" << endl;
-		cout << "In parsing ACDC buffer, found " << start_indices.size() << " matadata flag bytes." << endl;
-		cout << "Metadata for this event will likely be jarbled. Please throw this out!" << endl;
-        string fnnn = "acdc-corrupt-buffer.txt";
-        cout << "Printing to file : " << fnnn << endl;
-        ofstream cb(fnnn);
-        for(unsigned short k: acdcBuffer)
-        {
-            printByte(cb, k);
-            cb << endl;
-        }
-        corruptBuffer = true;
-	}
-
-
-	//loop through each startword index and store metadata. 
-	int chip_count = 0;
-	unsigned short endword = 0xFACE; //end of info buffer. 
-    unsigned short endoffile = 0x4321;
-	for(int i: start_indices)
-	{
-		//re-use buffer iterator from above
-		//to set starting point. 
-		bit = acdcBuffer.begin() + i + 1; //the 1 is to start one element after the startword
-		//while we are not at endword, 
-		//append elements to ac_info
-		vector<unsigned short> infobytes;
-		while(*bit != endword && *bit != endoffile && infobytes.size() < 20)
-		{
-			infobytes.push_back(*bit);
-			++bit;
-		}
-		ac_info.insert(pair<int, vector<unsigned short>>(chip_count, infobytes));
-		chip_count++;
-	}
-
-    //Here is where bad access errors could occur. 
-    //It is presently coded such that if there are 
-    //more ba11 bytes than NUM_PSEC (sometimes a bug
-    //that happens at firmware level), nothing will go wrong
-    //but this function will return a corruptBuffer flag at the end. 
-    //However, if there are less than NUM_SEC ba11 sets of words
-    //in the ac_info vector, we will have an access error and need
-    //to return now. 
-    if(ac_info.size() < NUM_PSEC)
-    {
-        return !corruptBuffer;
-    }
-
-
 
 	//-----start the rutheless decoding of the 
 	//-----acdc firmware and acc firmware packets. 
@@ -543,7 +418,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //also contained in this buffer element is bin_count_start and bin_count. 
     checkAndInsert("CC_BIN_COUNT", (cc_header_info[0] & 0x18) >> 3);
 
-	return !corruptBuffer;
+	return 0;
 }
 
 

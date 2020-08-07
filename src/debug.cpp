@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
 
 
 	//number of 16 bit words to allocate memory for usb read
-	int usbReadBufferMax = 50;
+	int usbReadBufferMax = 20000;
 	int readflag; //argument specifying the read option.
 	stringstream ss1;
 	unsigned int cmd;
@@ -71,7 +71,6 @@ int main(int argc, char *argv[])
 	//if there is only one command
 	if(argc == 2)
 	{
-		cout << "In this loop " << endl;
 		stringstream ss;
 		ss << argv[1]; //parse char* into stringstream
 		ss >> std::hex >> cmd; //interpret as a hex code
@@ -79,7 +78,6 @@ int main(int argc, char *argv[])
 		//wait a moment, very long compared to usb transfer
 		vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
 		printReadBuffer(retval);
-		cout << "Printed read buffer" << endl;
 		return 0;
 	}
 	else if(argc > 2 && !(readflag == 0 || readflag == 1))

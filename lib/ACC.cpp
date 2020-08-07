@@ -186,7 +186,7 @@ int ACC::createAcdcs()
 		acdcs.push_back(temp);
 	}
 
-	//parsePedsAndConversions(); //load pedestals and LUT conversion factors onto ACDC objects.
+	parsePedsAndConversions(); //load pedestals and LUT conversion factors onto ACDC objects.
 
 	return 1;
 }
@@ -679,7 +679,8 @@ int ACC::readAcdcBuffers(int evno, bool raw)
 				//and returns "bad buffer" if there are not NUM_PSEC 
 				//number of info blocks. 
 				bool corruptBuffer = false;
-				corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
+				int retval = a->parseDataFromBuffer(acdc_buffer, evno); //also triggers parsing function
+				if(retval != 0) corruptBuffer = true;
 				corruptBufferChecks.push_back(corruptBuffer); //true or false.
 				if(corruptBuffer)
 				{
@@ -687,17 +688,7 @@ int ACC::readAcdcBuffers(int evno, bool raw)
 					//good. therefore, I do not add a corruptBufferChecks.push_back(true) line. 
 					//however, you may find down the road that the actual psec data is corrupt as
 					//well. I have not been able to measure this yet. 
-					cout << "********* Corrupt buffer caught at metadata level ****************" << endl;
-				}
-
-				//tells it explicitly to load the data
-				//component of the buffer into private memory. 
-				int retval;//to catch corrupt buffers
-				retval = a->parseDataFromBuffer(raw); 
-				if(retval == 1)
-				{
-					cout << "********* Corrupt buffer caught at PSEC data level ****************" << endl;
-					corruptBufferChecks.push_back(true);
+					cout << "********* Corrupt buffer with errorcode " << retval << " ****************" << endl;
 					a->writeRawBufferToFile();
 				}
 
@@ -882,18 +873,11 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 					//is presently set by the Metadata.parseBuffer() member
 					//and returns "bad buffer" if there are not NUM_PSEC 
 					//number of info blocks. 
-					corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
+					int retval = a->parseDataFromBuffer(acdc_buffer, evno); //also triggers parsing function
+					if(retval != 0) corruptBuffer = true;
 					if(corruptBuffer)
 					{
-						cout << "********* got a corrupt buffer (1) ****************" << endl;
-						return 1;
-					}
-					//tells it explicitly to load the data
-					//component of the buffer into private memory. 
-					corruptBuffer = a->parseDataFromBuffer(raw); 
-					if(corruptBuffer)
-					{
-						cout << "********* got a corrupt buffer (2) ****************" << endl;
+						cout << "********* got a corrupt buffer with retval " << retval << " ****************" << endl;
 						return 1;
 					}
 				}
@@ -1025,13 +1009,10 @@ void ACC::writeAcdcDataToFile(ofstream& d, ofstream& m)
 	}
 }
 
-
-//at the moment is a port of the readACDC funciton
-//without corrupt buffer checking and with the right
-//software trigger signal. 
 int ACC::testFunction()
 {
 
+	int corruptBufferCount = 0;
 
 	//send a software trigger
 	unsigned int cmd = 0x1e0A0007;
@@ -1105,7 +1086,7 @@ int ACC::testFunction()
 	{
 		unsigned int command = 0x000C0000; //base command for set readmode
 		command = command | (unsigned int)(bi + 1); //which board to read
-
+		if(bi > 1) break;
 		//send 
 		usb->sendData(command);
 		//read only once. sometimes the buffer comes up empty. 
@@ -1113,35 +1094,46 @@ int ACC::testFunction()
 		//responds. 
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE);
 		//just throw it away, we will repeat. 
-
-
-		/*
-		//uncomment if you would like to print the buffer to file
-		int count = 0;
-		ofstream tempof("output", ios_base::trunc);
-		for(unsigned short k: acdc_buffer)
+		
+		for(ACDC* a: acdcs)
 		{
-			tempof << k << ", "; //decimal
-			stringstream ss;
-			ss << std::hex << k;          
-			string hexstr(ss.str());
-			tempof << hexstr << ", "; //hex
-			unsigned n;
-			ss >> n;
-			bitset<16> b(n);
-			tempof << b.to_string(); //binary
-			tempof << "   " << count << "th byte" << endl;
-			count++;
+			if(a->getBoardIndex() == bi)
+			{
+				int error_code = a->parseDataFromBuffer(acdc_buffer, 0); //0 is event number...
+				if(error_code != 0)
+				{
+					corruptBufferCount++;
+				}
+				
+				
+				//uncomment if you would like to print the buffer to file
+				int count = 0;
+				ofstream tempof("output", ios_base::trunc);
+				for(unsigned short k: acdc_buffer)
+				{
+					tempof << k << ", "; //decimal
+					stringstream ss;
+					ss << std::hex << k;          
+					string hexstr(ss.str());
+					tempof << hexstr << ", "; //hex
+					unsigned n;
+					ss >> n;
+					bitset<16> b(n);
+					tempof << b.to_string(); //binary
+					tempof << "   " << count << "th byte" << endl;
+					count++;
+				}
+
+				cout << "size of acdc_buffer is " << acdc_buffer.size() << endl;
+				
+			}
 		}
-
-		cout << "size of acdc_buffer is " << acdc_buffer.size() << endl;
-		*/
-
+		
 	}
 
 
 
-	return 0;
+	return corruptBufferCount;
 }
 
 
