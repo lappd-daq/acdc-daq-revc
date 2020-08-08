@@ -102,7 +102,6 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 
 	int corruptCounter = 0; //classified as unsuccessful pulls of ACDC buffer
 	int maxCorruptCounts = 1000; //if this many failed ACDC pulls occur, kill loop. 
-	bool raw = true; //to not apply the already text-loaded pedestals to the data acquisition
 	//duration variables
 	auto start = chrono::steady_clock::now();
 	auto end = chrono::steady_clock::now(); //just for initialization
@@ -152,7 +151,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					acc.toggleCal(0);
 					return 0;
 				}
-				eventHappened = acc.listenForAcdcData(trigMode, evCounter, raw);
+				eventHappened = acc.listenForAcdcData(trigMode, evCounter);
 				if(eventHappened == 1)
 				{
 					corruptCounter++;

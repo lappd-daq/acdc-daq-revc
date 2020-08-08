@@ -45,46 +45,6 @@ ACC::~ACC()
 }
 
 
-
-//sometimes it makes sense to repeatedly send
-//a usb command until a response is sent back. 
-//this function does that in a safe manner. 
-vector<unsigned short> ACC::sendAndRead(unsigned int command, int buffsize)
-{
-	if(!checkUSB()) exit(EXIT_FAILURE);
-
-	int read_counter = 0; //number of usb sends
-	int max_reads = 40; //arbitrary. 
-	bool loop_breaker = false; 
-	
-	vector<unsigned short> tempbuff;
-
-	//only sending once.
-	usb->sendData(command);
-	while(!loop_breaker)
-	{
-		tempbuff = usb->safeReadData(buffsize);
-
-		//if the buffer is non-zero size, then
-		//we got a message back. break the loop
-		if(tempbuff.size() > 0)
-		{
-			loop_breaker = true;
-		}
-		if(read_counter == max_reads)
-		{
-			loop_breaker = true;
-		}
-
-		//otherwise it reads again.
-		read_counter++;
-	}
-
-	return tempbuff;
-}
-
-
-
 bool ACC::checkUSB()
 {
 	if(!usb->isOpen())
@@ -117,27 +77,24 @@ stdUSB* ACC::getUsbStream()
 //that does not rely on any ACDCs to be connected. 
 vector<unsigned short> ACC::readAccBuffer()
 {
-	if(!checkUSB()) exit(EXIT_FAILURE);
+	if(!checkUSB())
+	{
+		cout << "USB line is not functioning" << endl;
+		vector<unsigned short> blank;
+		return blank;
+	}
 
 	//writing this tells the ACC to respond
 	//with its own metadata
 	unsigned int command = 0x1e0C0005; 
-	//is OK to just pound the ACC with the
-	//command until it responds. in a loop function "sendAndRead"
+	usb->sendData(command);
 
-	vector<unsigned short> v_buffer = sendAndRead(command, CC_BUFFERSIZE);
+	vector<unsigned short> v_buffer = usb->safeReadData(CC_BUFFERSIZE);
 	if(v_buffer.size() == 0)
 	{
-		cout << "USB comms to ACC are broken" << endl;
-		cout << "(1) Turn off the ACC" << endl;
-		cout << "(2) Unplug the USB cable power" << endl;
-		cout << "(3) Turn on ACC" << endl;
-		cout << "(4) Plug in USB" << endl;
-		cout << "(5) Wait for green ACC LED to turn off" << endl;
-		cout << "(6) Repeat if needed" << endl;
-		cout << "Trying USB reset before closing... " << endl;
-		usb->reset();
-		exit(EXIT_FAILURE);
+		cout << "Received no ACC info buffer upon request" << endl;
+		vector<unsigned short> blank;
+		return blank;
 	}
 	lastAccBuffer = v_buffer; //save as a private variable
 	return v_buffer; //also return as an option
@@ -578,7 +535,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(int evno, bool raw)
+int ACC::readAcdcBuffers(int evno)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -661,7 +618,7 @@ int ACC::readAcdcBuffers(int evno, bool raw)
 		//read only once. sometimes the buffer comes up empty. 
 		//made a choice not to pound it with a loop until it
 		//responds. 
-		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE);
 
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
@@ -721,7 +678,7 @@ int ACC::readAcdcBuffers(int evno, bool raw)
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
+int ACC::listenForAcdcData(int trigMode, int evno)
 {
 	bool pullNewAccBuffer = true;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
@@ -734,7 +691,7 @@ int ACC::listenForAcdcData(int trigMode, int evno, bool raw)
 		//The ACC already sent a trigger, so
 		//tell it not to send another during readout. 
 		setAccTrigInvalid();
-		retval = readAcdcBuffers(evno, raw);
+		retval = readAcdcBuffers(evno);
 		return retval;
 	}
 
@@ -1125,7 +1082,6 @@ int ACC::testFunction()
 				}
 
 				cout << "size of acdc_buffer is " << acdc_buffer.size() << endl;
-				
 			}
 		}
 		
@@ -1334,9 +1290,13 @@ void ACC::hardReset()
 	usb->sendData(command);
 }
 
-void ACC::alignLVDS()
+void ACC::updateLinkStatus()
 {
-	unsigned int command = 0x000D0000;
+	unsigned int command = 0x1e050000;
 	usb->sendData(command);
+	//then read the ACC data frame which now
+	//contains the links status check frames. 
+
+
 }
 

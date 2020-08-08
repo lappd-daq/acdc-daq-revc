@@ -231,7 +231,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 		{
 			cout << "Didn't get 256 samples per channel on chip " << chip << endl;
 			cout << "Got a total of " << chipData.size() << " when expecting " << NUM_SAMP*NUM_CH_PER_CHIP << endl;
-			//return 7;
+			return 7;
 		}
 		for(int i = 0; i < NUM_CH_PER_CHIP; i++)
 		{
@@ -255,6 +255,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 				}
 				lastVal = tempVec.at(samp);
 			}
+
 			data[channelNo] = waveform;
 			channelNo++;
 		}
@@ -263,6 +264,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 	//parse the metadata buffer blocks in the Metadata class.
 	meta.parseBuffer(rawMeta, cc_header_info);
 	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
+
 	
 	return 0;
 

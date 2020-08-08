@@ -153,8 +153,8 @@ to be written
 ### calibrateLinearity
 to be written
 
-### alignLVDS
-Sends an align LVDS command to the ACC and does nothing else. 
+### updateLinkStatus
+Tells the ACC to check which ACDCs are currently plugged in. It updates its own info buffer to indicate which ACDCs are connected and then sends back a few data packets. The ACC::updateLinkStatus then clears the buffer of those USB packets.
 
 ### Metadata Descriptions
 Please find a description of each metadata key in the Metadata.cpp::parseBuffer function. This will also point to locations in firmware where metadata words are clarified. 

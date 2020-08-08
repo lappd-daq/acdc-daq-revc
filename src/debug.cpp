@@ -4,6 +4,7 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
+#include <unistd.h>
 
 using namespace std;
 
@@ -12,14 +13,9 @@ using namespace std;
 //transmitted on the USB line. It circumvents
 //the need for an ACC object and just isolates the usb.
 
-//The function takes one argument, which is a
-//string formatted as a hex code, like 0x1e0C0005
-//which is sent down the line. Then it waits and
-//reads the response, if any, providing information in stdout. 
-//If you use multiple arguments separated by spaces,
-//it will send each one and read in between (final argument = 1)
-//or read only at the end (final argument = 0) 
-
+//Arguments are either 0x1e0C0000 (command type 32 bit words)
+//or a read command, specified as "r". One can string them in 
+//any sequence you want. 
 
 
 //printing utility
@@ -57,62 +53,32 @@ int main(int argc, char *argv[])
 		return 0;
 	}
 
-
 	//number of 16 bit words to allocate memory for usb read
 	int usbReadBufferMax = 20000;
-	int readflag; //argument specifying the read option.
-	stringstream ss1;
-	unsigned int cmd;
-	ss1 << argv[argc-1];
-	ss1 >> std::hex >> cmd;
-	readflag = (int)cmd;
-	//done formatting the readflag argument
 
-	//if there is only one command
-	if(argc == 2)
+	for(int c = 1; c < argc; c++)
 	{
-		stringstream ss;
-		ss << argv[1]; //parse char* into stringstream
-		ss >> std::hex >> cmd; //interpret as a hex code
-		usb->sendData(cmd); //send it down the usb line. 
-		//wait a moment, very long compared to usb transfer
-		vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
-		printReadBuffer(retval);
-		return 0;
-	}
-	else if(argc > 2 && !(readflag == 0 || readflag == 1))
-	{
-		cout << "For multiple messages, the last argument must be 0 or 1" << endl;
-		return 0;
-	}
-	else
-	{
-		//loop over the number of args.
-		for(int i = 1; i < (argc - 1); i++)
+		usleep(100000); //100 ms delay
+		//read and move on
+		if(string(argv[c]) == "r")
 		{
+			vector<unsigned short> buff = usb->safeReadData(usbReadBufferMax);
+			printReadBuffer(buff);
+			continue;
+		}
+		else
+		{
+			//send data
 			stringstream ss;
-			ss << argv[i]; //parse char* into stringstream
-			ss >> std::hex >> cmd; //interpret as a hex code
-			usb->sendData(cmd); //send it down the usb line. 
-			//the final argument tells us whether to read 
-			//in between commands or only read at the end. 
-			if(readflag == 1)
-			{
-				vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
-				printReadBuffer(retval);
-			}
-		}
-
-		//otherwise (0 or anything else on last argument)
-		//read out at the end
-		if(readflag == 0)
-		{
-			vector<unsigned short> retval = usb->safeReadData(usbReadBufferMax);
-			printReadBuffer(retval);
+			unsigned int cmd;
+			ss << argv[c];
+			ss >> std::hex >> cmd;
+			cout << "Sending: " << std::hex << cmd << endl;
+			cout << std::dec;
+			usb->sendData(cmd);
+			continue;
 		}
 	}
-	
-
 
 	return 0;
 }
