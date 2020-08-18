@@ -1,0 +1,52 @@
+Attempting to read the ACC info buffer
+504102917, 1e0c0005, 00011110000011000000000000000101
+Reading 54 bytes 
+read failed with retval -110
+Got -110 samples from usbread
+504102917, 1e0c0005, 00011110000011000000000000000101
+Reading 54 bytes 
+read failed with retval -110
+Got -110 samples from usbread
+504102917, 1e0c0005, 00011110000011000000000000000101
+Reading 54 bytes 
+Got 32 samples from usbread
+Creating a new ACDC object for detected ACDC: 0
+Attempting to read the ACC info buffer
+504102917, 1e0c0005, 00011110000011000000000000000101
+Reading 54 bytes 
+Got 32 samples from usbread
+Sending a software trigger to boards 0, 
+Soft trig mask is 1, 1, 0000000000000001
+917505, e0001, 00000000000011100000000000000001
+Reading ACDC buffers
+Reading board number 0
+504102913, 1e0c0001, 00011110000011000000000000000001
+Reading 10004 bytes 
+Got 8001 samples from usbread
+Saving buffer (size 8001) on board 0
+720897, b0001, 00000000000010110000000000000001
+Attempting to read the ACC info buffer
+504102917, 1e0c0005, 00011110000011000000000000000101
+Reading 54 bytes 
+Got 32 samples from usbread
+Calling acdc detructor
+Creating a new ACDC object for detected ACDC: 0
+Attempting to read the ACC info buffer
+504102917, 1e0c0005, 00011110000011000000000000000101
+Reading 54 bytes 
+Got 32 samples from usbread
+Sending a software trigger to boards 0, 
+Soft trig mask is 1, 1, 0000000000000001
+917505, e0001, 00000000000011100000000000000001
+Reading ACDC buffers
+Reading board number 0
+504102913, 1e0c0001, 00011110000011000000000000000001
+Reading 10004 bytes 
+read failed with retval -110
+Got -110 samples from usbread
+Saving buffer (size 0) on board 0
+720897, b0001, 00000000000010110000000000000001
+Calling acdc detructor
+Free handle
+Got free handle: 0
+Got free handle: 0

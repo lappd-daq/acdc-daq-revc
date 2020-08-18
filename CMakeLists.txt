@@ -26,6 +26,7 @@ set_property(TARGET yaml-cpp PROPERTY IMPORTED_LOCATION ${binary_dir}/libyaml-cp
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${source_dir}/include)
+include_directories(${source_dir}/local/include)
 
 
 add_compile_options(-g -Wall -Wextra -Wpedantic -fstack-protector)
@@ -45,11 +46,10 @@ add_library(Metadata
 add_library(Config
         ${LIBRARY_SOURCE_DIR}/Config.cpp)
 
-target_link_libraries(myusb PRIVATE usb)
-
 target_link_libraries(ACC myusb ACDC)
 target_link_libraries(ACDC Metadata)
 target_link_libraries(Config ACC myusb yaml-cpp)
+target_link_libraries(myusb PUBLIC usb-1.0)
 
 
 
@@ -58,14 +58,10 @@ add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
 add_executable(setConfig ${EXECUTABLE_SOURCE_DIR}/setConfig.cpp)
 add_executable(printAcdcMetadata ${EXECUTABLE_SOURCE_DIR}/printAcdcMetadata.cpp)
 add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
-add_executable(logDataFTBF ${EXECUTABLE_SOURCE_DIR}/logDataFTBF.cpp)
 add_executable(calibratePed ${EXECUTABLE_SOURCE_DIR}/calibratePed.cpp)
 add_executable(calEnable ${EXECUTABLE_SOURCE_DIR}/calEnable.cpp)
 add_executable(reset ${EXECUTABLE_SOURCE_DIR}/reset.cpp)
 add_executable(alignLVDS ${EXECUTABLE_SOURCE_DIR}/alignLVDS.cpp)
-add_executable(testFunction ${EXECUTABLE_SOURCE_DIR}/testFunction.cpp)
-add_executable(setLed ${EXECUTABLE_SOURCE_DIR}/setLed.cpp)
-
 
 
 
@@ -74,16 +70,12 @@ add_executable(setLed ${EXECUTABLE_SOURCE_DIR}/setLed.cpp)
 
 target_link_libraries(readACDC PUBLIC ACC)
 target_link_libraries(logData PUBLIC ACC)
-target_link_libraries(logDataFTBF PUBLIC ACC)
 target_link_libraries(setConfig PUBLIC ACC Config)
 target_link_libraries(printAcdcMetadata PUBLIC ACC)
 target_link_libraries(calibratePed PUBLIC ACC)
 target_link_libraries(calEnable PUBLIC ACC)
 target_link_libraries(reset PUBLIC ACC)
 target_link_libraries(alignLVDS PUBLIC ACC)
-target_link_libraries(testFunction PUBLIC ACC)
-target_link_libraries(setLed PUBLIC ACC)
-
 
 
 
