@@ -240,7 +240,11 @@ int stdUSB::readData(unsigned char * pData, int* lread) { // throw(...)
         return retval;
     } 
     else{
-        cout << "USB read error with retval : " << retval << " and transferred bytes " << *lread << endl;
+        //if it isnt a timeout flag, which happens often if you ask for more bytes. 
+        if(retval != -7)
+        {
+            cout << "USB read error with retval : " << retval << " and transferred bytes " << *lread << endl;    
+        }
         return retval;
     }
 

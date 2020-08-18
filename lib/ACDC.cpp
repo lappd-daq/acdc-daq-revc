@@ -103,6 +103,8 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 //argument toggles whether you want to subtract
 //pedestals and convert ADC-counts to mV live
 //or keep the data in units of raw ADC counts. 
+//This handles incorrect data buffers and does
+//error checks, hence "Flexible" but is not fast.
 //retval: 
 //0: success
 //1: zero size of ACDC buffer
@@ -112,7 +114,7 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 //5: Not the same psec end indices as metadata end indices
 //6: Not NUM_PSEC worth of chip data.
 //7: Some chip returned the wrong number of samples, needs to be NUM_CH_PER_CHIP*NUM_SAMP
-int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
+int ACDC::parseDataFromBufferFlexible(vector<unsigned short> b, int eventNumber)
 {
 
 	lastAcdcBuffer = b; //store the raw buffer for safe keeping
@@ -178,7 +180,30 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 		return 6;
 	}
 	//-----------end error management--------//
+	/*
+	cout << "psec_start_indices: ";
+	for(int k: psec_start_indices)
+	{
+		cout << k << ", ";
+	}
+	cout << endl;
 
+	cout << "psec_end_indices: ";
+	for(int k: psec_end_indices)
+	{
+		cout << k << ", ";
+	}
+	cout << endl;
+
+	cout << "metadata_end_indices: ";
+	for(int k: metadata_end_indices)
+	{
+		cout << k << ", ";
+	}
+	cout << endl;
+
+	cout << "total_end_index: " << total_end_index << endl;
+	*/
 
 	//raw data separated and indexed by psec chip number
 	map<int, vector<unsigned short>> rawPsec;
@@ -240,6 +265,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 			vector<unsigned short> tempVec(first, last);
 
 			vector<double> waveform; //the double-cast, rescaled data
+			
 			for(int samp = 0; samp < (int)tempVec.size(); samp++)
 			{
 				//pedestal is a constant offset.
@@ -257,6 +283,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 			}
 
 			data[channelNo] = waveform;
+
 			channelNo++;
 		}
 	}
@@ -265,6 +292,131 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
 	meta.parseBuffer(rawMeta, cc_header_info);
 	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
 
+	
+	return 0;
+
+}
+
+//this parser is Fast but has hard coded
+//indices where data blocks begin and end,
+//which are taken from a knowledge of (1) where
+//these data flags are in the buffer and (2) that
+//the data is not 'wrong' and in fact comes in the expected order.
+int ACDC::parseDataFromBuffer(vector<unsigned short> b, int eventNumber)
+{
+
+	lastAcdcBuffer = b; //store the raw buffer for safe keeping
+
+	//make sure an acdc buffer has been
+	//filled. if not, there is nothing to be done.
+	if(lastAcdcBuffer.size() == 0)
+	{
+		cout << "The last ACDC buffer has zero size! See ACDC:parseDataFromBuffer" << endl;
+		return 1;
+	}
+
+	if(peds.size() == 0 || conv.size() == 0)
+	{
+		cout << "Found no pedestal or LUT conversion data but was told to parse data." << endl;
+		cout << "Please check the ACC class for an initialization of this calibration data" << endl;
+		return 2;
+	}
+
+	int psec_start_indices[] = {9, 1561, 3113, 4665, 6217}; //start of psec data blocks.
+	int psec_end_indices[] = {1546, 3098, 4650, 6202, 7754}; //end of psec data blocks
+	int metadata_end_indices[] = {1560, 3112, 4664, 6216, 7768}; //end of metadata blocks
+	int total_end_index = 7800; //end of total buffer, defines where trigger data lives
+
+
+	//raw data separated and indexed by psec chip number
+	map<int, vector<unsigned short>> rawPsec;
+	map<int, vector<unsigned short>> rawMeta;
+	//special set of 10 or so words with some local
+	//info from the ACC.
+	vector<unsigned short> cc_header_info; 
+
+	//blockify the buffer based on the found indices
+	//by making a new vector that takes a chunk of the
+	//raw buffer using vector iterators.
+	for(int i = 0; i < NUM_PSEC; i++)
+	{
+
+		vector<unsigned short>::const_iterator first = b.begin() + psec_start_indices[i] + 1;
+		vector<unsigned short>::const_iterator last = b.begin() + psec_end_indices[i];
+		vector<unsigned short> tempVec(first, last);
+		rawPsec[i] = tempVec; //chip i's data is tempVec
+	}
+
+	//do the same for metadata
+	for(int i = 0; i < NUM_PSEC; i++)
+	{
+
+		vector<unsigned short>::const_iterator first = b.begin() + psec_end_indices[i] + 1;
+		vector<unsigned short>::const_iterator last = b.begin() + metadata_end_indices[i];
+		vector<unsigned short> tempVec(first, last);
+		rawMeta[i] = tempVec; //chip i's data is tempVec
+	}
+
+	//similar for cc_header_info
+	vector<unsigned short>::const_iterator first = b.begin();
+	vector<unsigned short>::const_iterator last = b.begin() + psec_start_indices[0];
+	vector<unsigned short> tempVec(first, last);
+	cc_header_info = tempVec; 
+
+
+	
+
+
+	//restructure chip waveform data
+	//to be indexed by channel. also apply
+	//pedestal and linearity corrections.
+	data.clear(); //the map indexed by channel
+	int channelNo = 1; //count this as we loop
+	for(int chip = 0; chip < NUM_PSEC; chip++)
+	{
+		vector<unsigned short> chipData = rawPsec[chip];
+		int lastVal = (int)chipData.at(0); //just used for firmware development
+		//make sure there is 256 samples per channel!
+		if((int)chipData.size() != NUM_SAMP*NUM_CH_PER_CHIP)
+		{
+			cout << "Didn't get 256 samples per channel on chip " << chip << endl;
+			cout << "Got a total of " << chipData.size() << " when expecting " << NUM_SAMP*NUM_CH_PER_CHIP << endl;
+			return 7;
+		}
+		for(int i = 0; i < NUM_CH_PER_CHIP; i++)
+		{
+			vector<unsigned short>::const_iterator first = chipData.begin() + i*NUM_SAMP;
+			vector<unsigned short>::const_iterator last = chipData.begin() + (i+1)*NUM_SAMP;
+			vector<unsigned short> tempVec(first, last);
+
+			vector<double> waveform; //the double-cast, rescaled data
+			/*
+			for(int samp = 0; samp < (int)tempVec.size(); samp++)
+			{
+				//pedestal is a constant offset.
+				//conversion (linearity) is a multiplicative scale
+				waveform.push_back((tempVec.at(samp) - peds[channelNo][samp])*conv[channelNo][samp]);
+
+				//checks on chronological order
+				if(samp != 0 && lastVal + 1 != tempVec.at(samp))
+				{
+					cout << "Chronological issue at chip " << chip << " sample " << samp << endl;
+					cout << "Last val: " << lastVal << ", this val " << tempVec.at(samp) << endl;
+					return 7;
+				}
+				lastVal = tempVec.at(samp);
+			}
+
+			data[channelNo] = waveform;
+			*/
+			channelNo++;
+		}
+	}
+	
+	//parse the metadata buffer blocks in the Metadata class.
+	meta.parseBuffer(rawMeta, cc_header_info);
+	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
+	
 	
 	return 0;
 

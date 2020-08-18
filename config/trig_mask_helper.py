@@ -15,10 +15,10 @@ def convert_ch_list(chs):
 
 
 if __name__ == "__main__":
-	l2_chs = range(1,31)
-        lrms = [6,7,8,14,17,2]
-        for rmch in lrms:
-            l2_chs.remove(rmch)
+	l2_chs = [30, 29]
+	lrms = []
+	for rmch in lrms:
+		l2_chs.remove(rmch)
 
-	print "l2 mask = " + convert_ch_list(l2_chs)
+	print("l2 mask = " + convert_ch_list(l2_chs))
 	

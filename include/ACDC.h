@@ -35,7 +35,8 @@ public:
 	void setPeds(map<int, vector<double>>& p){peds = p;} //sets pedestal map
 	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
 	void setData(map<int, vector<double>>& d){data = d;} //sets data map
-	int parseDataFromBuffer(vector<unsigned short> b, int eventNumber = 0); //parses raw data into metadata and psec data objects
+	int parseDataFromBufferFlexible(vector<unsigned short> b, int eventNumber = 0); //parses raw data into metadata and psec data objects
+	int parseDataFromBuffer(vector<unsigned short> b, int eventNumber = 0);
 	void writeDataToFile(ofstream& d, ofstream& m); //writes data and metadata to filestream
 	void writeRawBufferToFile();
 	void printByte(ofstream& ofs, unsigned short val);

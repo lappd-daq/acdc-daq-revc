@@ -1059,10 +1059,11 @@ int ACC::testFunction()
 				int error_code = a->parseDataFromBuffer(acdc_buffer, 0); //0 is event number...
 				if(error_code != 0)
 				{
+					cout << "Got corrupt buffer of type " << error_code << " from board " << bi << endl;
 					corruptBufferCount++;
 				}
 				
-				
+				/*
 				//uncomment if you would like to print the buffer to file
 				int count = 0;
 				ofstream tempof("output", ios_base::trunc);
@@ -1082,6 +1083,7 @@ int ACC::testFunction()
 				}
 
 				cout << "size of acdc_buffer is " << acdc_buffer.size() << endl;
+				*/
 			}
 		}
 		
@@ -1296,6 +1298,23 @@ void ACC::updateLinkStatus()
 	usb->sendData(command);
 	//then read the ACC data frame which now
 	//contains the links status check frames. 
+	cout << "Reading link status data frame " << endl;
+	vector<unsigned short> buff = usb->safeReadData(20000);
+	int count = 0;
+	for(unsigned short k: buff)
+	{
+		cout << k << ", "; //decimal
+		stringstream ss;
+		ss << std::hex << k;          
+		string hexstr(ss.str());
+		cout << hexstr << ", "; //hex
+		unsigned n;
+		ss >> n;
+		bitset<16> b(n);
+		cout << b.to_string(); //binary
+		cout << "   " << count << "th byte" << endl;
+		count++;
+	}
 
 
 }

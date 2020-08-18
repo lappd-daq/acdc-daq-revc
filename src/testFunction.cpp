@@ -46,19 +46,17 @@ int main(int argc, char *argv[])
 	cout << "Got " << corruptBufferCount << " corrupt buffers of " << niter << " iterations " << endl;
 
 	//make a little python file with a list of the times. 
-	string fn = string(argv[2]) + ".py";
+	string fn = string(argv[2]) + ".txt";
 	cout << "Finished, saving times to file: " << endl;
 	ofstream dataofs(fn.c_str(), ios_base::trunc); 
-	dataofs << "times = ["; 
 	for(int i = 0; i < (int)looptimes.size(); i++)
 	{
 		dataofs << looptimes.at(i).count();
 		if(i < (int)(looptimes.size() - 1))
 		{
-			dataofs << ",";
+			dataofs << endl;
 		} 
 	}
-	dataofs << "]";
 	dataofs.close();
 
 	return 0;
