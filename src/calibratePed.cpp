@@ -293,13 +293,13 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 	}
 
 	int totEventsRead; //counts number of events actually read for avg ped calibration.
-	map<int, vector<double>>::iterator mit; //general purpose map iterator
-	vector<double>::iterator vit; //generall purpose vector iterator
+	map<int, vector<unsigned short>>::iterator mit; //general purpose map iterator
+	vector<unsigned short>::iterator vit; //generall purpose vector iterator
 	//load data from file for that event on
 	//each active board. 
 	for(ACDC* a: acdcs)
 	{
-		map<int, vector<double>> avgPed;
+		map<int, vector<unsigned short>> avgPed;
 		cout << "On acdc " << a->getBoardIndex() << endl;
 
 		totEventsRead = 0;
@@ -310,7 +310,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 			//(either starting from beginning or
 			//the present line to find an event-number
 			//to board number match.)
-			map<int, vector<double>> tempPed = a->readDataFromFile(fileLines, evno);
+			map<int, vector<unsigned short>> tempPed = a->readDataFromFile(fileLines, evno);
 			//did data reading fail? would produce empty map
 			if(tempPed.size() == 0)
 			{
@@ -325,7 +325,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 				//if this channel exists already
 				if(avgPed.count(mit->first) > 0)
 				{
-					vector<double> chped = mit->second;
+					vector<unsigned short> chped = mit->second;
 					for(int i = 0; i < (int)chped.size(); i++)
 					{
 						avgPed[mit->first][i] += chped[i];
@@ -333,7 +333,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 				}
 				else
 				{
-					avgPed.insert(pair<int, vector<double>>(mit->first, mit->second));
+					avgPed.insert(pair<int, vector<unsigned short>>(mit->first, mit->second));
 				}
 			}
 			totEventsRead++;
@@ -342,7 +342,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 
 		//write this ped data to file.
 		ofstream ofsAvgPed(pedtag+to_string(a->getBoardIndex())+".txt", ios::trunc);
-		vector<double> tempwav; 
+		vector<unsigned short> tempwav; 
 		int ch;
 		for(mit = avgPed.begin(); mit != avgPed.end(); ++mit)
 		{
@@ -352,7 +352,7 @@ void calculatePedestalValues(ifstream& dataifs, string pedtag)
 			ofsAvgPed << ch << delim;//print channel to file with a delim
 			for(vit = tempwav.begin(); vit != tempwav.end(); ++vit)
 			{
-				ofsAvgPed << (*vit/totEventsRead) << delim; //print ped value for that sample 
+				ofsAvgPed << (((double)(*vit))/((double)(totEventsRead))) << delim; //print ped value for that sample 
 			}
 			ofsAvgPed << endl;
 		}

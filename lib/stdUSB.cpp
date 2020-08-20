@@ -30,6 +30,14 @@ stdUSB::stdUSB() {
         cout << "Usb was unable to connect to USB line, exiting" << endl;
         exit(EXIT_FAILURE);
     }
+
+    //clear the line just in case
+    //clear the USB line. 
+    vector<unsigned short> buf;
+    while(buf.size() > 0)
+    {
+        safeReadData(20000);
+    }
 }
 
 stdUSB::stdUSB(uint16_t vid, uint16_t pid) {
@@ -181,11 +189,11 @@ bool stdUSB::sendData(unsigned int data) { // throw(...)
     buff[2] = data >> 16;
     buff[3] = data >> 24;
    
-    /*
-    cout << "Data is: ";
+    
+    cout << "Data sending is: ";
     printByte(data);
     cout << endl;
-    */
+    
     
     int transferred;
 

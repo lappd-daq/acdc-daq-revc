@@ -24,12 +24,10 @@ public:
 	int testFunction();
 
 	//----------parsing functions (no usb comms)
-	void printAccMetadata(bool pullNew = false);
-	void printRawAccBuffer(bool pullNew = false);
+	void printRawAccBuffer();
 	void printAcdcInfo(bool verbose = false);
-	vector<int> checkFullRamRegisters(bool pullNew = false);
-	vector<int> checkDigitizingFlag(bool pullNew = false);
-	vector<int> checkDcPktFlag(bool pullNew = false);
+	vector<int> acdcsTransferringData(bool pullNew = false);
+	vector<int> acdcsDoneTransferringData(bool pullNew = false);
 	unsigned int vectorToUnsignedInt(vector<int> a); //utility for going from list to 101011 bits. 
 	unsigned short vectorToUnsignedShort(vector<int> a);
 	vector<int> unsignedShortToVector(unsigned short a);
@@ -77,9 +75,9 @@ private:
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port)
 	vector<ACDC*> acdcs; //a vector of active acdc boards. 
-	vector<int> fullRam; //which boards have finished sending all of their data to the ACC. 
-	vector<int> digFlag; //which boards (board index) have a dig start flag (dont know what that means)
-	vector<int> dcPkt; //which boards have started sending data to the ACC but have not yet filled the RAM. 
+	vector<int> boardsTransferring; //which boards have recently started transferring
+	vector<int> boardsDoneTransferring;
+
 
 
 	//-----------functions that involve usb comms
@@ -87,11 +85,10 @@ private:
 
 
 	//-----------parsing functions (no usb comms)
-	vector<int> whichAcdcsConnected(bool pullNew = false);
+	vector<int> whichAcdcsConnected();
 	void printByte(unsigned short val);
 	bool checkUSB(); //checking usb line and returning or couting appropriately.  
 	void clearAcdcs(); //memory deallocation for acdc vector. 
-	int parsePedsAndConversions(); //puts ped and LUT-scan data into ACDC objects
 
 	static void got_signal(int);
 };
