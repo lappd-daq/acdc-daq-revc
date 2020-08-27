@@ -95,8 +95,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	//need to. toggleCal(on/off = 1/0, all boards default, all channels default)
 	acc.toggleCal(1);
 
-	acc.resetAccTrigger();
-	acc.resetAccTrigger();
+	acc.resetAccRamFlags();
+	acc.resetAccRamFlags();
 
 	
 
@@ -156,8 +156,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				{
 					corruptCounter++;
 					acc.dataCollectionCleanup();
-					acc.resetAccTrigger();
-					acc.resetAccTrigger();
+					acc.resetAccRamFlags();
+					acc.resetAccRamFlags();
 					acc.initializeForDataReadout(trigMode);
 				}
 				//this is a time-out because it seems
@@ -170,8 +170,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					acc.dataCollectionCleanup();
 					//acc.softReconstructor();
 					acc.createAcdcs();
-					acc.resetAccTrigger();
-					acc.resetAccTrigger();
+					acc.resetAccRamFlags();
+					acc.resetAccRamFlags();
 					acc.initializeForDataReadout(trigMode);
 				}
 				//sigint happened inside ACC class

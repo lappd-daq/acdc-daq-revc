@@ -362,7 +362,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 	//bin = bin % 4;
 
 	//send the command
-	unsigned int command = 0x000A0010; 
+	unsigned int command = 0x000A0010; //temporarily this for just RAM read testing. 
 	command = command | mask ;//| (bin << 4); 
 
 	usb->sendData(command);
@@ -380,7 +380,7 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(int evno)
+int ACC::readAcdcBuffers(int evno, bool parse)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -432,6 +432,7 @@ int ACC::readAcdcBuffers(int evno)
 	if(check == maxChecks)
 	{
 		cout << "ACDC buffers were never sent to the ACC" << endl;
+		resetAccRamFlags();
 		return 2;
 	}
 
@@ -446,26 +447,28 @@ int ACC::readAcdcBuffers(int evno)
 
 		//send 
 		usb->sendData(command);
-		usleep(6000); 
+		usleep(6000); //usb takes this long to transfer from ACC ram to computer. 
 
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE);
 		//just throw it away, we will repeat. 
-		
-		for(ACDC* a: acdcs)
+		if(parse)
 		{
-			if(a->getBoardIndex() == bi)
+			for(ACDC* a: acdcs)
 			{
-				int error_code = a->parseDataFromBuffer(acdc_buffer, 0); //0 is event number...
-				if(error_code != 0)
+				if(a->getBoardIndex() == bi)
 				{
-					cout << "Got corrupt buffer of type " << error_code << " from board " << bi << endl;
-					corruptBufferCount++;
+					int error_code = a->parseDataFromBuffer(acdc_buffer, evno); //0 is event number...
+					if(error_code != 0)
+					{
+						cout << "Got corrupt buffer of type " << error_code << " from board " << bi << endl;
+						corruptBufferCount++;
+					}
 				}
 			}
 		}
-		
 	}
 
+	resetAccRamFlags();
 	return corruptBufferCount;
 }
 
@@ -665,7 +668,7 @@ void ACC::initializeForDataReadout(int trigMode)
 		setFreshReadmode();
 		setAccTrigInvalid();
 		setFreshReadmode();
-		resetAccTrigger();
+		resetAccRamFlags();
 
 		prepSync();
 		softwareTrigger();
@@ -677,7 +680,7 @@ void ACC::initializeForDataReadout(int trigMode)
 		setFreshReadmode();
 		setAccTrigInvalid();
 		setFreshReadmode();
-		resetAccTrigger();
+		resetAccRamFlags();
 
 		setAccTrigInvalid();
 
@@ -701,12 +704,12 @@ void ACC::dataCollectionCleanup(int trigMode)
 	if(trigMode == 0)
 	{
 		setAccTrigInvalid(); //b4
-		resetAccTrigger(); //b1
+		resetAccRamFlags(); //b1
 		resetAcdcTrigger();
 		setFreshReadmode(); //c0
 
 		setAccTrigInvalid(); //b4
-		resetAccTrigger(); //b1
+		resetAccRamFlags(); //b1
 		resetAcdcTrigger();
 		setFreshReadmode(); //c0
 	}
@@ -714,12 +717,12 @@ void ACC::dataCollectionCleanup(int trigMode)
 	else if(trigMode == 1)
 	{
 		setAccTrigInvalid(); //b4
-		resetAccTrigger(); //b1
+		resetAccRamFlags(); //b1
 		resetAcdcTrigger(); //c010
 		setFreshReadmode(); //c0
 
 		setAccTrigInvalid(); //b4
-		resetAccTrigger(); //b1
+		resetAccRamFlags(); //b1
 		resetAcdcTrigger();
 		setFreshReadmode(); //c0
 	}
@@ -735,8 +738,8 @@ void ACC::dumpData()
 	for(ACDC* a: acdcs)
 	{
 		//prep the ACC
-		resetAccTrigger();
-		resetAccTrigger();
+		resetAccRamFlags();
+		resetAccRamFlags();
 		int bi = a->getBoardIndex();
 		unsigned int command = 0x1e0C0000; //base command for set readmode
 		command = command | (unsigned int)(bi + 1); //which board to read
@@ -756,14 +759,8 @@ int ACC::testFunction()
 
 	int corruptBufferCount = 0;
 
-	//set sequential mode data 
-	unsigned int cmd;
-	cmd = 0xFF0A000C;
-	usb->sendData(cmd);
 
-	//request ACDC ram (ramReadEnable)
-	cmd = 0xFF0A0010;
-	usb->sendData(cmd);
+	softwareTrigger();
 
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -977,22 +974,16 @@ void ACC::prepSync()
 //will send the usb message immediately
 void ACC::makeSync()
 {
-	unsigned int command = 0x1e0B0010;
+	unsigned int command = 0xFF0B0010;
 	usb->sendData(command);
 }
 
-//(1) resets firmware in trigger and time
-//(2) does software reset of transeivers.vhd
-//(3) sets CC_INSTRUCTION to the command. 
-//Previously called "manage_cc_fifo", but now
-//calling it "resetAccTrigger". The software
-//reset in transeivers flags that software is
-//done reading over usb and goes to LVDS idle. 
-//Also sets SOFT_TRIG to 0 if it was at 1. Also
-//sets TRIG_OUT signal to 0. 
-void ACC::resetAccTrigger()
+//This function:
+//resets the boardsTransferring and boardsDoneTransferring bits on ACC
+//resets the ACC-to-ACDC trigger lines to 0
+void ACC::resetAccRamFlags()
 {
-	unsigned int command = 0x1e0B0001;
+	unsigned int command = 0xFF0B0001;
 	usb->sendData(command);
 }
 
@@ -1002,7 +993,7 @@ void ACC::resetAccTrigger()
 //feel free to change it. 
 void ACC::resetAcdcTrigger()
 {
-	unsigned int command = 0x1e0c0010; //set trig src 0. 
+	unsigned int command = 0xFF0c0010; //set trig src 0. 
 	usb->sendData(command);
 }
 
@@ -1018,7 +1009,7 @@ void ACC::setHardwareTrigSrc(int src)
 {
 	unsigned int byteSuffix;
 	byteSuffix = (1 << 3) | (1 << 4) | ((unsigned short)src << 13);
-	unsigned int command = 0x1e0c0000; 
+	unsigned int command = 0xFF0c0000; 
 	command = command | byteSuffix; 
 	usb->sendData(command);
 }
@@ -1028,19 +1019,19 @@ void ACC::setHardwareTrigSrc(int src)
 //be sent to trigger the ACDC
 void ACC::setAccTrigValid()
 {
-	unsigned int command = 0x1e0B0006;
+	unsigned int command = 0xFF0B0006;
 	usb->sendData(command);
 }
 
 void ACC::setAccTrigInvalid()
 {
-	unsigned int command = 0x1e0B0004;
+	unsigned int command = 0xFF0B0004;
 	usb->sendData(command);
 }
 
 void ACC::setFreshReadmode()
 {
-	unsigned int command = 0x1e0C0000;
+	unsigned int command = 0xFF0C0000;
 	usb->sendData(command);
 }
 
@@ -1077,9 +1068,11 @@ void ACC::updateLinkStatus()
 {
 	unsigned int command = 0xFF050000;
 	usb->sendData(command);
-	//clear the input buffer
-	usb->safeReadData(20000);
-
+	//now the ACDC will automatically send its entire
+	//data buffer size, full of zeros. It fills the ACC
+	//ram, which stays filled until we request the dummy
+	//data back. So, do a readAcdc but with no data parsing. 
+	readAcdcBuffers(0, false); //0 is event number, false is no data parsing.
 }
 
 

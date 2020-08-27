@@ -43,7 +43,7 @@ public:
 	int createAcdcs(); //creates ACDC objects, explicitly querying both buffers
 	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
 	void toggleCal(int onoff, unsigned int boardmask = 0xFF, unsigned int channelmask = 0xFFFF); //toggles calibration input switch on boards
-	int readAcdcBuffers(int evno = 0); //reads the acdc buffers
+	int readAcdcBuffers(int evno = 0, bool parse = true); //reads the acdc buffers. if parse, then parses into data objects
 	int listenForAcdcData(int trigMode, int evno = 0); //almost identical to readAcdcBuffers but intended for real data triggering
 	void initializeForDataReadout(int trigMode = 0);
 	void dataCollectionCleanup(int trigMode = 0); //a set of usb commands to reset boards after data logging
@@ -55,7 +55,7 @@ public:
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 
 	void setAccTrigInvalid(); //b004
-	void resetAccTrigger(); //b0001
+	void resetAccRamFlags(); //b0001
 	void setFreshReadmode(); //c0001
 	void resetAcdcTrigger(); //c0010
 	void setHardwareTrigSrc(int src); //c0000 | complicated code

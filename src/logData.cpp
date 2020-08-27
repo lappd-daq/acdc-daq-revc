@@ -40,8 +40,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	acc.createAcdcs(); //detect ACDCs and create ACDC objects
 
 
-	acc.resetAccTrigger();
-	acc.resetAccTrigger();
+	acc.resetAccRamFlags();
+	acc.resetAccRamFlags();
 
 	
 
@@ -94,8 +94,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				{
 					corruptCounter++;
 					acc.dataCollectionCleanup();
-					acc.resetAccTrigger();
-					acc.resetAccTrigger();
+					acc.resetAccRamFlags();
+					acc.resetAccRamFlags();
 					acc.initializeForDataReadout(trigMode);
 				}
 				//this is a time-out because it seems
@@ -108,8 +108,8 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					acc.dataCollectionCleanup();
 					//acc.softReconstructor();
 					acc.createAcdcs();
-					acc.resetAccTrigger();
-					acc.resetAccTrigger();
+					acc.resetAccRamFlags();
+					acc.resetAccRamFlags();
 					acc.initializeForDataReadout(trigMode);
 				}
 				//sigint happened inside ACC class

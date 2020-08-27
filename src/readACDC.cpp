@@ -25,9 +25,6 @@ int main() {
 	bool waitForAll = true; //require that all ACDC buffers be found for success. 
 	retval = acc.readAcdcBuffers(waitForAll); //read ACDC buffer from usb, save and parse in ACDC objects
 
-	//acc.resetAccTrigger();
-	//acc.resetAccTrigger();
-
 	//only print if readAcdcBuffers
 	//successfully retreived and parsed
 	//data. 
