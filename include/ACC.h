@@ -41,7 +41,7 @@ public:
 	//-----------functions that involve usb comms
 	//(see cpp declaration for more comments above functions)
 	int createAcdcs(); //creates ACDC objects, explicitly querying both buffers
-	void softwareTrigger(vector<int> boards = {}, int bin = 0); //sends soft trigger to specified boards
+	void softwareTrigger(vector<int> boards = {0, 1, 2, 3, 4, 5, 6, 7}); //sends soft trigger to specified boards
 	void toggleCal(int onoff, unsigned int boardmask = 0xFF, unsigned int channelmask = 0xFFFF); //toggles calibration input switch on boards
 	int readAcdcBuffers(int evno = 0, bool parse = true); //reads the acdc buffers. if parse, then parses into data objects
 	int listenForAcdcData(int trigMode, int evno = 0); //almost identical to readAcdcBuffers but intended for real data triggering
@@ -57,8 +57,6 @@ public:
 	void setAccTrigInvalid(); //b004
 	void resetAccRamFlags(); //b0001
 	void setFreshReadmode(); //c0001
-	void resetAcdcTrigger(); //c0010
-	void setHardwareTrigSrc(int src); //c0000 | complicated code
 	void prepSync(); //preps sync? need to read firmware to understand this
 	void makeSync(); //make sync? need to read firmware to understand this
 	void setAccTrigValid(); //b0006

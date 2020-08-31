@@ -87,7 +87,7 @@ vector<unsigned short> ACC::readAccBuffer()
 
 	//writing this tells the ACC to respond
 	//with its own metadata
-	unsigned int command = 0x000D0000; 
+	unsigned int command = 0x000C0005; 
 	usb->sendData(command);
 
 	vector<unsigned short> v_buffer = usb->safeReadData(CC_BUFFERSIZE);
@@ -215,8 +215,10 @@ vector<int> ACC::acdcsTransferringData(bool pullNew)
 		return whichBoardsTransferring;
 	}
 
-	unsigned short transferWord = (lastAccBuffer.at(4) & 0xFF00) >> 8;
+	unsigned short transferWord = (lastAccBuffer.at(4) & 0xF0) >> 4;
 	
+
+	cout << "Transfering now word is: " << transferWord << endl;
 	for(int bo = 0; bo < MAX_NUM_BOARDS; bo++)
 	{
 		if((transferWord & (1 << bo)))
@@ -249,8 +251,8 @@ vector<int> ACC::acdcsDoneTransferringData(bool pullNew)
 		return whichBoardsDone;
 	}
 
-	unsigned short transferWord = (lastAccBuffer.at(4) & 0xFF);
-	
+	unsigned short transferWord = (lastAccBuffer.at(4) & 0xF);
+	cout << "Transfering done word is: " << transferWord << endl;
 	for(int bo = 0; bo < MAX_NUM_BOARDS; bo++)
 	{
 		if((transferWord & (1 << bo)))
@@ -337,7 +339,7 @@ vector<int> ACC::unsignedShortToVector(unsigned short a)
 //bin option allows one to force a particular 160MHz
 //clock cycle to trigger on. anything greater than 3
 //is defaulted to 0. 
-void ACC::softwareTrigger(vector<int> boards, int bin)
+void ACC::softwareTrigger(vector<int> boards)
 {
 	
 	//default value for "boards" is empty. If so, then
@@ -351,20 +353,10 @@ void ACC::softwareTrigger(vector<int> boards, int bin)
 	//turn the board vector into a binary form
 	//(0110), unsigned int mask. 
 	unsigned int mask = vectorToUnsignedInt(boards);
-	//the present version of firmware only allows
-	//one to mask boards 0-3 (as opposed to 0-7). 
-	//take this part out when moving to 8 board firmware. 
-	mask = mask << 24;
 
-	//force the board to trigger on a certain 160MHz
-	//clock cycle within the event. default is 0, and
-	//cannot be more than 3. 
-	//bin = bin % 4;
 
 	//send the command
-	unsigned int command = 0x000A0010; //temporarily this for just RAM read testing. 
-	command = command | mask ;//| (bin << 4); 
-
+	unsigned int command = 0xFF0E0000 | mask; 
 	usb->sendData(command);
 }
 
@@ -403,15 +395,6 @@ int ACC::readAcdcBuffers(int evno, bool parse)
 		//it's USB write flag. 
 		unsigned short tr = vectorToUnsignedShort(boardsTransferring);
 		unsigned short dtr = vectorToUnsignedShort(boardsDoneTransferring);
-
-		//if no boards have started transmitting ACDC data,
-		//then no need to continue. 
-		if(tr == 0)
-		{
-			cout << "Tried reading ACDC data but none had been told to send data" << endl;
-			cout << "Try sending a trigger first." << endl;
-			break;
-		}
 
 		//if the boards that have started transmitting data
 		//have finished transmitting data. 
@@ -468,7 +451,7 @@ int ACC::readAcdcBuffers(int evno, bool parse)
 		}
 	}
 
-	resetAccRamFlags();
+	//resetAccRamFlags();
 	return corruptBufferCount;
 }
 
@@ -698,36 +681,7 @@ void ACC::initializeForDataReadout(int trigMode)
 //state after doing a logData data collection.
 void ACC::dataCollectionCleanup(int trigMode)
 {
-	//i'm taking this directly from a USB listening
-	//mode of the old software. it may not be unique.
-	//it is cryptic and is possibly unstable.
-	if(trigMode == 0)
-	{
-		setAccTrigInvalid(); //b4
-		resetAccRamFlags(); //b1
-		resetAcdcTrigger();
-		setFreshReadmode(); //c0
-
-		setAccTrigInvalid(); //b4
-		resetAccRamFlags(); //b1
-		resetAcdcTrigger();
-		setFreshReadmode(); //c0
-	}
-
-	else if(trigMode == 1)
-	{
-		setAccTrigInvalid(); //b4
-		resetAccRamFlags(); //b1
-		resetAcdcTrigger(); //c010
-		setFreshReadmode(); //c0
-
-		setAccTrigInvalid(); //b4
-		resetAccRamFlags(); //b1
-		resetAcdcTrigger();
-		setFreshReadmode(); //c0
-	}
-	
-
+	return;
 }
 
 
@@ -984,33 +938,6 @@ void ACC::makeSync()
 void ACC::resetAccRamFlags()
 {
 	unsigned int command = 0xFF0B0001;
-	usb->sendData(command);
-}
-
-//this command does a number of things
-//and the name may not be appropriate. 
-//if you think of a better name, please
-//feel free to change it. 
-void ACC::resetAcdcTrigger()
-{
-	unsigned int command = 0xFF0c0010; //set trig src 0. 
-	usb->sendData(command);
-}
-
-
-//there is an option to use one of
-//the front end boards (ACDCs) as
-//a hardware trigger source. It is
-//set via the 1e0c register (somewhat bad
-//design i think). 
-//int src:
-//0=ext, 3 = board0, 4=b1, 6=b2, 7=b3
-void ACC::setHardwareTrigSrc(int src)
-{
-	unsigned int byteSuffix;
-	byteSuffix = (1 << 3) | (1 << 4) | ((unsigned short)src << 13);
-	unsigned int command = 0xFF0c0000; 
-	command = command | byteSuffix; 
 	usb->sendData(command);
 }
 

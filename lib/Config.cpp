@@ -317,7 +317,6 @@ bool Config::writeConfigToAcc(ACC* acc)
 	cout << "Writing the configuration settings to the ACC" << endl;
 
 	//first, make sure the ACDCs have a fresh trigger mode, 0
-	acc->resetAcdcTrigger();
 	vector<int> acdcIndices = acc->getAlignedIndices();
 	unsigned int command;
 	unsigned int tempWord;
@@ -402,8 +401,7 @@ bool Config::writeConfigToAcc(ACC* acc)
 		}
 
 		cout << "Setting trigger source" << endl;
-		//set trigger mode
-		acc->setHardwareTrigSrc(hrdw_trig_src);
+		//needs to be revised with new firmware
 	}
 	catch(string message)
 	{
