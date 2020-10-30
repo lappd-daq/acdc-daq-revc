@@ -273,9 +273,10 @@ int main(int argc, char *argv[])
 					{
 						scp.plot(filename);
 						check++;
+					}else{
+						scp.send_cmd("pause 0.01");
+						scp.send_cmd("reread");
 					}
-					scp.send_cmd("pause 0.1");
-					scp.send_cmd("reread");
 					break;
 				case 1:
 					std::cout << "Successfully found data and but buffer corrupted" << std::endl;
