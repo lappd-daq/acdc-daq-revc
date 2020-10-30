@@ -1,2 +1,20 @@
 # acdc-daq-revc
-A new C++17 version of the acdc-daq, completely re-written from scratch. Its first commit matches the firmware version of ACC and ACDC with branch "uartcomms" and is written object oriented and modularly to be updated over time as the firmware updates. 
+Here will be a new readme soon!
+
+## Prerequisites
+This code is built using `cmake` and requires `libusb` headers (which usually come prepackaged with your os-- you may want to double-check).
+
+To install on a debian-based machine
+
+```bash
+$ sudo apt install libusb-1.0-0-dev cmake
+```
+
+gcc/g++ version optimally is >7.1 
+cmake version is >3.1
+
+
+
+
+
+

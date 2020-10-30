@@ -1,0 +1,27 @@
+# This config was written for ISU's test bench to use one board to hardware trigger on a falling pulse
+# for more details on these configuration files, see the README and the example document
+acdc_settings:
+  pedestal:
+    0:
+      all: 2000
+    1:
+      all: 2000
+
+  threshold:
+    0:
+      all: 2200
+    1:
+      all: 2200
+
+trigger_settings:
+  trig_mask:
+    0:0x30000000
+    1:0x30000000
+  trig_enable:
+    0: on
+    1: on 
+  trig_sign:
+    0: rising
+    1: rising  
+  hrdw_trig: off
+  hrdw_trig_src: 0

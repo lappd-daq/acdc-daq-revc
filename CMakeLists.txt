@@ -26,9 +26,10 @@ set_property(TARGET yaml-cpp PROPERTY IMPORTED_LOCATION ${binary_dir}/libyaml-cp
 
 include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${source_dir}/include)
+include_directories(${source_dir}/local/include)
 
 
-add_compile_options(-g -Wall -Wextra -Wpedantic -fstack-protector)
+add_compile_options(-g -Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector) 
 
 add_library(ACC
         ${LIBRARY_SOURCE_DIR}/ACC.cpp)
@@ -44,25 +45,43 @@ add_library(Metadata
 
 add_library(Config
         ${LIBRARY_SOURCE_DIR}/Config.cpp)
+add_library(Scope
+	${LIBRARY_SOURCE_DIR}/Scope.cpp)
 
-target_link_libraries(myusb PRIVATE usb)
-
-target_link_libraries(ACC myusb ACDC Metadata Config yaml-cpp)
-
-
-
-
-add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
-add_executable(setConfig ${EXECUTABLE_SOURCE_DIR}/setConfig.cpp)
-
-add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
+target_link_libraries(ACC myusb ACDC)
+target_link_libraries(ACDC Metadata)
+target_link_libraries(Config ACC myusb yaml-cpp)
+target_link_libraries(myusb PUBLIC usb-1.0)
+target_link_libraries(Scope ACC ACDC)
 
 
 
 
-target_link_libraries(readACDC PUBLIC ACC)
+#add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
+#add_executable(setConfig ${EXECUTABLE_SOURCE_DIR}/setConfig.cpp)
+#add_executable(printAcdcMetadata ${EXECUTABLE_SOURCE_DIR}/printAcdcMetadata.cpp)
+#add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
+#add_executable(calibratePed ${EXECUTABLE_SOURCE_DIR}/calibratePed.cpp)
+#add_executable(calEnable ${EXECUTABLE_SOURCE_DIR}/calEnable.cpp)
+#add_executable(reset ${EXECUTABLE_SOURCE_DIR}/reset.cpp)
+#add_executable(alignLVDS ${EXECUTABLE_SOURCE_DIR}/alignLVDS.cpp)
+add_executable(debug ${EXECUTABLE_SOURCE_DIR}/debug.cpp)
+add_executable(readCalibModeData ${EXECUTABLE_SOURCE_DIR}/readCalibModeData.cpp)
+add_executable(listenForData ${EXECUTABLE_SOURCE_DIR}/listenForData.cpp)
+add_executable(oscope ${EXECUTABLE_SOURCE_DIR}/oscope.cpp)
 
-target_link_libraries(logData PUBLIC ACC)
 
-target_link_libraries(setConfig PUBLIC ACC Config)
+
+#target_link_libraries(readACDC PUBLIC ACC)
+#target_link_libraries(logData PUBLIC ACC)
+#target_link_libraries(setConfig PUBLIC ACC Config)
+#target_link_libraries(printAcdcMetadata PUBLIC ACC)
+#target_link_libraries(calibratePed PUBLIC ACC)
+#target_link_libraries(calEnable PUBLIC ACC)
+#target_link_libraries(reset PUBLIC ACC)
+#target_link_libraries(alignLVDS PUBLIC ACC)
+target_link_libraries(debug PUBLIC myusb)
+target_link_libraries(readCalibModeData PUBLIC ACC)
+target_link_libraries(listenForData PUBLIC ACC Scope)
+target_link_libraries(oscope PUBLIC ACC ACDC Scope)
 

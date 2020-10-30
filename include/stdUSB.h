@@ -9,7 +9,7 @@ StdUSB libusb implementation used here uses same function interface with native 
 
 *****/
 
-#include <usb.h>
+#include <libusb-1.0/libusb.h>
 #include <vector>
 
 using namespace std;
@@ -22,41 +22,38 @@ using namespace std;
 #define CNFNO 1 //USBFX2 configuration number
 
 class stdUSB {
-public:
-    stdUSB();
-    stdUSB(uint16_t vid, uint16_t pid);
+    public:
+        stdUSB();
+        stdUSB(uint16_t vid, uint16_t pid);
 
-    ~stdUSB();
+        ~stdUSB();
 
+        bool createHandles(int device_count = 1);
 
-    bool createHandles(int device_count = 1);
+        bool freeHandle();
 
-    bool freeHandle();
+        //bool sendData(unsigned short data);
+        bool sendData(unsigned int data);
 
-    //bool sendData(unsigned short data);
-    bool sendData(unsigned int data);
+        int readData(unsigned char *pData, int *lread);
 
-    bool readData(unsigned short *pData, int l, int *lread);
+        void writeAndReadNothing();
 
-    void writeAndReadNothing();
+        bool isOpen();
 
-    bool isOpen();
+        bool reset();
 
-    bool reset();
+        void printByte(unsigned int val);
 
-    void printByte(unsigned int val);
+        vector<unsigned short> safeReadData(int maxSamples); //allocates memory properly for reading
 
-    vector<unsigned short> safeReadData(int maxSamples); //allocates memory properly for reading
-
-private:
-    struct usb_device* init(int device_count);
-
-    /* USBFX2 device descriptions */
-    uint16_t USBFX2_VENDOR_ID; //0x090c;
-    uint16_t USBFX2_PRODUCT_ID; //0x1000;
-
-protected:
-    struct usb_dev_handle *stdHandle;
+    private:
+        struct libusb_device* init(int device_count);
+        struct libusb_device_handle *stdHandle;
+        /* USBFX2 device descriptions */
+        uint16_t USBFX2_VENDOR_ID; //0x090c;
+        uint16_t USBFX2_PRODUCT_ID; //0x1000;
+   
 };
 
 #endif

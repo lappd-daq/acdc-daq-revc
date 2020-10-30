@@ -3,6 +3,7 @@
 #include <thread>
 #include <string>
 #include <chrono>
+#include <thread>
 #include <atomic>
 #include "ACC.h"
 #include <signal.h>
@@ -11,6 +12,13 @@
 
 using namespace std;
 
+
+
+//same as logdata but it has
+//hard coded in wait statements such
+//that it only logs data at the time of a spill.
+//One starts this logdata loop while looking at
+//the spill structure, to synchronize
 
 std::atomic<bool> quit(false); //signal flag
 
@@ -41,7 +49,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	retval = acc.createAcdcs(); //detect ACDCs and create ACDC objects
 	if(retval == 0)
 	{
-		cout << "No acdcs were aligned at time of loggin" << endl;
+		cout << "No acdcs were aligned at time of logging" << endl;
 		return 0;
 	}
 	acc.setLed(false);
@@ -56,12 +64,17 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 	int maxCorruptCounts = 1000; //if this many failed ACDC pulls occur, kill loop. 
 
 	//duration variables
-	auto start = chrono::steady_clock::now();
-	auto end = chrono::steady_clock::now(); //just for initialization
-	
+	auto now = chrono::steady_clock::now(); //just for initialization 
+	auto spillstart = chrono::steady_clock::now();
+	auto waitstart = chrono::steady_clock::now(); //just for initialization 
+	auto spillDuration = chrono::seconds(10); //length to keep the logging gate open
+	auto spillWait = chrono::seconds(47); //time after the spillDuration to wait before opening again
+	bool waiting = false;
+	int evCounter = 0;
+	int eventHappened;
 	try
 	{
-		for(int evCounter = 0; evCounter < nev; evCounter++)
+		while(evCounter < nev)
 		{
 			//close gracefull if ctrl-C is thrown
 			if(quit.load())
@@ -70,40 +83,56 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 				acc.dataCollectionCleanup();
 				return 0;
 			}
+			//get the present time
+			now = chrono::steady_clock::now();
 
-			cout << "On event " << evCounter << " of " << nev << "... ";
-
-			//send a set of USB commands to configure ACC
-			//send a software trigger if trigMode = 0
-			//currently doesn't support any other mode
-			acc.initializeForDataReadout(trigMode);
-
-			int eventHappened = 2;
-			//retval of readAcdcBuffers = 0 indicates
-			//total success of pulling ACDC data. 
-			while(eventHappened != 0)
+			//is the spill over?
+			if(chrono::duration_cast<chrono::seconds>(now - spillstart) >= spillDuration && !waiting)
 			{
+				cout << "Holding off, the spill has finished" << endl;
+				waitstart = chrono::steady_clock::now();
+				waiting = true;
+				acc.dataCollectionCleanup();
+			}
+
+			//is the wait time over? 
+			else if(waiting && chrono::duration_cast<chrono::seconds>(now - waitstart) >= spillWait)
+			{
+				cout << "Starting to log again, wait time has ended" << endl;
+				waiting = false;
+
+				spillstart = chrono::steady_clock::now();
+				acc.softReconstructor();
+				acc.createAcdcs();
+				acc.resetAccTrigger();
+				acc.resetAccTrigger();
+			}
+			//capture one event and return. 
+			//or if there is a corrupt buffer, 
+			//return to top of timing while loop
+			else if(!waiting)
+			{
+				cout << "On event " << evCounter << " of " << nev << "... ";
+
+				//send a set of USB commands to configure ACC
+				//send a software trigger if trigMode = 0
+				//currently doesn't support any other mode
+				acc.initializeForDataReadout(trigMode);
+
 				if(corruptCounter >= maxCorruptCounts)
 				{
 					cout << "Too many corrupt buffers" << endl;
 					throw("Too many corrupt events");
 				}
 
-				//close gracefull if ctrl-C is thrown
-				if(quit.load())
-				{
-					cout << "Cought a Ctrl-C, cleaning up" << endl;
-					acc.dataCollectionCleanup();
-					return 0;
-				}
 				eventHappened = acc.listenForAcdcData(trigMode, evCounter);
+
 				if(eventHappened == 1)
 				{
 					corruptCounter++;
 					acc.dataCollectionCleanup();
 					acc.resetAccTrigger();
 					acc.resetAccTrigger();
-					acc.initializeForDataReadout(trigMode);
 				}
 				//this is a time-out because it seems
 				//as if the ACDCs are no longer connected. 
@@ -117,7 +146,6 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					acc.createAcdcs();
 					acc.resetAccTrigger();
 					acc.resetAccTrigger();
-					acc.initializeForDataReadout(trigMode);
 				}
 				//sigint happened inside ACC class
 				if(eventHappened == 3)
@@ -126,24 +154,27 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 					acc.dataCollectionCleanup();
 					return 0;
 				}
+				if(eventHappened == 0)
+				{
+					acc.setAccTrigInvalid();
+					acc.setFreshReadmode();
+					acc.setAccTrigInvalid();
+					acc.setFreshReadmode();
+					
+					cout << "Found an event after waiting for a trigger. ";
 
+					cout << "Writing the event to file" << endl;
+					//writes to file. assumes no new AccBuffer 
+					//has been pulled (i.e. uses fullRam from last AccBuffer)
+					acc.writeAcdcDataToFile(dataofs, metaofs); 
+					evCounter++;
+				}
+				//head to top, incrementing event counter.
 			}
-
-			
-			acc.setAccTrigInvalid();
-			acc.setFreshReadmode();
-			acc.setAccTrigInvalid();
-			acc.setFreshReadmode();
-			
-			end = chrono::steady_clock::now();
-			cout << "Found an event after waiting for a trigger. ";
-			cout << "Computer time was " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. ";
-
-			cout << "Writing the event to file" << endl;
-			//writes to file. assumes no new AccBuffer 
-			//has been pulled (i.e. uses fullRam from last AccBuffer)
-			acc.writeAcdcDataToFile(dataofs, metaofs); 
-			//head to top, incrementing event counter.
+			else
+			{
+				std::this_thread::sleep_for(std::chrono::milliseconds(300));
+			}
 		}
 	}
 	catch(string mechanism)
@@ -153,8 +184,7 @@ int dataQueryLoop(ofstream& dataofs, ofstream& metaofs, int nev, int trigMode)
 		return 0;
 	}
 
-	end = chrono::steady_clock::now();
-	cout << "Finished collecting " << nev << " events after " << chrono::duration_cast<chrono::milliseconds>(end - start).count() << " milliseconds. "<< endl;
+	cout << "Finished collecting " << nev << " events. ";
 	//clean up at the end
 	acc.dataCollectionCleanup();
 	cout << "Found " << corruptCounter << " number of corrupt buffers during acquisition" << endl;

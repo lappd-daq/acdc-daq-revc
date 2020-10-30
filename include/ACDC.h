@@ -35,11 +35,21 @@ public:
 	bool setLastBuffer(vector<unsigned short> b, int eventNumber = 0); //sets metadata buffer, returns false if bad buffer
 	void setPeds(map<int, vector<double>>& p){peds = p;} //sets pedestal map
 	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
-	int parseDataFromBuffer(); //parses only the psec data component of the ACDC buffer
-	void writeDataToFile(ofstream& d, ofstream& m); //writes data and metadata to filestream
-	void writeRawBufferToFile();
+	void setData(map<int, vector<double>>& d){data = d;} //sets data map
+	int parseDataFromBuffer(bool raw = false); //parses only the psec data component of the ACDC buffer
+	void writeDataToFile(ofstream& d, ofstream& m, int oscopeOnOff); //writes data and metadata to filestream
+	void writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer);
+	void writeRawDataToFile(vector<unsigned short> buffer, ofstream& d);
 	void printByte(ofstream& ofs, unsigned short val);
+	void writePedsToFile(ofstream& ofs);
+	void readPedsFromFile(ifstream& ifs);
+	void writeConvsToFile(ofstream& ofs);
+	void readConvsFromFile(ifstream& ifs);
 
+	map<int, vector<double>> readDataFromFile(vector<string>, int evno); //takes a datafile and loads the data member with evno's data. 
+
+	void readPED(vector<unsigned short> acdc_buffer);
+	void setPed(vector<double> p){pedestal =p;}
 
 
 private:
@@ -51,6 +61,7 @@ private:
 	map<int, vector<double>> data; //data[channel][waveform samples] channel starts at 1. 
 	map<int, vector<double>> peds; //peds[channel][waveform samples] from a calibration file.
 	map<int, vector<double>> conv; //conversion factor from adc counts to mv from calibration file. 
+	vector<double> pedestal;
 
 	void convertMaskToChannels();
 	void fillData(); //parses the acdc buffer and fills the data map
