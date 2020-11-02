@@ -472,69 +472,82 @@ void ACC::softwareTrigger()
 }
 
 
-//returns map[board][is ram full]
-vector<int> ACC::checkFullRamRegisters()
+vector<int> ACC::acdcsDoneTransferringData(bool pullNew)
 {
-	vector<int> tempRamFull;
+	if(pullNew ||lastAccBuffer.size() == 0)
+	{
+		unsigned int command = 0xFFD00000;
+		usb->sendData(command);
+
+		enableTransfer(0);
+		command = 0x00210000;
+		usb->sendData(command);
+
+		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+	}
+
+	//just in case the Acc doesnt have a good buffer
+	vector<int> whichBoardsDone;
 	if(lastAccBuffer.size() < 5) 
 	{
 		cout << "Something wrong with ACC buffer" << endl;
-		fullRam = tempRamFull;
-		return tempRamFull;
+		boardsDoneTransferring = whichBoardsDone; //ACC local variable
+		return whichBoardsDone;
 	}
 
-	unsigned short ram_packet = lastAccBuffer.at(9) & 0x00FF;
-
-	//this will change when the full 8 bits of 
-	//xram_full in packetUSB.vhd are included in the ACC buffer. 
-	int ramRegisters = 8; 
-	for(int i = 0; i < ramRegisters; i++)
+	unsigned short transferWord = lastAccBuffer.at(9) & 0x00FF;
+	//cout << "Transfering done word is: " << transferWord << endl;
+	for(int bo = 0; bo < MAX_NUM_BOARDS; bo++)
 	{
-		if((ram_packet & (1 << i)))
+		if((transferWord & (1 << bo)))
 		{
-			//the i'th board is connected
-			tempRamFull.push_back(i);
+			//the bo'th board is connected
+			whichBoardsDone.push_back(bo);
 		}
 	}
 
-	//this allows no map-clearing to be needed
-	fullRam = tempRamFull; //private variable storage
-	return tempRamFull; //return as an alternative. 
-
+	boardsDoneTransferring = whichBoardsDone; //ACC local variable
+	return whichBoardsDone; //return as an alternative. 
 }
 
-
-//returns map[board][is digitizing flag true]
-//dcPkt indicates that an ACDC has started sending
-//data to the ACC, but has not yet filled the ram. 
-vector<int> ACC::checkDcPktFlag()
+vector<int> ACC::acdcsTransferringData(bool pullNew)
 {
+	if(pullNew ||lastAccBuffer.size() == 0)
+	{
+		unsigned int command = 0xFFD00000;
+		usb->sendData(command);
+
+		enableTransfer(0);
+		command = 0x00210000;
+		usb->sendData(command);
+
+		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+	}
+
 	//just in case the Acc doesnt have a good buffer
-	vector<int> tempDcPktFlag;
+	vector<int> whichBoardsTransferring;
 	if(lastAccBuffer.size() < 5) 
 	{
 		cout << "Something wrong with ACC buffer" << endl;
-		dcPkt = tempDcPktFlag;
-		return tempDcPktFlag;
+		boardsTransferring = whichBoardsTransferring; //ACC local variable
+		return whichBoardsTransferring;
 	}
 
-	unsigned short dc_packet = (lastAccBuffer.at(9) & 0xFF00) >> 8;
+	unsigned short transferWord = (lastAccBuffer.at(9) & 0xFF00) >> 8;
+	
 
-	//this will change when the full 8 bits of 
-	//xram_full in packetUSB.vhd are included in the ACC buffer. 
-	int bitsTransferred = 8; 
-	for(int i = 0; i < bitsTransferred; i++)
+	//cout << "Transfering now word is: " << transferWord << endl;
+	for(int bo = 0; bo < MAX_NUM_BOARDS; bo++)
 	{
-		if((dc_packet & (1 << i)))
+		if((transferWord & (1 << bo)))
 		{
-			//the i'th board is connected
-			tempDcPktFlag.push_back(i);
+			//the bo'th board is connected
+			whichBoardsTransferring.push_back(bo);
 		}
 	}
 
-	//this allows no map-clearing to be needed
-	dcPkt = tempDcPktFlag; //private variable storage
-	return tempDcPktFlag; //return as an alternative. 
+	boardsTransferring = whichBoardsTransferring; //ACC local variable
+	return whichBoardsTransferring; //return as an alternative. 
 }
 
 
@@ -560,61 +573,43 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	int check = 0;
 
 	vector<int> boardsReadyForRead;
+
+	unsigned int command = 0xFFD00000;
+	usb->sendData(command);
+
+	enableTransfer(0);
+	command = 0x00210000;
+	usb->sendData(command);
+
 	while(check < maxChecks)
 	{
-		unsigned int command = 0xFFD00000;
-		usb->sendData(command);
-
-		enableTransfer(0);
-		command = 0x00210000;
-		usb->sendData(command);
-
-		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-
+		
 		//pull a new Acc buffer and parse
 		//the data-ready state indicators. 
-		checkDcPktFlag();
-		checkFullRamRegisters();
-		if(alignedAcdcIndices.size() == 0)
-		{
-			cout << "No ACDCs were LVDS aligned" << endl;
-			return 2;
-		}
+		acdcsTransferringData();
+		acdcsDoneTransferringData();
+
 	
 		//check which ACDCs have both gotten a trigger
 		//and have filled the ACC ram, thus starting
 		//it's USB write flag. 
-		unsigned short fr = vectorToUnsignedShort(fullRam);
-		unsigned short dc = vectorToUnsignedShort(dcPkt);
+		unsigned short tr = vectorToUnsignedShort(boardsTransferring);
+		unsigned short dtr = vectorToUnsignedShort(boardsDoneTransferring);
 
-		//a vector of indices that have both flags = 1
-		boardsReadyForRead = unsignedShortToVector(fr & dc); 
-		if(waitForAll)
+		//if the boards that have started transmitting data
+		//have finished transmitting data. 
+		if(tr == dtr)
 		{
-			if(boardsReadyForRead.size() != alignedAcdcIndices.size())
-			{
-				//have not gotten all ACDC data
-				check++;
-			}
-			else
-			{
-				//found them all. 
-				break;
-			}
+			boardsReadyForRead = unsignedShortToVector(tr); 
+			break;
 		}
-		else
+
+
+		if(check >= maxChecks)
 		{
-			if(boardsReadyForRead.size() == 0)
-			{
-				//have not gotten any ACDC data
-				check++;
-			}
-			else
-			{
-				//found at least 1 ACDC data
-				break;
-			}
+			break;
 		}
+		check++;	
 	}
 
 	if(check == maxChecks)
@@ -633,10 +628,9 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	//just rather throw this event away. At
 	//the end, the function will return based
 	//on whether it finds any corrupt buffers.
-	vector<bool> corruptBufferChecks;
 	//each ACDC needs to be queried individually
 	//by the ACC for its buffer. 
-	for(int bi: alignedAcdcIndices)
+	for(int bi: boardsReadyForRead)
 	{
 		usleep(10000);
 
@@ -653,69 +647,64 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 		if(acdc_buffer.size() !=  7795){
 			cout << "Size of  Acdc buffer: " << acdc_buffer.size() << endl;
 		}
+		bool corruptBuffer = false;
+		if(acdc_buffer.size() == 0)
+		{
+			corruptBuffer = true;
+		}
+		int nonzerocount = 0;
+		//if the first 20 bytes are all 0's, it is corrupt...
+		for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
+		{
+			if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
+		}
+		if(nonzerocount == 0) {corruptBuffer = true;}
+
+		if(corruptBuffer)
+		{
+			return 1;
+		}
+
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
-		//and checking each index
+		//and checking each index 
 		for(ACDC* a: acdcs)
 		{
 			if(a->getBoardIndex() == bi)
 			{
-				//set the buffer that we just read. 
-				//There is a string of bool returning
-				//functions that checks if the buffer is corrupt
-				//in a sense that it doesn't follow the expected
-				//packet order or packet format. Ultimately, this
-				//is presently set by the Metadata.parseBuffer() member
-				//and returns "bad buffer" if there are not NUM_PSEC 
-				//number of info blocks. 
-				bool corruptBuffer = false;
-				corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
-				corruptBufferChecks.push_back(corruptBuffer); //true or false.
-				if(corruptBuffer)
-				{
-					//a corrupt buffer at metadata level can sometimes mean that data is still 
-					//good. therefore, I do not add a corruptBufferChecks.push_back(true) line. 
-					//however, you may find down the road that the actual psec data is corrupt as
-					//well. I have not been able to measure this yet. 
-					cout << "********* Corrupt buffer caught at metadata level ****************" << endl;
-				}
+				//tells it explicitly to load the data
+				//component of the buffer into private memory. 
+				int retval;
+
 				if(!raw)
 				{
 					a->readPED(acdc_buffer);
 				}
-				//tells it explicitly to load the data
-				//component of the buffer into private memory. 
-				int retval;//to catch corrupt buffers
-				retval = a->parseDataFromBuffer(raw);
-				//cout << "Retval from paring is " << retval  << endl; 
-				if(retval == 1)
+				
+				retval = a->parseDataFromBuffer(acdc_buffer, raw); 
+				if(retval !=0)
 				{
-					cout << "********* Corrupt buffer caught at PSEC data level ****************" << endl;
-					corruptBufferChecks.push_back(true);
-					a->writeRawBufferToFile(acdc_buffer);
-					continue;
+					cout << "********* Corrupt buffer caught at PSEC data level (2) ****************" << endl;
+					corruptBuffer = true;
+
+					a->writeRawBufferToFile(acdc_buffer);	
 				}
+
+				if(corruptBuffer)
+				{
+					cout << "********* got a corrupt buffer with retval " << retval << " ****************" << endl;
+					return 1;
+				}
+
 				//filename logistics
 				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
-//				ofstream rawofs(rawfn.c_str(), ios_base::out); //trunc overwrites
+
 				a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
-//				a->writeRawDataToFile(acdc_buffer, rawofs);
-		}
-
-		}
-	}
-
-	//if any of the corrupt buffer checks return
-	//true, then return integer 1 to flag that downstream. 
-	for(bool c: corruptBufferChecks)
-	{
-		if(c == true)
-		{
-			return 1;
+			}
 		}
 	}
 
@@ -808,8 +797,8 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 			//pull a new Acc buffer and parse
 			//the data-ready state indicators. 
-			checkDcPktFlag();
-			checkFullRamRegisters();
+			acdcsTransferringData();
+			acdcsDoneTransferringData();
 
 			//debug
 			/*
@@ -825,27 +814,12 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			//and have filled the ACC ram, thus starting
 			//it's USB write flag. 
 			
-			//I want to see that dcPkt and fullRam
-			//are equivalent. If one board finishes
-			//sending data to ACC before another, for
-			//example, we still want to wait. 
-			//check which ACDCs have both gotten a trigger
-			//and have filled the ACC ram, thus starting
-			//it's USB write flag. 
-			unsigned short fr = vectorToUnsignedShort(fullRam);
-			unsigned short dc = vectorToUnsignedShort(dcPkt);
-
-			//a vector of indices that have both flags = 1
-			boardsReadyForRead = unsignedShortToVector(fr & dc); 
-
-			if(boardsReadyForRead.size() != alignedAcdcIndices.size())
+			std::sort(boardsTransferring.begin(), boardsTransferring.end());
+			std::sort(boardsDoneTransferring.begin(), boardsDoneTransferring.end());
+			if(boardsTransferring == boardsDoneTransferring && boardsDoneTransferring.size() > 0)
 			{
-				//have not gotten all ACDC data
-				//cout << "al " << alignedAcdcIndices.size() << " bR " << boardsReadyForRead.size() <<  endl;
-			}
-			else
-			{
-				//found them all. 
+				//all boards have finished
+				//sending data to ACC. 
 				break;
 			}
 
@@ -855,12 +829,17 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 		//each ACDC needs to be queried individually
 		//by the ACC for its buffer. 
 		enableTransfer(1);
-		vector<bool> corruptBufferChecks;
 		string outfilename = "./Results/";
 		//cout << "al " << alignedAcdcIndices.size() << " bR " << boardsReadyForRead.size() <<  endl;
 
-		for(int bi: alignedAcdcIndices)
+		for(int k: boardsDoneTransferring)
 		{
+			cout << k << endl;
+		}
+
+		for(int bi: boardsDoneTransferring)
+		{
+			cout << "bi " << bi << endl;
 			usleep(10000);
 			cout << "Board " << bi << ", ";
 			unsigned int command = 0x00210000; //base command for set readmode
@@ -875,6 +854,32 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 			usleep(10000);
 
+			//----corrupt buffer checks begin
+			//sometimes the ACDCs dont send back good
+			//data. It is unclear why, but we would
+			//just rather throw this event away. 
+			bool corruptBuffer = false;
+			if(acdc_buffer.size() == 0)
+			{
+				corruptBuffer = true;
+			}
+			int nonzerocount = 0;
+			//if the first 20 bytes are all 0's, it is corrupt...
+			for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
+			{
+				if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
+			}
+			if(nonzerocount == 0)
+			{
+				corruptBuffer = true;
+				writeDataToFile(acdc_buffer);
+			}
+
+			if(corruptBuffer)
+			{
+				cout << "******************** Early corrupt buffer *************************" << endl;
+				return 1;
+			}
 
 			//save this buffer a private member of ACDC
 			//by looping through our acdc vector
@@ -883,21 +888,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			{
 				if(a->getBoardIndex() == bi)
 				{
-					bool corruptBuffer = false;
-					//set the buffer that we just read. 
-					//There is a string of bool returning
-					//functions that checks if the buffer is corrupt
-					//in a sense that it doesn't follow the expected
-					//packet order or packet format. Ultimately, this
-					//is presently set by the Metadata.parseBuffer() member
-					//and returns "bad buffer" if there are not NUM_PSEC 
-					//number of info blocks. 
-					corruptBuffer = !(a->setLastBuffer(acdc_buffer, evno)); //also triggers parsing function
-					corruptBufferChecks.push_back(corruptBuffer);
-					if(corruptBuffer)
-					{
-						cout << "********* Corrupt buffer caught at metadata level ****************" << endl;
-					}
 					//tells it explicitly to load the data
 					//component of the buffer into private memory. 
 					int retval;
@@ -907,33 +897,30 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 						a->readPED(acdc_buffer);
 					}
 					
-					retval = a->parseDataFromBuffer(raw); 
-					if(retval == 1)
+					retval = a->parseDataFromBuffer(acdc_buffer, raw); 
+					if(retval !=0)
 					{
 						cout << "********* Corrupt buffer caught at PSEC data level (2) ****************" << endl;
-						corruptBufferChecks.push_back(true);
+						corruptBuffer = true;
+
 						a->writeRawBufferToFile(acdc_buffer);	
 					}
+
+					if(corruptBuffer)
+					{
+						cout << "********* got a corrupt buffer with retval " << retval << " ****************" << endl;
+						return 1;
+					}
+
 					//filename logistics
 					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 					ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
-//					ofstream rawofs(rawfn.c_str(), ios_base::out); //trunc overwrites
-					a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
-//					a->writeRawDataToFile(acdc_buffer, rawofs);
-				}
-			}
-		}
 
-		//if any of the corrupt buffer checks return
-		//true, then return integer 1 to flag that downstream. 
-		for(bool c: corruptBufferChecks)
-		{
-			if(c == true)
-			{
-				return 1;
+					a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
+				}
 			}
 		}
 	}
@@ -1108,18 +1095,25 @@ void ACC::dumpData()
 //just tells each ACDC that has a fullRam flag
 // to write its data and metadata maps to the filestreams. 
 //Event number is passed to the ACDC objects to help. 
-void ACC::writeAcdcDataToFile(ofstream& d, ofstream& m)
+void ACC::writeDataToFile(vector<unsigned short> acdc_buffer)
 {
-	for(int bi: fullRam)
-	{
-		for(ACDC* a: acdcs)
-		{
-			if(a->getBoardIndex() == bi)
-			{
-				a->writeDataToFile(d, m, 0);
-			}
-		}
-	}
+    string fnnn = "empty-acdc-buffer.txt";
+    cout << "Printing empty ACDC buffer to file : " << fnnn << endl;
+    ofstream ofs(fnnn);
+    for(unsigned short k: acdc_buffer)
+    {
+        ofs << k << ", "; //decimal
+	    stringstream ss;
+	    ss << std::hex << k;
+	    string hexstr(ss.str());
+	    ofs << hexstr << ", "; //hex
+	    unsigned n;
+	    ss >> n;
+	    bitset<16> b(n);
+	    ofs << b.to_string(); //binary
+        ofs << endl;
+    }
+    ofs.close();
 }
 
 

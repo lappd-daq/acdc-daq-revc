@@ -70,17 +70,6 @@ void ACDC::convertMaskToChannels()
 }
 
 
-
-bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
-{
-	lastAcdcBuffer = b;
-	bool goodBuffer = true;
-	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills metadata maps
-	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
-	return goodBuffer;
-
-}
-
 //utility for debugging
 void ACDC::writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer)
 {
@@ -118,8 +107,10 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer(bool raw)
+int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw)
 {
+	lastAcdcBuffer = acdc_buffer;
+
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
 	if(lastAcdcBuffer.size() == 0)

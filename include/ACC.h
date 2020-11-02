@@ -31,7 +31,7 @@ public:
 	unsigned int vectorToUnsignedInt(vector<int> a); //utility for going from list to 101011 bits. 
 	unsigned short vectorToUnsignedShort(vector<int> a);
 	vector<int> unsignedShortToVector(unsigned short a);
-	void writeAcdcDataToFile(ofstream& d, ofstream& m); 
+	void writeDataToFile(vector<unsigned short> acdc_buffer); 
 	vector<int> getAlignedIndices(){return alignedAcdcIndices;} //returns vector of aligned acdc indices
 	string getCalDirectory(){return CALIBRATION_DIRECTORY;}
 	string getPedTag(){return PED_TAG;}
@@ -52,8 +52,8 @@ public:
   	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
 
 
-	vector<int> checkDcPktFlag();
-	vector<int> checkFullRamRegisters();
+	vector<int> acdcsTransferringData(bool pullNew=false);
+	vector<int> acdcsDoneTransferringData(bool pullNew=false);
 
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 
@@ -74,9 +74,8 @@ private:
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port)
 	vector<ACDC*> acdcs; //a vector of active acdc boards. 
-	vector<int> fullRam; //which boards have finished sending all of their data to the ACC. 
-	vector<int> digFlag; //which boards (board index) have a dig start flag (dont know what that means)
-	vector<int> dcPkt; //which boards have started sending data to the ACC but have not yet filled the RAM. 
+	vector<int> boardsDoneTransferring; //which boards have finished sending all of their data to the ACC. 
+	vector<int> boardsTransferring; //which boards have started sending data to the ACC but have not yet filled the RAM. 
 	int detectionMode;
 	int invertMode;
 	int enableCoin;
