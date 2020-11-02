@@ -36,7 +36,7 @@ public:
 	string getCalDirectory(){return CALIBRATION_DIRECTORY;}
 	string getPedTag(){return PED_TAG;}
 	string getLinTag(){return LIN_TAG;}
-	void printByte(unsigned short val, string format);
+	void printByte(unsigned short val, int format);
 	//-----------functions that involve usb comms
 	//(see cpp declaration for more comments above functions)
 	int createAcdcs(); //creates ACDC objects, explicitly querying both buffers
