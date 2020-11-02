@@ -273,7 +273,8 @@ int main(int argc, char *argv[])
 					{
 						scp.plot(filename);
 						check++;
-					}else{
+					}else
+					{
 						scp.send_cmd("pause 0.01");
 						scp.send_cmd("reread");
 					}

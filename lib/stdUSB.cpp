@@ -187,11 +187,13 @@ bool stdUSB::sendData(unsigned int data) { // throw(...)
     buff[1] = data >> 8;
     buff[2] = data >> 16;
     buff[3] = data >> 24;
+
     
     retval = libusb_bulk_transfer(stdHandle, EP_WRITE, (unsigned char*)buff, sizeof(buff), &transferred, USB_TOUT_MS);
-	int waitTime = 8*3*4*8/48; //microseconds
+	int waitTime = 16*3*4*8/48; //microseconds
 	std::this_thread::sleep_for(std::chrono::microseconds(waitTime));
-
+    //cout << "size: "<< sizeof(buff) << " trans: " << transferred << endl;
+    //printf("0x%08x\n", data);
     if (retval == 0 && transferred == 4){ //return value must be exact as the bytes transferred
       	//printf("sending data to board...\n");  
       	return true;
@@ -203,8 +205,8 @@ bool stdUSB::sendData(unsigned int data) { // throw(...)
     else{
     	cout << "USB write retval is " << retval << " and bytes transferred is " << transferred << " for command ";
         printf("0x%08x\n", data);
-        libusb_clear_halt(stdHandle,EP_WRITE);
-        retval = libusb_bulk_transfer(stdHandle, EP_WRITE, (unsigned char*)buff, sizeof(buff), &transferred, USB_TOUT_MS);
+        //libusb_clear_halt(stdHandle,EP_WRITE);
+        retval = libusb_bulk_transfer(stdHandle, EP_WRITE, (unsigned char*)buff, sizeof(buff), &transferred, 0);
         if(retval == 0){
             cout << "Retry successfull" << endl;
             return true;

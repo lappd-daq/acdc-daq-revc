@@ -316,20 +316,20 @@ void ACC::clearAcdcs()
 
 
 
-void ACC::printByte(unsigned short val, string format)
+void ACC::printByte(unsigned short val, int format)
 {	
 	stringstream ss;
 	ss << std::hex << val;   
 	unsigned n;
 
-	if(format == "dec")//decimal	
+	if(format == 1)//decimal	
 	{
 		cout << val; 
-	}else if(format == "hex")//hex
+	}else if(format == 2)//hex
 	{       
 		string hexstr(ss.str());
 		cout << hexstr; 
-	}else if(format == "bin")//binary
+	}else if(format == 3)//binary
 	{	
 		ss >> n;
 		bitset<16> b(n);
@@ -799,8 +799,8 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 			unsigned int command = 0xFFD00000;
 			usb->sendData(command);
-
 			enableTransfer(0);
+			usleep(1000);
 			command = 0x00210000;
 			usb->sendData(command);
 
@@ -816,7 +816,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			if(lastAccBuffer.size() > 4)
 			{
 				cout << "Ram/Pkt byte is: ";
-				printByte(lastAccBuffer.at(4));
+				printByte(lastAccBuffer.at(9),2);
 				cout << endl;
 			}
 			*/
@@ -829,14 +829,26 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			//are equivalent. If one board finishes
 			//sending data to ACC before another, for
 			//example, we still want to wait. 
-			std::sort(fullRam.begin(), fullRam.end());
-			std::sort(dcPkt.begin(), dcPkt.end());
-			if(dcPkt == fullRam && dcPkt.size() > 0)
+			//check which ACDCs have both gotten a trigger
+			//and have filled the ACC ram, thus starting
+			//it's USB write flag. 
+			unsigned short fr = vectorToUnsignedShort(fullRam);
+			unsigned short dc = vectorToUnsignedShort(dcPkt);
+
+			//a vector of indices that have both flags = 1
+			boardsReadyForRead = unsignedShortToVector(fr & dc); 
+
+			if(boardsReadyForRead.size() != alignedAcdcIndices.size())
 			{
-				//all boards have finished
-				//sending data to ACC. 
+				//have not gotten all ACDC data
+				//cout << "al " << alignedAcdcIndices.size() << " bR " << boardsReadyForRead.size() <<  endl;
+			}
+			else
+			{
+				//found them all. 
 				break;
 			}
+
 
 		}
 
@@ -845,8 +857,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 		enableTransfer(1);
 		vector<bool> corruptBufferChecks;
 		string outfilename = "./Results/";
+		//cout << "al " << alignedAcdcIndices.size() << " bR " << boardsReadyForRead.size() <<  endl;
 
-		for(int bi: fullRam)
+		for(int bi: alignedAcdcIndices)
 		{
 			usleep(10000);
 			cout << "Board " << bi << ", ";
@@ -979,7 +992,6 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			command = 0xFFB30000;
 			command = (command & (command | (boardMask << 24))) | invertMode;
 			usb->sendData(command);
-
 			command = 0xFFB31000;
 			command = (command & (command | (boardMask << 24))) | detectionMode;
 			usb->sendData(command);
@@ -1020,6 +1032,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			command = 0xFFB18000;
 			command = command | enableCoin;
 			usb->sendData(command);
+
 			break;				
 		case 5: //Self trigger with SMA validation on ACC
  			setHardwareTrigSrc(trigMode,boardMask);
@@ -1170,8 +1183,8 @@ void ACC::toggleCal(int onoff, unsigned int channelmask)
 	command = 0xFFB00000;
 	usb->sendData(command);
 
-	//command = 0x003100FF;
-	//usb->sendData(command);
+	command = 0x003100FF;
+	usb->sendData(command);
 
 	command = 0xFFC00000;
 	//the firmware just uses the channel mask to toggle
@@ -1210,7 +1223,7 @@ void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 
 	//ACC hardware trigger
 	command = 0x00300FF0;
-	command = (command & (boardMask << 4)) | (unsigned short)src;
+	command = (command & (command | (boardMask << 4))) | (unsigned short)src;
 	usb->sendData(command);
 	//ACDC hardware trigger
 	command = 0xFFB00000;
