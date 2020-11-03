@@ -176,8 +176,8 @@ int main(int argc, char *argv[])
 		}
 	}
 
-
-	while(true)
+	flag = true;
+	while(flag)
 	{
 		std::cout << "Do you want to use SAVE mode(0) or OSCOPE(1) mode?" << std::endl;
 
@@ -195,11 +195,13 @@ int main(int argc, char *argv[])
 
 				if(eventNumber>0)
 				{
+					flag = false;
 					break;
 				}
 			}		
 		}else if(oscopeMode ==1)
 		{
+			flag = false;
 			eventNumber = 1;
 			break;
 		}
