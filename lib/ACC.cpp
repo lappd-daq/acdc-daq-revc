@@ -454,8 +454,8 @@ void ACC::setSoftwareTrigger(vector<int> boards)
 	command = 0xFFB00000; //Turn the trigger OFF on all ACDCs
 	usb->sendData(command);
 
-	//command = 0x003100FF;
-	//usb->sendData(command);
+	command = 0x003100FF;
+	usb->sendData(command);
 
 	//Set the trigger
 	command = 0xFFB00001; //Sets the trigger of all ACDC boards to 1 = Software trigger
