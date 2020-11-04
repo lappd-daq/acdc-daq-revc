@@ -7,7 +7,7 @@ using std::ostringstream;
 
 Scope::Scope()
 {
-  init();
+  //init();
 }
 
 Scope::~Scope()

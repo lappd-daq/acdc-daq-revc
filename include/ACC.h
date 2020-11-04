@@ -31,7 +31,7 @@ public:
 	unsigned int vectorToUnsignedInt(vector<int> a); //utility for going from list to 101011 bits. 
 	unsigned short vectorToUnsignedShort(vector<int> a);
 	vector<int> unsignedShortToVector(unsigned short a);
-	void writeDataToFile(vector<unsigned short> acdc_buffer); 
+	void writeEDataToFile(vector<unsigned short> acdc_buffer); 
 	vector<int> getAlignedIndices(){return alignedAcdcIndices;} //returns vector of aligned acdc indices
 	string getCalDirectory(){return CALIBRATION_DIRECTORY;}
 	string getPedTag(){return PED_TAG;}

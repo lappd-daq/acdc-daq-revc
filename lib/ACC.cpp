@@ -474,17 +474,6 @@ void ACC::softwareTrigger()
 
 vector<int> ACC::acdcsDoneTransferringData(bool pullNew)
 {
-	if(pullNew ||lastAccBuffer.size() == 0)
-	{
-		unsigned int command = 0xFFD00000;
-		usb->sendData(command);
-
-		enableTransfer(0);
-		command = 0x00210000;
-		usb->sendData(command);
-
-		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-	}
 
 	//just in case the Acc doesnt have a good buffer
 	vector<int> whichBoardsDone;
@@ -512,17 +501,6 @@ vector<int> ACC::acdcsDoneTransferringData(bool pullNew)
 
 vector<int> ACC::acdcsTransferringData(bool pullNew)
 {
-	if(pullNew ||lastAccBuffer.size() == 0)
-	{
-		unsigned int command = 0xFFD00000;
-		usb->sendData(command);
-
-		enableTransfer(0);
-		command = 0x00210000;
-		usb->sendData(command);
-
-		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-	}
 
 	//just in case the Acc doesnt have a good buffer
 	vector<int> whichBoardsTransferring;
@@ -573,16 +551,18 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	int check = 0;
 
 	vector<int> boardsReadyForRead;
-
-	unsigned int command = 0xFFD00000;
-	usb->sendData(command);
-
-	enableTransfer(0);
-	command = 0x00210000;
-	usb->sendData(command);
-
-	while(check < maxChecks)
+	while(true)
 	{
+		unsigned int command = 0xFFD00000;
+		usb->sendData(command);
+
+		enableTransfer(0);
+		usleep(1000);
+
+		command = 0x00210000;
+		usb->sendData(command);
+
+		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 		
 		//pull a new Acc buffer and parse
 		//the data-ready state indicators. 
@@ -593,8 +573,8 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 		//check which ACDCs have both gotten a trigger
 		//and have filled the ACC ram, thus starting
 		//it's USB write flag. 
-		unsigned short tr = vectorToUnsignedShort(boardsTransferring);
-		unsigned short dtr = vectorToUnsignedShort(boardsDoneTransferring);
+		unsigned int tr = vectorToUnsignedInt(boardsTransferring);
+		unsigned int dtr = vectorToUnsignedInt(boardsDoneTransferring);
 
 		//if the boards that have started transmitting data
 		//have finished transmitting data. 
@@ -603,19 +583,6 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 			boardsReadyForRead = unsignedShortToVector(tr); 
 			break;
 		}
-
-
-		if(check >= maxChecks)
-		{
-			break;
-		}
-		check++;	
-	}
-
-	if(check == maxChecks)
-	{
-		cout << "ACDC buffers were never sent to the ACC" << endl;
-		return 2;
 	}
 
 	enableTransfer(1);
@@ -630,14 +597,12 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	//on whether it finds any corrupt buffers.
 	//each ACDC needs to be queried individually
 	//by the ACC for its buffer. 
-	for(int bi: boardsReadyForRead)
+	for(int bi: alignedAcdcIndices)
 	{
 		usleep(10000);
-
 		unsigned int command = 0x00210000; //base command for set readmode
 		command = command | (unsigned int)(bi); //which board to read
 		usb->sendData(command);
-
 		usleep(10000);
 		//read only once. sometimes the buffer comes up empty. 
 		//made a choice not to pound it with a loop until it
@@ -658,10 +623,15 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 		{
 			if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
 		}
-		if(nonzerocount == 0) {corruptBuffer = true;}
+		if(nonzerocount == 0)
+		{
+			corruptBuffer = true;
+			writeEDataToFile(acdc_buffer);
+		}
 
 		if(corruptBuffer)
 		{
+			cout << "******************** Early corrupt buffer *************************" << endl;
 			return 1;
 		}
 
@@ -699,7 +669,6 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 				//filename logistics
 				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-				string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 
@@ -757,7 +726,10 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
     sa.sa_handler = got_signal;
     sigfillset(&sa.sa_mask);
     sigaction(SIGINT,&sa,NULL);
-
+    enableTransfer(0);
+	unsigned command = 0x00210000;
+	usb->sendData(command);
+    enableTransfer(1);
 	try
 	{
 		while(true)
@@ -781,79 +753,50 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 				return 3;
 			}
 
-			//throttle, without it the USB line becomes jarbled...
-			//this is also the amount of time that the trigValid = 1
-			//on the ACC, i.e. a window for events to happen. 
-			std::this_thread::sleep_for(chrono::milliseconds(2)); 
-
-			unsigned int command = 0xFFD00000;
-			usb->sendData(command);
-			enableTransfer(0);
-			usleep(1000);
-			command = 0x00210000;
+			command = 0x00200000;
 			usb->sendData(command);
 
 			lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-
-			//pull a new Acc buffer and parse
-			//the data-ready state indicators. 
-			acdcsTransferringData();
-			acdcsDoneTransferringData();
-
-			//debug
-			/*
-			if(lastAccBuffer.size() > 4)
-			{
-				cout << "Ram/Pkt byte is: ";
-				printByte(lastAccBuffer.at(9),2);
-				cout << endl;
-			}
-			*/
-
-			//check which ACDCs have both gotten a trigger
-			//and have filled the ACC ram, thus starting
-			//it's USB write flag. 
 			
-			std::sort(boardsTransferring.begin(), boardsTransferring.end());
-			std::sort(boardsDoneTransferring.begin(), boardsDoneTransferring.end());
-			if(boardsTransferring == boardsDoneTransferring && boardsDoneTransferring.size() > 0)
+			for(int k=0; k<MAX_NUM_BOARDS; k++)
 			{
-				//all boards have finished
-				//sending data to ACC. 
+				if(lastAccBuffer.at(16+k)==7795)
+				{
+					boardsReadyForRead.push_back(k);
+					usleep(1000);
+				}
+			}
+			if(boardsReadyForRead.size()>0)
+			{
 				break;
 			}
-
-
 		}
-
+	
 		//each ACDC needs to be queried individually
 		//by the ACC for its buffer. 
-		enableTransfer(1);
+		
 		string outfilename = "./Results/";
-		//cout << "al " << alignedAcdcIndices.size() << " bR " << boardsReadyForRead.size() <<  endl;
+		
 
-		for(int k: boardsDoneTransferring)
+		for(int bi: boardsReadyForRead)
 		{
-			cout << k << endl;
-		}
-
-		for(int bi: boardsDoneTransferring)
-		{
-			cout << "bi " << bi << endl;
-			usleep(10000);
-			cout << "Board " << bi << ", ";
+			cout << "Read for board " << bi << endl;
+			
 			unsigned int command = 0x00210000; //base command for set readmode
 			command = command | (unsigned int)(bi); //which board to read
-
-			//send 
 			usb->sendData(command);
-			usleep(10000);
+			usleep(5000);
 			//read only once. sometimes the buffer comes up empty. 
 			//made a choice not to pound it with a loop until it
 			//responds. 
 			vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 			usleep(10000);
 
+			if(acdc_buffer.size()!=7795)
+			{
+				cout << "Buffer size " << acdc_buffer.size() << endl;
+				break;
+			}
 			//----corrupt buffer checks begin
 			//sometimes the ACDCs dont send back good
 			//data. It is unclear why, but we would
@@ -861,6 +804,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			bool corruptBuffer = false;
 			if(acdc_buffer.size() == 0)
 			{
+				cout << "Buffer size " << acdc_buffer.size() << endl;
 				corruptBuffer = true;
 			}
 			int nonzerocount = 0;
@@ -872,7 +816,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			if(nonzerocount == 0)
 			{
 				corruptBuffer = true;
-				writeDataToFile(acdc_buffer);
+				writeEDataToFile(acdc_buffer);
 			}
 
 			if(corruptBuffer)
@@ -923,6 +867,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 				}
 			}
 		}
+	
 	}
 	catch(string mechanism)
 	{
@@ -1073,8 +1018,6 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			command = 0xFFB18000;
 			command = command | enableCoin;
 	}
-	
-	enableTransfer(0);
 
 	return 0;
 }
@@ -1095,7 +1038,7 @@ void ACC::dumpData()
 //just tells each ACDC that has a fullRam flag
 // to write its data and metadata maps to the filestreams. 
 //Event number is passed to the ACDC objects to help. 
-void ACC::writeDataToFile(vector<unsigned short> acdc_buffer)
+void ACC::writeEDataToFile(vector<unsigned short> acdc_buffer)
 {
     string fnnn = "empty-acdc-buffer.txt";
     cout << "Printing empty ACDC buffer to file : " << fnnn << endl;
@@ -1172,12 +1115,10 @@ bool ACC::setPedestals(unsigned int ped, vector<int> boards)
 //2 for hardware reasons. So 0x0001 is channels 1 and 2 enabled. 
 void ACC::toggleCal(int onoff, unsigned int channelmask)
 {
-	unsigned int command = 0x00300000;
+		//Prepare Software trigger
+	unsigned int command = 0x00300000; //Turn trigger to OFF on the acc
 	usb->sendData(command);
-	command = 0xFFB00000;
-	usb->sendData(command);
-
-	command = 0x003100FF;
+	command = 0xFFB00000; //Turn the trigger OFF on all ACDCs
 	usb->sendData(command);
 
 	command = 0xFFC00000;
@@ -1206,17 +1147,8 @@ void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 		cout << "Source: " << src << " will cause an error for setting Hardware triggers. Source has to be <7" << endl;
 	}
 
-	//Prepare Software trigger
-	unsigned int command = 0x00300000; //Turn trigger to OFF on the acc
-	usb->sendData(command);
-	command = 0xFFB00000; //Turn the trigger OFF on all ACDCs
-	usb->sendData(command);
-
-	//command = 0x003100FF;
-	//usb->sendData(command);
-
 	//ACC hardware trigger
-	command = 0x00300FF0;
+	unsigned int command = 0x00300FF0;
 	command = (command & (command | (boardMask << 4))) | (unsigned short)src;
 	usb->sendData(command);
 	//ACDC hardware trigger

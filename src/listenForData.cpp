@@ -249,19 +249,15 @@ int main(int argc, char *argv[])
 					failCounter++;
 					break;
 			}
-			if(failCounter >= 15)
+			if(failCounter >= 50)
 			{
 				break;
 			}
 		}
 	}else if(oscopeMode==1)
 	{
-		Scope scp;
-
-		string filename = "./Results/Data_b0_evno0.txt";
-		int check =0;
-
-		while(true){
+		flag = true;
+		while(flag){
 			if(triggermode == 1)
 			{
 				acc.softwareTrigger();
@@ -270,17 +266,7 @@ int main(int argc, char *argv[])
 			switch(retval)
 			{
 				case 0:
-					std::cout << "Successfully found data and parsed" << std::endl;
-					if(check<1)
-					{
-						scp.plot(filename);
-						check++;
-					}else
-					{
-						scp.send_cmd("pause 0.01");
-						scp.send_cmd("reread");
-					}
-					break;
+					system("gnuplot ./oscilloscope/liveplot.gnu");
 				case 1:
 					std::cout << "Successfully found data and but buffer corrupted" << std::endl;
 					break;
@@ -289,9 +275,11 @@ int main(int argc, char *argv[])
 					break;
 				case 3:
 					std::cout << "Sigint failure" << std::endl;
+					flag =  false;
 					break;
 				default:
 					std::cout << "Unknown error" << std::endl;
+					flag =  false;
 					break;
 			}
 		}
