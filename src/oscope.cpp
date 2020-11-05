@@ -13,9 +13,17 @@ using namespace std;
 int main(int argc, char *argv[])
 {
 	Scope scp;
-
-	int exit_in;
-
-  	system("gnuplot ./Results/liveplot.gnu");
-
+	int first = 0;
+	while(true)
+	{
+		if(first == 0)
+		{	
+			scp.plot();
+			std::cout << "Or here?" << std::endl;
+			first++;
+		}else
+		{
+			std::cout << "Do we get here?" << std::endl;
+		}
+	}
 }

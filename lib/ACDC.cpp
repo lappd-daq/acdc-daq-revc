@@ -360,7 +360,7 @@ void ACDC::writeDataToFile(ofstream& d, ofstream& m, int oscopeOnOff)
 			d << row << delim;
 			for(int column=1; column<=NUM_CH; column++)
 			{
-				d << data[column][row] << delim; 
+				d << data[column][row-1] << delim; 
 			}
 			d << endl;
 		}

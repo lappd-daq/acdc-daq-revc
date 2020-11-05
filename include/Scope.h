@@ -25,7 +25,9 @@ public:
 
     int init();
 
-    int plot(string filename);
+    int plot();
+
+    int reread();
 
     int send_cmd(const string &plot_cmd);
 

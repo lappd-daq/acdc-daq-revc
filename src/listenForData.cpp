@@ -256,6 +256,9 @@ int main(int argc, char *argv[])
 		}
 	}else if(oscopeMode==1)
 	{
+		Scope scp;
+		int first = 0;
+
 		flag = true;
 		while(flag){
 			if(triggermode == 1)
@@ -266,7 +269,12 @@ int main(int argc, char *argv[])
 			switch(retval)
 			{
 				case 0:
-					system("gnuplot ./oscilloscope/liveplot.gnu");
+					if(first == 0)
+					{
+						scp.plot();
+						first++;
+					}
+					break;
 				case 1:
 					std::cout << "Successfully found data and but buffer corrupted" << std::endl;
 					break;
