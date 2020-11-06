@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 		}
 	}else if(oscopeMode==1)
 	{
-		Scope scp;
+		//Scope scp;
 		int first = 0;
 
 		flag = true;
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 				case 0:
 					if(first == 0)
 					{
-						scp.plot();
+						//scp.plot();
 						first++;
 					}
 					break;
