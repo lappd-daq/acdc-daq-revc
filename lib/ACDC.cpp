@@ -330,7 +330,7 @@ void ACDC::writeDataToFile(ofstream& d, ofstream& m, int oscopeOnOff)
 	{
 		//metadata part is simple and contained
 		//in that class. 
-		meta.writeMetadataToFile(m, delim);
+		//meta.writeMetadataToFile(m, delim);
 
 		int evno = meta.getEventNumber();
 

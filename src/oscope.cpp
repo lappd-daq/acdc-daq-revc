@@ -23,7 +23,7 @@ int main(int argc, char *argv[])
 			first++;
 		}else
 		{
-			std::cout << "Do we get here?" << std::endl;
+			//std::cout << "Do we get here?" << std::endl;
 		}
 	}
 }

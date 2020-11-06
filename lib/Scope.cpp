@@ -17,7 +17,7 @@ Scope::~Scope()
 
 int Scope::init()
 {  
-	gp_cmd = popen("gnuplot --persist", "w"); // open gnuplot
+	gp_cmd = popen("gnuplot -p", "w"); // open gnuplot
 	if(!gp_cmd)
 	{
 		std::cout << "scope failed to initialize!" << std::endl;

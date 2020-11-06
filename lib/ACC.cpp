@@ -551,38 +551,29 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	int check = 0;
 
 	vector<int> boardsReadyForRead;
+    enableTransfer(0);
+	unsigned int command = 0x00210000;
+	usb->sendData(command);
+    enableTransfer(1);
 	while(true)
 	{
-		unsigned int command = 0xFFD00000;
-		usb->sendData(command);
+			command = 0x00200000;
+			usb->sendData(command);
 
-		enableTransfer(0);
-		usleep(1000);
-
-		command = 0x00210000;
-		usb->sendData(command);
-
-		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-		
-		//pull a new Acc buffer and parse
-		//the data-ready state indicators. 
-		acdcsTransferringData();
-		acdcsDoneTransferringData();
-
-	
-		//check which ACDCs have both gotten a trigger
-		//and have filled the ACC ram, thus starting
-		//it's USB write flag. 
-		unsigned int tr = vectorToUnsignedInt(boardsTransferring);
-		unsigned int dtr = vectorToUnsignedInt(boardsDoneTransferring);
-
-		//if the boards that have started transmitting data
-		//have finished transmitting data. 
-		if(tr == dtr)
-		{
-			boardsReadyForRead = unsignedShortToVector(tr); 
-			break;
-		}
+			lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+			
+			for(int k=0; k<MAX_NUM_BOARDS; k++)
+			{
+				if(lastAccBuffer.at(16+k)==7795)
+				{
+					boardsReadyForRead.push_back(k);
+					usleep(1000);
+				}
+			}
+			if(boardsReadyForRead.size()>0)
+			{
+				break;
+			}
 	}
 
 	enableTransfer(1);
@@ -667,8 +658,8 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 				}
 
 				//filename logistics
-				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
+				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
 				ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 
@@ -727,7 +718,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
     sigfillset(&sa.sa_mask);
     sigaction(SIGINT,&sa,NULL);
     enableTransfer(0);
-	unsigned command = 0x00210000;
+	unsigned int command = 0x00210000;
 	usb->sendData(command);
     enableTransfer(1);
 	try
@@ -857,9 +848,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 					}
 
 					//filename logistics
-					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-					string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
+					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
+					//string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 					ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 

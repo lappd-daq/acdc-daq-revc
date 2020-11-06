@@ -1,5 +1,5 @@
 set xrange [0:256]
-set yrange [0:4095]
+set yrange [0:1000]
 
 set pointsize 1
 set grid ls 1
