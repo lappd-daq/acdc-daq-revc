@@ -3,8 +3,10 @@ set yrange [-200:200]
 set datafile sep ' '
 set decimalsign '.'
 
-set terminal wxt 1 title "PSEC1" size 500,500 background 'white' noraise 
+
+
 set key on outside 
+set multiplot layout 3,2
 plot\
 "./Results/Data_b0_evno0.dat" using 1:2 lw 2 with lines title 'CHAN 1',\
 "./Results/Data_b0_evno0.dat" using 1:3 lw 2 with lines title 'CHAN 2',\
@@ -13,8 +15,6 @@ plot\
 "./Results/Data_b0_evno0.dat" using 1:6 lw 2 with lines title 'CHAN 5',\
 "./Results/Data_b0_evno0.dat" using 1:7 lw 2 with lines title 'CHAN 6',\
 
-set terminal wxt 2 title 'PSEC2' size 500,500 background 'white' noraise 
-set key on outside  
 plot\
 "./Results/Data_b0_evno0.dat" using 1:8 lw 2 with lines title 'CHAN 1',\
 "./Results/Data_b0_evno0.dat" using 1:9 lw 2 with lines title 'CHAN 2',\
@@ -23,8 +23,6 @@ plot\
 "./Results/Data_b0_evno0.dat" using 1:12 lw 2 with lines title 'CHAN 5',\
 "./Results/Data_b0_evno0.dat" using 1:13 lw 2 with lines title 'CHAN 6',\
 
-set terminal wxt 3 title 'PSEC3' size 500,500 background 'white' noraise 
-set key on outside  
 plot\
 "./Results/Data_b0_evno0.dat" using 1:14 lw 2 with lines title 'CHAN 1',\
 "./Results/Data_b0_evno0.dat" using 1:15 lw 2 with lines title 'CHAN 2',\
@@ -33,8 +31,6 @@ plot\
 "./Results/Data_b0_evno0.dat" using 1:18 lw 2 with lines title 'CHAN 5',\
 "./Results/Data_b0_evno0.dat" using 1:19 lw 2 with lines title 'CHAN 6',\
 
-set terminal wxt 4 title 'PSEC4' size 500,500 background 'white' noraise 
-set key on outside  
 plot\
 "./Results/Data_b0_evno0.dat" using 1:20 lw 2 with lines title 'CHAN 1',\
 "./Results/Data_b0_evno0.dat" using 1:21 lw 2 with lines title 'CHAN 2',\
@@ -43,8 +39,6 @@ plot\
 "./Results/Data_b0_evno0.dat" using 1:24 lw 2 with lines title 'CHAN 5',\
 "./Results/Data_b0_evno0.dat" using 1:25 lw 2 with lines title 'CHAN 6',\
 
-set terminal wxt 5 title 'PSEC5' size 500,500 background 'white' noraise 
-set key on outside  
 plot\
 "./Results/Data_b0_evno0.dat" using 1:26 lw 2 with lines title 'CHAN 1',\
 "./Results/Data_b0_evno0.dat" using 1:27 lw 2 with lines title 'CHAN 2',\
