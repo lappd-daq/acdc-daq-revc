@@ -25,7 +25,7 @@ public:
 
     int init();
 
-    int plot();
+    int plot(bool rawMode);
 
     int reread();
 

@@ -18,7 +18,7 @@ int main(int argc, char *argv[])
 	{
 		if(first == 0)
 		{	
-			scp.plot();
+			scp.plot(false);
 			std::cout << "Or here?" << std::endl;
 			first++;
 		}else

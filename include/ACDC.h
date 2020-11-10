@@ -48,7 +48,7 @@ public:
 	map<int, vector<double>> readDataFromFile(vector<string>, int evno); //takes a datafile and loads the data member with evno's data. 
 
 	void readPED(vector<unsigned short> acdc_buffer);
-	void setPed(vector<double> p){pedestal =p;}
+	void setPed(vector<double> p){pedestal = p;}
 
 
 private:

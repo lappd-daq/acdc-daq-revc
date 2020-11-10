@@ -7,12 +7,12 @@ using std::ostringstream;
 
 Scope::Scope()
 {
-  init();
+	init();
 }
 
 Scope::~Scope()
 {
-  // need proper destructor at some point..
+	
 }
 
 int Scope::init()
@@ -22,8 +22,7 @@ int Scope::init()
 	{
 		std::cout << "scope failed to initialize!" << std::endl;
 		return (1);
-	}
-	else
+	}else
 	{
 		std::cout << "opening gnuplot..." << std::endl;
 	}
@@ -36,21 +35,25 @@ int Scope::init()
 	return (0);
 }
 
-int Scope::plot()
-{
+int Scope::plot(bool rawMode)
+{	
+	if(rawMode)
+	{
+		send_cmd("load \"./oscilloscope/settings_raw.gnu\"");
+	}
 
-  send_cmd("load \"./oscilloscope/liveplot.gnu\"");
+	send_cmd("load \"./oscilloscope/liveplot.gnu\"");
 
-  return (0);
+	return (0);
 }
 
 int Scope::send_cmd(const string &plot_cmd)
 {
-  ostringstream cmd_stream;
-  cmd_stream << plot_cmd << std::endl;
-  //std::cout << cmd_stream.str();
-  fprintf(gp_cmd, "%s", cmd_stream.str().c_str());   
-  fflush(gp_cmd);
-  
-  return (0);
+	ostringstream cmd_stream;
+	cmd_stream << plot_cmd << std::endl;
+	//std::cout << cmd_stream.str();
+	fprintf(gp_cmd, "%s", cmd_stream.str().c_str());   
+	fflush(gp_cmd);
+
+	return (0);
 }

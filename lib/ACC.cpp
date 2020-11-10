@@ -472,64 +472,6 @@ void ACC::softwareTrigger()
 }
 
 
-vector<int> ACC::acdcsDoneTransferringData(bool pullNew)
-{
-
-	//just in case the Acc doesnt have a good buffer
-	vector<int> whichBoardsDone;
-	if(lastAccBuffer.size() < 5) 
-	{
-		cout << "Something wrong with ACC buffer" << endl;
-		boardsDoneTransferring = whichBoardsDone; //ACC local variable
-		return whichBoardsDone;
-	}
-
-	unsigned short transferWord = lastAccBuffer.at(9) & 0x00FF;
-	//cout << "Transfering done word is: " << transferWord << endl;
-	for(int bo = 0; bo < MAX_NUM_BOARDS; bo++)
-	{
-		if((transferWord & (1 << bo)))
-		{
-			//the bo'th board is connected
-			whichBoardsDone.push_back(bo);
-		}
-	}
-
-	boardsDoneTransferring = whichBoardsDone; //ACC local variable
-	return whichBoardsDone; //return as an alternative. 
-}
-
-vector<int> ACC::acdcsTransferringData(bool pullNew)
-{
-
-	//just in case the Acc doesnt have a good buffer
-	vector<int> whichBoardsTransferring;
-	if(lastAccBuffer.size() < 5) 
-	{
-		cout << "Something wrong with ACC buffer" << endl;
-		boardsTransferring = whichBoardsTransferring; //ACC local variable
-		return whichBoardsTransferring;
-	}
-
-	unsigned short transferWord = (lastAccBuffer.at(9) & 0xFF00) >> 8;
-	
-
-	//cout << "Transfering now word is: " << transferWord << endl;
-	for(int bo = 0; bo < MAX_NUM_BOARDS; bo++)
-	{
-		if((transferWord & (1 << bo)))
-		{
-			//the bo'th board is connected
-			whichBoardsTransferring.push_back(bo);
-		}
-	}
-
-	boardsTransferring = whichBoardsTransferring; //ACC local variable
-	return whichBoardsTransferring; //return as an alternative. 
-}
-
-
-
 //checks to see if there are any ACDC buffers
 //in the ram of the ACC. If waitForAll = true (false by default),
 //it will continue checking until all alignedAcdcs have sent
@@ -658,8 +600,8 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 				}
 
 				//filename logistics
-				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
-				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
+				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 
@@ -848,8 +790,8 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 					}
 
 					//filename logistics
-					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
-					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".dat";
+					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					//string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 					ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites

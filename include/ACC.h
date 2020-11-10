@@ -52,9 +52,6 @@ public:
   	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
 
 
-	vector<int> acdcsTransferringData(bool pullNew=false);
-	vector<int> acdcsDoneTransferringData(bool pullNew=false);
-
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 
 	void setHardwareTrigSrc(int src, unsigned int boardMask = 0xFF); 

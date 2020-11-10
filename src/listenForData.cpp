@@ -64,7 +64,7 @@ int main(int argc, char *argv[])
 				flag = false;
 				break;
 			case 3:
-				std::cout << "Use normal polarity (0) or inverted polarity (1) on ACDC SMA?" << std::endl;
+				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACDC SMA?" << std::endl;
 				cin >> invertMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
 				std::cout << "Use edge detect (0) or level detect (1) on ACDC SMA?" << std::endl;
@@ -256,7 +256,7 @@ int main(int argc, char *argv[])
 		}
 	}else if(oscopeMode==1)
 	{
-		//Scope scp;
+		Scope scp;
 		int first = 0;
 
 		flag = true;
@@ -271,7 +271,7 @@ int main(int argc, char *argv[])
 				case 0:
 					if(first == 0)
 					{
-						//scp.plot();
+						scp.plot(rawBool);
 						first++;
 					}
 					break;
