@@ -2,7 +2,7 @@
 Here will be a new readme soon!
 
 ## Prerequisites
-This code is built using `cmake` and requires `libusb` headers (which usually come prepackaged with your os-- you may want to double-check).
+This code is built using `cmake` and requires `libusb` headers.
 
 To install on a debian-based machine
 
