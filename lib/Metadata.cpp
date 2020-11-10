@@ -47,21 +47,13 @@ void Metadata::printAllMetadata()
 
 void Metadata::writeMetadataToFile(ofstream& m, string delim)
 {
-    bool firstCount = true;
     for(string k: metadata_keys)
     {
-        //no space at the first key
-        if(firstCount)
-        {
-            m << metadata[k];
-            firstCount = false;
-        }
-        //space preceeding each key
-        else
-        {
-           m << delim << metadata[k]; 
-        }
-        
+        m << k << "\t"; 
+        stringstream ss;
+        ss << std::hex << metadata[k]; 
+        string hexstr(ss.str());
+        m << hexstr << endl; //hex rep
     }
     //no space at the end of the line. 
     m << endl;
@@ -265,27 +257,6 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         }
 	}
 
-	//re-use this iterator to fill the cc_header_info vector
-	//which starts with the first occurance of 1234. This will
-	//be before the first occurance of the ac_info startword. 
-	unsigned int cc_header_start = 0x1234;
-	bit = std::find(acdcBuffer.begin(), acdcBuffer.end(), cc_header_start);
-	bit++; //so that first byte is not the cc_header_start word. 
-    int counter = 0;
-    int maxAccInfo = 20; //the most bytes that would possibly be needed. 
-	for(bit = bit; bit != acdcBuffer.end(); ++bit)
-	{
-		cc_header_info.push_back(*bit);
-		
-        //just fill with more than enough bytes. 
-        //we will only access the relevant ones. 
-		if(counter == maxAccInfo)
-		{
-			break;
-		}
-        counter++;
-	}
-
 	//I have found experimentally that sometimes
     //the ACC sends an ACDC buffer that has 8001 elements
     //(correct) but has BAD data, i.e. with extra ADC samples
@@ -331,6 +302,22 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 		chip_count++;
 	}
 
+    map<int, vector<unsigned short>> trigger_info;
+    vector<unsigned short> insert_buffer;
+    int colomn = 0;
+    for(int chip=0; chip<NUM_PSEC; chip++)
+    {
+        for(int it = 0; it<NUM_CH; it++)
+        {
+            bit = acdcBuffer.begin() + it + start_indices[4]+15;
+            insert_buffer.push_back(*bit);
+        }
+        trigger_info.insert(pair<int, vector<unsigned short>>(colomn, insert_buffer));
+        colomn++;
+    }
+
+    unsigned short combined_trigger = acdcBuffer[7792];
+
     //Here is where bad access errors could occur. 
     //It is presently coded such that if there are 
     //more ba11 bytes than NUM_PSEC (sometimes a bug
@@ -344,208 +331,78 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         return !corruptBuffer;
     }
 
-
-
-	//-----start the rutheless decoding of the 
-	//-----acdc firmware and acc firmware packets. 
+    //Filling all the metadata infos with ac_info[chip][infoNr -1]
+    //General PSEC info 
     for(int i = 0; i < NUM_PSEC; i++)
     {
-        //indexing directly from ACDC top-level diagram and "lvds_com.vhd" line 316
-        //ac_info[chip][0]: wilkcount
-        //ac_info[chip][1]: readRO_cnt
-        //ac_info[chip][2]: biases
-        //ac_info[chip][3]: thresholds
-        //ac_info[chip][4]: ro_vdd
-        //ac_info[chip][10]: vcdl_count lo
-        //ac_info[chip][11]: vcdl_count hi
-        //ac_info[chip][12]: dll vdd
-        checkAndInsert("ro_cnt"+to_string(i), ac_info[i][0]);
-        checkAndInsert("ro_target_cnt"+to_string(i), ac_info[i][1]);
-        checkAndInsert("vbias"+to_string(i), ac_info[i][2]);
-        checkAndInsert("trigger_threshold"+to_string(i), ac_info[i][3]);
-        checkAndInsert("ro_dac_value"+to_string(i), ac_info[i][4]);
-        checkAndInsert("vcdl_count_lo"+to_string(i), ac_info[i][10]);//16 bit
-        checkAndInsert("vcdl_count_hi"+to_string(i), ac_info[i][11]);//16 bit
-        checkAndInsert("dll_vdd"+to_string(i), ac_info[i][12]);//16 bit
-
+        checkAndInsert("feedback_count_"+to_string(i), ac_info[i][0]); //Info 1
+        checkAndInsert("feedback_target_count_"+to_string(i), ac_info[i][1]); //Info 2
+        checkAndInsert("Vbias_setting_"+to_string(i), ac_info[i][2]); //Info 3
+        checkAndInsert("selftrigger_threshold_setting_"+to_string(i), ac_info[i][3]); //Info 4
+        checkAndInsert("PROVDD_setting_"+to_string(i), ac_info[i][4]); // Info 5
+        checkAndInsert("VCDL_count_lo_"+to_string(i), ac_info[i][10]); //Info 11, later bit(15-0)
+        checkAndInsert("VCDL_count_hi_"+to_string(i), ac_info[i][11]); //Info 12, later bit(31-16)
+        checkAndInsert("DLLVDD_setting_"+to_string(i), ac_info[i][12]); //Info 13
     }
-    
-    //indexing directly from ACDC top-level diagram and "lvds_com.vhd" line 316
-    //ac_info[chip][5]: info_t - TRIGGER_INFO
-    //ac_info[chip][6]: info_s - SAMPLE_INFO
-    //ac_info[chip][7]: evt_cnt - XEVENT_COUNT
-    //ac_info[chip][8]: last_instruct
-    //ac_info[chip][9]: timestamp_and_instruct 
 
+    if(ac_info[0][5] != 0xEEEE)
+    {
+        cout << "------------------------------------------------------------" << endl;
+        cout << " PSEC frame data, trigger info 0 at info 6 is not right" << endl;
+        cout << "------------------------------------------------------------" << endl;
+        return corruptBuffer;
+    }
+    if(ac_info[4][5] != 0xEEEE)
+    {
+        cout << "------------------------------------------------------------" << endl;
+        cout << " PSEC frame data, trigger info 0 at info 6 is not right" << endl;
+        cout << "------------------------------------------------------------" << endl;
+        return corruptBuffer;
+    }
+    //Trigger PSEC settings
+    checkAndInsert("trigger_mode", ac_info[1][5] & 0xF); //Info 6, PSEC1 bit(3-0)
+    checkAndInsert("trigger_validation_window_start", (ac_info[1][5] & 0xFFF0) >> 4); //Info 6, PSEC1 bit(15-4)
+    checkAndInsert("trigger_validation_window_length", ac_info[2][5] & 0xFFF); //info 6, PSEC2 bit(11-0)
+    checkAndInsert("trigger_sma_invert", (ac_info[3][5] & 0x2) >> 1); // Info 6, PSEC3 bit(1)
+    checkAndInsert("trigger_sma_detection_mode", ac_info[3][5] & 0x1); // Info 6, PSEC3 bit(0)
+    checkAndInsert("trigger_acc_invert", (ac_info[3][5] & 0x8) >> 3); // Info 6, PSEC3 bit(3)
+    checkAndInsert("trigger_acc_detection_mode", (ac_info[3][5] & 0x4) >> 2); // Info 6, PSEC3 bit(2)
+    checkAndInsert("trigger_self_sign", (ac_info[3][5] & 0x20) >> 5); //Info 6, PSEC3 bit(5)
+    checkAndInsert("trigger_self_detection_mode", (ac_info[3][5] & 0x1) >> 4); // Info 6, PSEC3 bit(4)
+    checkAndInsert("trigger_self_coin", (ac_info[3][5] & 0x7C0) >> 6); // Info 6, PSEC3 bit(10-6)
 
-    //decoding info_t
-    unsigned short info_t_0 = ac_info[0][5];
-    unsigned short info_t_1 = ac_info[1][5];
-    unsigned short info_t_2 = ac_info[2][5];
-    unsigned short info_t_3 = ac_info[3][5]; //and info_t_4 is unused in firmware (see psec4_trigger_global)
-    //parsing info_t_0
-    unsigned short bin_count_save = info_t_0 & 0x0F;
-    unsigned short self_trigger_settings = (info_t_0 & 0xFFF0) >> 4; //12 bit word 
-    unsigned short cc_trigger_width = self_trigger_settings & 0x7; //first 3 bits
-    unsigned short asic_coincidence_min = (self_trigger_settings & 0x38) >> 3; //next 3 bits
-    unsigned short channel_coincidence_min = (self_trigger_settings & 0x7C0) >> 6; //next 5 bits
-    //parsing info_t_1
-    unsigned short num_triggered_channels = (info_t_1 & 0x7C00) >> 10; //the number of channels triggered 0-30
-    unsigned short trigger_settings_0 = info_t_1 & 0x7FF; 
-    unsigned short self_trig = trigger_settings_0 & 1; //is self trigger enabled, 1 or 0
-    unsigned short sys_trig = (trigger_settings_0 & 2) >> 1; //is sys trig enabled, 1 or 0
-    unsigned short rate_only = (trigger_settings_0 & 4) >> 2; //is rate counting mode enabled, 1 or 0
-    unsigned short trigger_sign = (trigger_settings_0 & 8) >> 3; //1 for rising edge, 0 for falling
-    unsigned short onboard_acdc_sma_trig = (trigger_settings_0 & 16) >> 4; //use the onboard sma as a trigger signal
-    unsigned short use_coincidence = (trigger_settings_0 & 32) >> 5; //use coincidence between channels as a condition
-    unsigned short use_trig_valid_as_reset = (trigger_settings_0 & 64) >> 6; //reset ACDC on trig valid
-    unsigned short coincidence_window = (trigger_settings_0 & 0x780) >> 7; //coincidence window in number of clocks
+    checkAndInsert("trigger_selfmask_0", ac_info[0][6]); //Info 7 PSEC0
+    checkAndInsert("trigger_selfmask_1", ac_info[1][6]); //Info 7 PSEC1
+    checkAndInsert("trigger_selfmask_2", ac_info[2][6]); //Info 7 PSEC2
+    checkAndInsert("trigger_selfmask_3", ac_info[3][6]); //Info 7 PSEC3
+    checkAndInsert("trigger_selfmask_4", ac_info[4][6]); //Info 7 PSEC4
 
-    //4 bits where 0000 represents the first
-    //1/10th of a buffer, 0001 represents the second, 
-    //up until 1000 (no 1001 is set in firmware, that
-    //is the reset value). It is incremented by an 
-    //asynchronous clock at 400 MHz (10 x master clock). 
+    checkAndInsert("trigger_self_threshold_0", ac_info[0][7] & 0xFFF); //Info 8 PSEC0 bit(11-0)
+    checkAndInsert("trigger_self_threshold_1", ac_info[1][7] & 0xFFF); //Info 8 PSEC1 bit(11-0)
+    checkAndInsert("trigger_self_threshold_2", ac_info[2][7] & 0xFFF); //Info 8 PSEC2 bit(11-0)
+    checkAndInsert("trigger_self_threshold_3", ac_info[3][7] & 0xFFF); //Info 8 PSEC3 bit(11-0)
+    checkAndInsert("trigger_self_threshold_4", ac_info[4][7] & 0xFFF); //Info 8 PSEC4 bit(11-0)
 
-    checkAndInsert("bin_count", bin_count_save);
-    checkAndInsert("num_triggered_channels", num_triggered_channels);
-    checkAndInsert("self_trig", self_trig);
-    checkAndInsert("wait_for_sys", sys_trig);
-    checkAndInsert("rate_mode", rate_only);
-    checkAndInsert("trigger_sign", trigger_sign);
-    checkAndInsert("reset_on_trig_valid", use_trig_valid_as_reset);
-    checkAndInsert("onboard_acdc_sma_trig", onboard_acdc_sma_trig);
-    checkAndInsert("use_coincidence", use_coincidence);
-    checkAndInsert("coincidence_window", coincidence_window);
-    checkAndInsert("channel_coincidence_min", channel_coincidence_min);
-    checkAndInsert("asic_coincidence_min", asic_coincidence_min);
-    checkAndInsert("cc_trigger_width", cc_trigger_width);
+    //Timestamp data
+    checkAndInsert("timestamp_0", ac_info[0][8]); // Info 9 PSEC0 later bit(15-0)
+    checkAndInsert("timestamp_1", ac_info[1][8]); // Info 9 PSEC1 later bit(31-16)
+    checkAndInsert("timestamp_2", ac_info[2][8]); // Info 9 PSEC2 later bit(47-32)
+    checkAndInsert("timestamp_3", ac_info[3][8]); // Info 9 PSEC3 later bit(63-48)
 
+    checkAndInsert("clockcycle_bits", ac_info[0][8] & 0x7); // Info 9 PSEC0 bit(2-0)
 
-    //parsing info_t_2
-    //self trig reset time is wierd. I think it may count
-    //how many clock cycles it takes to fully reset the trigger. 
-    //would have thought only one. see line 617 of psec4_trigger_Global
-    unsigned short self_trig_reset_time_lo = info_t_2; //16 bit words
-    unsigned short self_trig_reset_time_hi = info_t_3; 
-    checkAndInsert("self_trig_reset_duration_lo", self_trig_reset_time_lo);
-    checkAndInsert("self_trig_reset_duration_hi", self_trig_reset_time_hi);
+    //Event count
+    checkAndInsert("event_count_lo", ac_info[0][9]); //Info 10 PSEC0 later bit(15-0)
+    checkAndInsert("event_count_hi", ac_info[1][9]); //Info 10 PSEC1 later bit(31-16)
 
-    //parsing of info_s
-    unsigned short info_s_0 = ac_info[0][6];
-    unsigned short info_s_1 = ac_info[1][6];
-    unsigned short info_s_2 = ac_info[2][6];
-    unsigned short info_s_3 = ac_info[3][6]; 
-    //a bitwise list of channels that had their discriminators
-    //above threshold during the event, regardless of coincidence
-    //logic or trigger mask; at the lowest level
-    unsigned short triggered_channels_lo = info_s_0; //first 16 channels
-    unsigned short triggered_channels_hi = info_s_1 & 0x1FFF; //second set of 14 channels
-    checkAndInsert("triggered_channels_lo", triggered_channels_lo);
-    checkAndInsert("triggered_channels_hi", triggered_channels_hi);
-    unsigned short sma_bin_count_save_lo = (info_s_1 & 0x6000) >> 13; //not sure, but has to do with sma trigger. 
-    //I think this is when ACC sends a trigger signal but the 
-    //ACDC did not self trigger (i.e. in wait_for_sys mode)
-    //good for characterizing efficiency
-    unsigned short sys_trig_count_no_local_lo = info_s_2; 
-    unsigned short sys_trig_count_no_local_hi = info_s_3;
-    checkAndInsert("sys_but_no_local_hi", sys_trig_count_no_local_hi);
-    checkAndInsert("sys_but_no_local_lo", sys_trig_count_no_local_lo);
-
-    //parsing evt_count
-    unsigned short evt_count_0 = ac_info[0][7]; 
-    unsigned short evt_count_1 = ac_info[1][7]; 
-    unsigned short evt_count_2 = ac_info[2][7]; 
-    unsigned short evt_count_3 = ac_info[3][7]; 
-    unsigned short evt_count_4 = ac_info[4][7]; 
-
-    unsigned short firmware_resets_lo = evt_count_0;
-    unsigned short firmware_resets_hi = evt_count_1;
-    unsigned short firmware_version = evt_count_2;
-    checkAndInsert("firmware_version", firmware_version);
-    checkAndInsert("firmware_resets_hi", firmware_resets_hi);
-    checkAndInsert("firmware_resets_lo", firmware_resets_lo);
-    unsigned short self_trigger_mask_lo = evt_count_3; //channel mask first 16 channels
-    unsigned short self_trigger_mask_hi = evt_count_4 & 0x1FFF; //second set of 14 channels
-    checkAndInsert("trig_mask_hi", self_trigger_mask_hi);
-    checkAndInsert("trig_mask_lo", self_trigger_mask_lo);
-    unsigned short sma_bin_count_save_hi = (evt_count_4 & 0x6000) >> 13; //second two bits of sma bin count save
-    //combine the sma_bin_count_saves
-    unsigned short sma_bin_count_save = (sma_bin_count_save_hi << 2) + sma_bin_count_save_lo;
-    checkAndInsert("sma_bin_count", sma_bin_count_save);
-
-    //last instruction parsing
-    unsigned short last_instruct_0 = ac_info[0][8];
-    unsigned short last_instruct_1 = ac_info[1][8];
-    unsigned short last_instruct_2 = ac_info[2][8];
-    unsigned short last_instruct_3 = ac_info[3][8];
-    unsigned short last_instruct_4 = ac_info[4][8];
-    //this timestamp "latched_dig_time" is the time at
-    //which the last digitized trigger was digitized. 
-    //This quantity minus the trig_time found below
-    //is consistently 3 clock cycles. 
-    unsigned short latched_dig_time_lo = last_instruct_0; //16 bit
-    unsigned short latched_dig_time_mid = last_instruct_1; //16 bit
-    unsigned short latched_dig_time_hi = last_instruct_2 & 0xFF; //8 bits
-    checkAndInsert("readout_time_lo", latched_dig_time_lo);
-    checkAndInsert("readout_time_mid", latched_dig_time_mid);
-    checkAndInsert("readout_time_hi", latched_dig_time_hi);
-
-    //I think this is the time from when a trigger signal is registered
-    //to when the event (all channels) have been digitized. i.e. ~4 mu-s
-    //but this quantity experimentally varies from 1-250 clock cycles. 
-    unsigned short valid_to_dig_time = (last_instruct_2 & 0xFF00) >> 8; // 8 bits. 
-    checkAndInsert("readout_duration", valid_to_dig_time);
-
-    //these two are called digitized event count in firmware
-    //but really they represent total event count... 
-    unsigned short digitized_evt_count_lo = last_instruct_3; //16 bits counting how many events are digitized
-    unsigned short digitized_evt_count_hi = last_instruct_4; //16 bits counting how many events are digitized
-    checkAndInsert("acdc_total_event_count_lo", digitized_evt_count_lo); //dont change total! See comment above. 
-    checkAndInsert("acdc_total_event_count_hi", digitized_evt_count_hi);
-
-
-    //timestamp_and_instruct parsing
-    unsigned short t_and_i_0 = ac_info[0][9];
-    unsigned short t_and_i_1 = ac_info[1][9];
-    unsigned short t_and_i_2 = ac_info[2][9];
-    unsigned short t_and_i_3 = ac_info[3][9];
-    unsigned short t_and_i_4 = ac_info[4][9];
-
-    //latched system clock is time at which the trigger
-    //signal on the FPGA went high
-    unsigned short trig_time_lo = t_and_i_0; //16 bit
-    unsigned short trig_time_mid = t_and_i_1; //16 bit
-    unsigned short trig_time_hi = t_and_i_2; //16 bit
-    checkAndInsert("trig_time_lo", trig_time_lo);
-    checkAndInsert("trig_time_mid", trig_time_mid);
-    checkAndInsert("trig_time_hi", trig_time_hi);
-
-
-    //16 bit clock counter of all "events" which
-    //are not necessarily digitization events. For example,
-    //receiving some words from the ACC may be considered
-    //an event. The details are a little fuzzy. 
-
-    //these two are called "total event count" in firmware 
-    //but are really representing the number of events that are
-    //triggered using the configured trigger mode. If hardware trig
-    //mode is off, then it counts software triggers. Else, it does hardware triggers.
-    unsigned short acdc_total_event_count_lo = t_and_i_3; //16 bit.
-    unsigned short acdc_total_event_count_hi = t_and_i_4; //16 bit 
-    checkAndInsert("digitized_event_count_lo", acdc_total_event_count_lo); //dont change digitized! see comment above
-    checkAndInsert("digitized_event_count_hi", acdc_total_event_count_hi);
-
-    //CC clock count is three 16 bit words. Literally counting 40MHz clock cycles (not 125MHz, 25MHz, but 40Mhz from pll)
-    checkAndInsert("CC_TIMESTAMP_LO", cc_header_info[3]);
-    checkAndInsert("CC_TIMESTAMP_MID", cc_header_info[4]);
-    checkAndInsert("CC_TIMESTAMP_HI", cc_header_info[5]);
-    //event count is two 16 bit words, this combines them into an int
-    checkAndInsert("CC_EVENT_COUNT_LO", cc_header_info[2]);
-    checkAndInsert("CC_EVENT_COUNT_HI", cc_header_info[1]);
-    //called in firmware "BIN_COUNT_SAVE" in triggerAndTime.vhd line 112. 
-    //also contained in this buffer element is bin_count_start and bin_count. 
-    checkAndInsert("CC_BIN_COUNT", (cc_header_info[0] & 0x18) >> 3);
+    for(int chip=0; chip<NUM_PSEC; chip++)
+    {
+        for(int ch=0; ch<NUM_CH; ch++)
+        {
+            checkAndInsert("self_trigger_rate_count_psec"+to_string(chip)+"_ch"+to_string(ch), trigger_info[chip][ch]);
+        }
+    }
+    checkAndInsert("combined_trigger_rate_count", combined_trigger);
 
 	return !corruptBuffer;
 }
@@ -575,49 +432,63 @@ void Metadata::checkAndInsert(string key, unsigned short val)
 //to order the printing/output of metadata map. 
 void Metadata::initializeMetadataKeys()
 {
-	metadata_keys.push_back("Event"); metadata_keys.push_back("Board");
-	metadata_keys.push_back("CC_TIMESTAMP_HI");
-	metadata_keys.push_back("CC_TIMESTAMP_MID"); metadata_keys.push_back("CC_TIMESTAMP_LO");
-	metadata_keys.push_back("CC_EVENT_COUNT_HI");metadata_keys.push_back("CC_EVENT_COUNT_LO"); 
-    metadata_keys.push_back("CC_BIN_COUNT");
-	for(int i = 0; i < NUM_PSEC; i++)
-	{
-		metadata_keys.push_back("ro_cnt"+to_string(i));
-		metadata_keys.push_back("ro_target_cnt"+to_string(i));
-		metadata_keys.push_back("vbias"+to_string(i));
-		metadata_keys.push_back("trigger_threshold"+to_string(i));
-		metadata_keys.push_back("ro_dac_value"+to_string(i));
-		metadata_keys.push_back("vcdl_count_lo"+to_string(i));
-		metadata_keys.push_back("vcdl_count_hi"+to_string(i));
-		metadata_keys.push_back("dll_vdd"+to_string(i));
-	}
+    metadata_keys.push_back("Event");
+    metadata_keys.push_back("Board");
+    //General PSEC info 
+    for(int i = 0; i < NUM_PSEC; i++)
+    {
+        metadata_keys.push_back("feedback_count_"+to_string(i)); //Info 1
+        metadata_keys.push_back("feedback_target_count_"+to_string(i)); //Info 2
+        metadata_keys.push_back("Vbias_setting_"+to_string(i)); //Info 3
+        metadata_keys.push_back("selftrigger_threshold_setting_"+to_string(i)); //Info 4
+        metadata_keys.push_back("PROVDD_setting_"+to_string(i)); // Info 5
+        metadata_keys.push_back("VCDL_count_lo_"+to_string(i)); //Info 11, later bit(15-0)
+        metadata_keys.push_back("VCDL_count_hi_"+to_string(i)); //Info 12, later bit(31-16)
+        metadata_keys.push_back("DLLVDD_setting_"+to_string(i)); //Info 13
+    }
 
-	//times and durations
-	metadata_keys.push_back("trig_time_hi"); metadata_keys.push_back("trig_time_mid");
-	metadata_keys.push_back("trig_time_lo"); metadata_keys.push_back("readout_duration");
-	metadata_keys.push_back("readout_time_hi"); metadata_keys.push_back("readout_time_mid");
-	metadata_keys.push_back("readout_time_lo"); metadata_keys.push_back("self_trig_reset_duration_hi");
-	metadata_keys.push_back("self_trig_reset_duration_lo");
+    //Trigger PSEC settings
+    metadata_keys.push_back("trigger_mode"); //Info 6, PSEC1 bit(3-0)
+    metadata_keys.push_back("trigger_validation_window_start"); //Info 6, PSEC1 bit(15-4)
+    metadata_keys.push_back("trigger_validation_window_length"); //info 6, PSEC2 bit(11-0)
+    metadata_keys.push_back("trigger_sma_invert"); // Info 6, PSEC3 bit(1)
+    metadata_keys.push_back("trigger_sma_detection_mode"); // Info 6, PSEC3 bit(0)
+    metadata_keys.push_back("trigger_acc_invert"); // Info 6, PSEC3 bit(3)
+    metadata_keys.push_back("trigger_acc_detection_mode"); // Info 6, PSEC3 bit(2)
+    metadata_keys.push_back("trigger_self_sign"); //Info 6, PSEC3 bit(5)
+    metadata_keys.push_back("trigger_self_detection_mode"); // Info 6, PSEC3 bit(4)
+    metadata_keys.push_back("trigger_self_coin"); // Info 6, PSEC3 bit(10-6)
 
-	//event counters and typifiers
-	metadata_keys.push_back("acdc_total_event_count_hi");metadata_keys.push_back("acdc_total_event_count_lo");
-	metadata_keys.push_back("digitized_event_count_hi");metadata_keys.push_back("digitized_event_count_lo");
-	metadata_keys.push_back("sys_but_no_local_hi");metadata_keys.push_back("sys_but_no_local_lo");
+    metadata_keys.push_back("trigger_selfmask_0"); //Info 7 PSEC0
+    metadata_keys.push_back("trigger_selfmask_1"); //Info 7 PSEC1
+    metadata_keys.push_back("trigger_selfmask_2"); //Info 7 PSEC2
+    metadata_keys.push_back("trigger_selfmask_3"); //Info 7 PSEC3
+    metadata_keys.push_back("trigger_selfmask_4"); //Info 7 PSEC4
 
-	//event properties
-	metadata_keys.push_back("num_triggered_channels"); metadata_keys.push_back("triggered_channels_hi");
-	metadata_keys.push_back("triggered_channels_lo");
-	metadata_keys.push_back("firmware_resets_hi");metadata_keys.push_back("firmware_resets_lo");
-	//settings (from configuration file)
-	metadata_keys.push_back("self_trig"); metadata_keys.push_back("wait_for_sys");
-	metadata_keys.push_back("rate_mode"); metadata_keys.push_back("trigger_sign");
-	metadata_keys.push_back("reset_on_trig_valid");metadata_keys.push_back("trig_mask_hi");
-	metadata_keys.push_back("trig_mask_lo");metadata_keys.push_back("firmware_version");
-	metadata_keys.push_back("onboard_acdc_sma_trig"); metadata_keys.push_back("use_coincidence");
-	metadata_keys.push_back("coincidence_window"); metadata_keys.push_back("channel_coincidence_min");
-	metadata_keys.push_back("asic_coincidence_min"); metadata_keys.push_back("cc_trigger_width");
+    metadata_keys.push_back("trigger_self_threshold_0"); //Info 8 PSEC0 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_1"); //Info 8 PSEC1 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_2"); //Info 8 PSEC2 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_3"); //Info 8 PSEC3 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_4"); //Info 8 PSEC4 bit(11-0)
 
-	//bin counts
-	metadata_keys.push_back("sma_bin_count"); metadata_keys.push_back("bin_count");
+    //Timestamp data
+    metadata_keys.push_back("timestamp_0"); // Info 9 PSEC0 later bit(15-0)
+    metadata_keys.push_back("timestamp_1"); // Info 9 PSEC1 later bit(31-16)
+    metadata_keys.push_back("timestamp_2"); // Info 9 PSEC2 later bit(47-32)
+    metadata_keys.push_back("timestamp_3"); // Info 9 PSEC3 later bit(63-48)
 
+    metadata_keys.push_back("clockcycle_bits"); // Info 9 PSEC0 bit(2-0)
+
+    //Event count
+    metadata_keys.push_back("event_count_lo"); //Info 10 PSEC0 later bit(15-0)
+    metadata_keys.push_back("event_count_hi"); //Info 10 PSEC1 later bit(31-16)
+
+    for(int chip=0; chip<NUM_PSEC; chip++)
+    {
+        for(int ch=0; ch<NUM_CH; ch++)
+        {
+            metadata_keys.push_back("self_trigger_rate_count_psec"+to_string(chip)+"_ch"+to_string(ch));
+        }
+    }
+    metadata_keys.push_back("combined_trigger_rate_count");
 }
