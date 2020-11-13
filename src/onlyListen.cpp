@@ -29,7 +29,20 @@ int main(int argc, char *argv[])
 	bool flag = true;
 	int oscopeMode;
 
-	triggermode = acc.getTriggermode();
+	std::cout << "Please select triggermode: (Does not set anything just reminds the software) " << std::endl; 
+	std::cout << "(0) Off" << std::endl;
+	std::cout << "(1) Software trigger" << std::endl;
+	std::cout << "(2) SMA trigger ACC" << std::endl;
+	std::cout << "(3) SMA trigger ACDC" << std::endl;
+	std::cout << "(4) Self-trigger" << std::endl;
+	std::cout << "(5) Self-trigger with validation ACC" << std::endl;
+	std::cout << "(6) Self-trigger with validation ACDC" << std::endl;
+	std::cout << "(7) SMA ACC with SMA ACDC" << std::endl;
+	std::cout << "(8) SMA ACDC with SMA ACC" << std::endl;
+
+	std::cin >> triggermode;
+	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+	
 	while(true)
 	{
 		std::cout << "Do you want the raw data? (0/1)" << std::endl;
