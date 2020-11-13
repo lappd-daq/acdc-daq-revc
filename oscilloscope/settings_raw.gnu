@@ -7,4 +7,4 @@ set border ls 10
 set size 1, 1
 
 set xlabel 'Sample Number' 
-set ylabel 'arb num'
+set ylabel 'adc counts'
