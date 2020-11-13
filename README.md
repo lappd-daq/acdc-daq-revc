@@ -25,6 +25,8 @@ To use full extend of the software use `./bin/listenForData` (important is that 
 4 - self trigger
 5 - self trigger with ACC SMA validation
 6 - self trigger with ACDC SMA validation
+7 - SMA ACC trigger with SMA ACDC validation
+8 - SMA ACDC trigger with SMA ACC validation
 ```
 
 2. Depending on the trigger mode the following settings might need to be set as well:
