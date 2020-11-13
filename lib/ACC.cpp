@@ -618,7 +618,6 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
-
 				a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
 
 				ped_data[bi] = a->returnData();

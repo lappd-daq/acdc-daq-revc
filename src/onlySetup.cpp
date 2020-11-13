@@ -26,7 +26,7 @@ int main(int argc, char *argv[])
 	bool flag = true;
 	int oscopeMode;
 
-	ACC acc;
+	ACC* acc = new ACC();
 
 	system("mkdir -p Results");
 	
@@ -61,8 +61,8 @@ int main(int argc, char *argv[])
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				acc.setInvertMode(invertMode);
-				acc.setDetectionMode(detectionMode);
+				acc->setInvertMode(invertMode);
+				acc->setDetectionMode(detectionMode);
 				flag = false;
 				break;
 			case 3:
@@ -73,8 +73,8 @@ int main(int argc, char *argv[])
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				acc.setInvertMode(invertMode);
-				acc.setDetectionMode(detectionMode);
+				acc->setInvertMode(invertMode);
+				acc->setDetectionMode(detectionMode);
 				flag = false;
 				break;
 			case 4:
@@ -87,8 +87,8 @@ int main(int argc, char *argv[])
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				acc.setInvertMode(invertMode);
-				acc.setDetectionMode(detectionMode);
+				acc->setInvertMode(invertMode);
+				acc->setDetectionMode(detectionMode);
 				goto selfsetup;
 			case 6:
 				std::cout << "Use normal polarity (0) or inverted polarity (1) on ACDC SMA?" << std::endl;
@@ -98,8 +98,8 @@ int main(int argc, char *argv[])
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				acc.setInvertMode(invertMode);
-				acc.setDetectionMode(detectionMode);
+				acc->setInvertMode(invertMode);
+				acc->setDetectionMode(detectionMode);
 				goto selfsetup;
 			case 7:
 				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA?" << std::endl;
@@ -109,8 +109,8 @@ int main(int argc, char *argv[])
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				acc.setInvertMode(invertMode);
-				acc.setDetectionMode(detectionMode);
+				acc->setInvertMode(invertMode);
+				acc->setDetectionMode(detectionMode);
 				flag = false;
 				break;
 			case 8:
@@ -131,7 +131,7 @@ int main(int argc, char *argv[])
 					unsigned int hexstr;
 					ss << ChCoin;
 					ss >> std::hex >> hexstr;
-					acc.setChCoin(hexstr);
+					acc->setChCoin(hexstr);
 				}
 				std::cout << "Use normal polarity (0) or inverted polarity (1) on ACDC SMA?" << std::endl;
 				cin >> invertMode;
@@ -140,14 +140,14 @@ int main(int argc, char *argv[])
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				acc.setEnableCoin(enableCoin);
-				acc.setInvertMode(invertMode);
-				acc.setDetectionMode(detectionMode);
+				acc->setEnableCoin(enableCoin);
+				acc->setInvertMode(invertMode);
+				acc->setDetectionMode(detectionMode);
 				flag = false;
 				break;
 		}
 	}
-	acc.setTriggermode(triggermode);
+	
 	
 	while(true)
 	{
@@ -175,7 +175,7 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	retval = acc.initializeForDataReadout(triggermode, boardmask, calibMode);
+	retval = acc->initializeForDataReadout(triggermode, boardmask, calibMode);
 	if(retval != 0)
 	{
 		cout << "Initialization failed!" << endl;

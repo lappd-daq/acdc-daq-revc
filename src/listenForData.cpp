@@ -25,6 +25,7 @@ int main(int argc, char *argv[])
 	int failCounter;
 	bool flag = true;
 	int oscopeMode;
+	int setup;
 
 	ACC acc;
 
@@ -222,6 +223,7 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
+
 
 	retval = acc.initializeForDataReadout(triggermode, boardmask, calibMode);
 	if(retval != 0)

@@ -11,7 +11,7 @@
 int main(int argc, char *argv[])
 {
 
-	ACC acc;
+	ACC* acc;
 
 	int retval;
 	int triggermode;
@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 
 	std::cin >> triggermode;
 	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-	
+
 	while(true)
 	{
 		std::cout << "Do you want the raw data? (0/1)" << std::endl;
@@ -100,9 +100,9 @@ int main(int argc, char *argv[])
 		{
 			if(triggermode == 1)
 			{
-				acc.softwareTrigger();
+				acc->softwareTrigger();
 			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
+			retval = acc->listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
 			switch(retval)
 			{
 				case 0:
@@ -140,9 +140,9 @@ int main(int argc, char *argv[])
 		while(flag){
 			if(triggermode == 1)
 			{
-				acc.softwareTrigger();
+				acc->softwareTrigger();
 			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
+			retval = acc->listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
 			switch(retval)
 			{
 				case 0:
