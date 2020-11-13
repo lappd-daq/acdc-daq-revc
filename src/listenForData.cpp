@@ -25,10 +25,28 @@ int main(int argc, char *argv[])
 	int failCounter;
 	bool flag = true;
 	int oscopeMode;
+	int ped;
 
 	ACC acc;
 
 	system("mkdir -p Results");
+
+	while(true)
+	{
+		std::cout << "Do you want to do a pedestal calibration?(0/1)" << std::endl; 
+	
+		std::cin >> ped;
+		cin.ignore(numeric_limits<streamsize>::max(),'\n');	
+		
+		if(ped==0){
+			break;
+		}else if (ped==1)
+		{
+			system("./bin/calibratePed ");
+			usleep(10000);
+			break;
+		}
+	}
 	
 	while(flag)
 	{

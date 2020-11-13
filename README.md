@@ -13,13 +13,6 @@ $ sudo apt install libusb-1.0-0-dev cmake gnuplot
 gcc/g++ version optimally is >7.1 
 cmake version is >3.1
 
-## Installing the software
-To install the software after downloading it use
-```bash
-$ cmake . -Bbuild && cmake --build build --jN
-```
-where N is the number of available cores on your computer
-
 ## Executable data monitoring
 To use full extend of the software use `./bin/listenForData` (important is that you use it from the same folder you launched the make from as well, since otherwise several refences will point to nothing). Once launched the software will guide you through the set up of the boards and then automatically detect and set up all detected boards. The setup process looks like this:
  

@@ -57,31 +57,17 @@ target_link_libraries(Scope ACC ACDC)
 
 
 
-#add_executable(readACDC ${EXECUTABLE_SOURCE_DIR}/readACDC.cpp)
-#add_executable(setConfig ${EXECUTABLE_SOURCE_DIR}/setConfig.cpp)
-#add_executable(printAcdcMetadata ${EXECUTABLE_SOURCE_DIR}/printAcdcMetadata.cpp)
-#add_executable(logData ${EXECUTABLE_SOURCE_DIR}/logData.cpp)
-#add_executable(calibratePed ${EXECUTABLE_SOURCE_DIR}/calibratePed.cpp)
-#add_executable(calEnable ${EXECUTABLE_SOURCE_DIR}/calEnable.cpp)
-#add_executable(reset ${EXECUTABLE_SOURCE_DIR}/reset.cpp)
-#add_executable(alignLVDS ${EXECUTABLE_SOURCE_DIR}/alignLVDS.cpp)
+add_executable(connectedBoards ${EXECUTABLE_SOURCE_DIR}/connectedBoards.cpp)
+add_executable(calibratePed ${EXECUTABLE_SOURCE_DIR}/calibratePed.cpp)
 add_executable(debug ${EXECUTABLE_SOURCE_DIR}/debug.cpp)
-add_executable(readCalibModeData ${EXECUTABLE_SOURCE_DIR}/readCalibModeData.cpp)
 add_executable(listenForData ${EXECUTABLE_SOURCE_DIR}/listenForData.cpp)
-add_executable(oscope ${EXECUTABLE_SOURCE_DIR}/oscope.cpp)
 
 
 
-#target_link_libraries(readACDC PUBLIC ACC)
-#target_link_libraries(logData PUBLIC ACC)
-#target_link_libraries(setConfig PUBLIC ACC Config)
-#target_link_libraries(printAcdcMetadata PUBLIC ACC)
-#target_link_libraries(calibratePed PUBLIC ACC)
-#target_link_libraries(calEnable PUBLIC ACC)
-#target_link_libraries(reset PUBLIC ACC)
-#target_link_libraries(alignLVDS PUBLIC ACC)
+
+target_link_libraries(connectedBoards PUBLIC myusb)
+target_link_libraries(calibratePed PUBLIC ACC)
 target_link_libraries(debug PUBLIC myusb)
-target_link_libraries(readCalibModeData PUBLIC ACC)
 target_link_libraries(listenForData PUBLIC ACC Scope)
-target_link_libraries(oscope PUBLIC ACC ACDC Scope)
+
 

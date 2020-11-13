@@ -249,57 +249,54 @@ int ACC::parsePedsAndConversions()
 	int pedCounter = 0; //counts how many board numbers DO NOT have matching ped files
 	double defaultConversion = 1200.0/4096.0; //default for ADC-to-mv conversion
 	double defaultPed = 0.0; //sets the baseline around 600mV
+	map<int, map<int, double>> tempMap; 
+	map<int, vector<double>> tempMap2; 
+
 	//loop over all connected boards
-	for(ACDC* a: acdcs)
+	ACDC* a;
+	//look for the PED and LIN files for this index
+	string pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG)  + ".txt";
+	string linfilename = string(CALIBRATION_DIRECTORY) + string(LIN_TAG)  + ".txt";
+	ifstream ifped(pedfilename);
+	ifstream iflin(linfilename);
+	
+	//if the associated file does not exist
+	//set default values defined above. 
+	if(!(bool)ifped)
 	{
-		//peds and lins in ACDC objects are map
-		//objects like map[chip] = vector[sample].
-		//use this temp map as a container for parsed data.
-		map<int, vector<double>> tempMap; 
-
-
-		int bi = a->getBoardIndex();
-		//look for the PED and LIN files for this index
-		string pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG) + to_string(bi) + ".txt";
-		string linfilename = string(CALIBRATION_DIRECTORY) + string(LIN_TAG) + to_string(bi) + ".txt";
-		ifstream ifped(pedfilename);
-		ifstream iflin(linfilename);
-		
-		//if the associated file does not exist
-		//set default values defined above. 
-		if(!(bool)ifped)
+		cout << "WARNING: Your boards do not have a pedestal calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
+		pedCounter++;
+		for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
 		{
-			cout << "WARNING: Your board number " << bi << " does not have a pedestal calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
-			pedCounter++;
-			for(int channel = 1; channel <= a->getNumCh(); channel++)
+			for(int channel = 0; channel < a->getNumCh(); channel++)
 			{
-				vector<double> vtemp(a->getNumSamp(), defaultPed); //vector of 0's
-				tempMap[channel] = vtemp;
+				tempMap[bi][channel] = defaultPed;
 			}
-			a->setPeds(tempMap);	 
-		}else //otherwise, parse the file.
-		{
-			a->readPedsFromFile(ifped);
 		}
-
-		if(!(bool)iflin)
-		{
-			cout << "WARNING: Your board number " << bi << " does not have a linearity scan calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
-			linCounter++;
-			for(int channel = 1; channel <= a->getNumCh(); channel++)
-			{
-				vector<double> vtemp(a->getNumSamp(), defaultConversion); //vector of defaults
-				tempMap[channel] = vtemp;
-			}
-			a->setConv(tempMap);
-		}
-		else //otherwise, parse the file. 
-		{
-			a->readConvsFromFile(iflin);
-		}
-		ifped.close();
-		iflin.close();
+		a->setPeds(tempMap);	 
+	}else //otherwise, parse the file.
+	{
+		a->readPedsFromFile(ifped);
 	}
+
+	if(!(bool)iflin)
+	{
+		cout << "WARNING: Your boards do not have a linearity scan calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
+		linCounter++;
+		for(int channel = 1; channel <= a->getNumCh(); channel++)
+		{
+			vector<double> vtemp(a->getNumSamp(), defaultConversion); //vector of defaults
+			tempMap2[channel] = vtemp;
+		}
+		a->setConv(tempMap2);
+	}
+	else //otherwise, parse the file. 
+	{
+		a->readConvsFromFile(iflin);
+	}
+	ifped.close();
+	iflin.close();
+
 	return linCounter;
 }
 
@@ -386,7 +383,7 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 
 	//this allows no vector clearing to be needed
 	alignedAcdcIndices = connectedBoards;
-	cout << "Connected Borads: " << connectedBoards.size() << endl;
+	cout << "Connected Boards: " << connectedBoards.size() << endl;
 	return connectedBoards;
 }
 
@@ -489,9 +486,6 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
 	//that ACDCs have sent data to the ACC
-	int maxChecks = 15; //will give up after this many
-	int check = 0;
-
 	vector<int> boardsReadyForRead;
     enableTransfer(0);
 	unsigned int command = 0x00210000;
@@ -581,13 +575,18 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 
 				if(!raw)
 				{
-					a->readPED(acdc_buffer);
+					//a->readPED(acdc_buffer);
 				}
 				
 				retval = a->parseDataFromBuffer(acdc_buffer, raw); 
+
 				if(retval !=0)
 				{
 					cout << "********* Corrupt buffer caught at PSEC data level (2) ****************" << endl;
+					if(retval == 3)
+					{
+						cout << "Because of the Metadata buffer" << endl;
+					}
 					corruptBuffer = true;
 
 					a->writeRawBufferToFile(acdc_buffer);	
@@ -606,6 +605,8 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 
 				a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
+
+				ped_data[bi] = a->returnData();
 			}
 		}
 	}
@@ -713,7 +714,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 		for(int bi: boardsReadyForRead)
 		{
-			cout << "Read for board " << bi << endl;
+			//cout << "Read for board " << bi << endl;
 			
 			unsigned int command = 0x00210000; //base command for set readmode
 			command = command | (unsigned int)(bi); //which board to read
@@ -771,13 +772,17 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 					if(!raw)
 					{
-						a->readPED(acdc_buffer);
+						//a->readPED(acdc_buffer);
 					}
 					
-					retval = a->parseDataFromBuffer(acdc_buffer, raw); 
+					retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
 					if(retval !=0)
 					{
 						cout << "********* Corrupt buffer caught at PSEC data level (2) ****************" << endl;
+						if(retval == 3)
+						{
+							cout << "Because of the Metadata buffer" << endl;
+						}
 						corruptBuffer = true;
 
 						a->writeRawBufferToFile(acdc_buffer);	

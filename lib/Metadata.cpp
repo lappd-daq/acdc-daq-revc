@@ -220,7 +220,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 {
 	//if the buffer is 0 length (i.e. bad usb comms)
 	//return doing nothing
-	if(acdcBuffer.size() == 0) return false;
+	if(acdcBuffer.size() == 0) return true;
 	
 
 	//byte that indicates the metadata of
@@ -328,7 +328,8 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //to return now. 
     if(ac_info.size() < NUM_PSEC)
     {
-        return !corruptBuffer;
+    	corruptBuffer = true;
+        return corruptBuffer;
     }
 
     //Filling all the metadata infos with ac_info[chip][infoNr -1]
@@ -347,6 +348,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 
     if(ac_info[0][5] != 0xEEEE)
     {
+    	corruptBuffer = true;
         cout << "------------------------------------------------------------" << endl;
         cout << " PSEC frame data, trigger info 0 at info 6 is not right" << endl;
         cout << "------------------------------------------------------------" << endl;
@@ -354,6 +356,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     }
     if(ac_info[4][5] != 0xEEEE)
     {
+    	corruptBuffer = true;
         cout << "------------------------------------------------------------" << endl;
         cout << " PSEC frame data, trigger info 0 at info 6 is not right" << endl;
         cout << "------------------------------------------------------------" << endl;
@@ -404,7 +407,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     }
     checkAndInsert("combined_trigger_rate_count", combined_trigger);
 
-	return !corruptBuffer;
+	return corruptBuffer;
 }
 
 

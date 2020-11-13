@@ -107,7 +107,7 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw)
+int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int bi)
 {
 	lastAcdcBuffer = acdc_buffer;
 
@@ -203,7 +203,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw)
 			if(!raw)
 			{	
 				//apply a pedestal subtraction
-				sampleValue = sampleValue - pedestal[channelCount-1]; //adc counts
+				sampleValue = sampleValue - peds[bi][channelCount-1]; //adc counts
 				//apply a linearity corrected mV conversion
 				sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
 			}
@@ -225,6 +225,13 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw)
 		return 1;
 	}
 
+	bool corruptBuffer;
+	corruptBuffer = meta.parseBuffer(acdc_buffer);
+
+	if(corruptBuffer)
+	{
+		return 3;
+	}	
 	return 0;
 
 }
@@ -389,7 +396,7 @@ void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 //<channel> ...
 //samples in ADC counts. 
 void ACDC::writePedsToFile(ofstream& ofs)
-{
+{/*
 	string delim = " ";
 
 	map<int, vector<double>>::iterator mit;
@@ -411,7 +418,7 @@ void ACDC::writePedsToFile(ofstream& ofs)
 	}
 
 	return;
-	
+	*/
 }
 
 
@@ -423,35 +430,31 @@ void ACDC::writePedsToFile(ofstream& ofs)
 void ACDC::readPedsFromFile(ifstream& ifs)
 {
 	char delim = ' '; //in between ADC counts
-	map<int, vector<double>> tempPeds;//temporary holder for the new pedestal map
+	map<int, map<int, double>> tempPeds;//temporary holder for the new pedestal map
 
 	//temporary variables for line parsing
 	string lineFromFile; //full line
 	string adcCountStr; //string representing adc counts of ped
-	int ch; //int for the current channel key
-	vector<double> tempWav; //ped wav temporary 
-	bool isChannel; //is this character the channel key
+	double avg; //int for the current channel key
+	int bi =0;
+	int ch=0;
 
 	//loop over each line of file
 	while(getline(ifs, lineFromFile))
 	{
 		stringstream line(lineFromFile); //stream of characters delimited
-		isChannel = true; //first character is the channel key
-		tempWav.clear(); //fresh vector
+
 		//loop over each sample index
 		while(getline(line, adcCountStr, delim))
 		{
-			if(isChannel)
-			{
-				ch = stoi(adcCountStr); //channel key for a while
-				isChannel = false;
-				continue; //go to next delimited word (start of adcCounts)
-			}
-			tempWav.push_back(stod(adcCountStr)); //pedestal adcCounts
+
+			avg = stoi(adcCountStr); //channel key for a while
+			tempPeds[bi][ch] = avg;
+
+			ch++;
 		}
 
-		//now set this vector to the appropriate ped map element
-		tempPeds.insert(pair<int, vector<double>>(ch, tempWav));
+		bi++;
 	}
 
 	//call public member of this class to set the pedestal map

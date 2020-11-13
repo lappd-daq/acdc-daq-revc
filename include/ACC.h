@@ -66,6 +66,8 @@ public:
 	void setChCoin(unsigned int in){ChCoin = in;}	
 	void setEnableCoin(int in){enableCoin = in;}
 
+	map<int, map<int, vector<double>>> returnPedData(){return ped_data;}
+
 private:
 	stdUSB* usb;
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
@@ -77,7 +79,7 @@ private:
 	int invertMode;
 	int enableCoin;
 	unsigned int ChCoin;
-
+	map<int, map<int, vector<double>>> ped_data;
 
 	//-----------functions that involve usb comms
 	vector<unsigned short> readAccBuffer();
