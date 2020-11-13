@@ -66,7 +66,9 @@ public:
 	void setInvertMode(int in){invertMode = in;}
 	void setChCoin(unsigned int in){ChCoin = in;}	
 	void setEnableCoin(int in){enableCoin = in;}
-
+	void setTriggermode(int in){trigMode = in;}
+	int getTriggermode(){return trigMode;}
+	
 	map<int, map<int, vector<double>>> returnPedData(){return ped_data;}
 
 private:
@@ -79,6 +81,7 @@ private:
 	int detectionMode;
 	int invertMode;
 	int enableCoin;
+	int trigMode;
 	unsigned int ChCoin;
 	map<int, map<int, vector<double>>> ped_data;
 
