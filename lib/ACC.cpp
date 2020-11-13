@@ -950,6 +950,50 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 
 			goto selfsetup;
 			break;
+		case 7:
+			setHardwareTrigSrc(trigMode,boardMask);
+
+			command = 0xFFB40000;
+			usb->sendData(command);
+			command = 0xFFB41280;
+			usb->sendData(command);
+
+			command = 0xFFB20000;
+			command = (command & (command | (boardMask << 24))) | invertMode;
+			usb->sendData(command);
+			command = 0xFFB21000;
+			command = (command & (command | (boardMask << 24))) | detectionMode;
+			usb->sendData(command);
+
+			command = 0xFFB30000;
+			command = (command & (command | (boardMask << 24))) | invertMode;
+			usb->sendData(command);
+			command = 0xFFB31000;
+			command = (command & (command | (boardMask << 24))) | detectionMode;
+			usb->sendData(command);
+			break;
+		case 8:
+			setHardwareTrigSrc(trigMode,boardMask);
+
+			command = 0xFFB40000;
+			usb->sendData(command);
+			command = 0xFFB41280;
+			usb->sendData(command);
+
+			command = 0xFFB20000;
+			command = (command & (command | (boardMask << 24))) | invertMode;
+			usb->sendData(command);
+			command = 0xFFB21000;
+			command = (command & (command | (boardMask << 24))) | detectionMode;
+			usb->sendData(command);
+
+			command = 0xFFB30000;
+			command = (command & (command | (boardMask << 24))) | invertMode;
+			usb->sendData(command);
+			command = 0xFFB31000;
+			command = (command & (command | (boardMask << 24))) | detectionMode;
+			usb->sendData(command);
+			break;
 		default: // ERROR case
 			cout << "Specified trigger is not known!" << endl;
 			break;
@@ -1101,8 +1145,8 @@ void ACC::toggleCal(int onoff, unsigned int channelmask)
 //0=ext, 3 = board0, 4=b1, 6=b2, 7=b3
 void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 {
-	if(src > 7){
-		cout << "Source: " << src << " will cause an error for setting Hardware triggers. Source has to be <7" << endl;
+	if(src > 9){
+		cout << "Source: " << src << " will cause an error for setting Hardware triggers. Source has to be <9" << endl;
 	}
 
 	//ACC hardware trigger

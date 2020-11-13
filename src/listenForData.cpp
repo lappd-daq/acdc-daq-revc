@@ -25,28 +25,10 @@ int main(int argc, char *argv[])
 	int failCounter;
 	bool flag = true;
 	int oscopeMode;
-	int ped;
 
 	ACC acc;
 
 	system("mkdir -p Results");
-
-	while(true)
-	{
-		std::cout << "Do you want to do a pedestal calibration?(0/1)" << std::endl; 
-	
-		std::cin >> ped;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');	
-		
-		if(ped==0){
-			break;
-		}else if (ped==1)
-		{
-			system("./bin/calibratePed");
-			usleep(10000);
-			break;
-		}
-	}
 	
 	while(flag)
 	{
@@ -58,6 +40,8 @@ int main(int argc, char *argv[])
 		std::cout << "(4) Self-trigger" << std::endl;
 		std::cout << "(5) Self-trigger with validation ACC" << std::endl;
 		std::cout << "(6) Self-trigger with validation ACDC" << std::endl;
+		std::cout << "(7) SMA ACC with SMA ACDC" << std::endl;
+		std::cout << "(8) SMA ACDC with SMA ACC" << std::endl;
 
 		std::cin >> triggermode;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
@@ -117,6 +101,20 @@ int main(int argc, char *argv[])
 				acc.setInvertMode(invertMode);
 				acc.setDetectionMode(detectionMode);
 				goto selfsetup;
+			case 7:
+				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA?" << std::endl;
+				cin >> invertMode;
+				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				std::cout << "Use edge detect (0) or level detect (1) on ACC SMA?" << std::endl;
+				cin >> detectionMode;
+				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+
+				acc.setInvertMode(invertMode);
+				acc.setDetectionMode(detectionMode);
+				flag = false;
+				break;
+			case 8:
+				//
 			default:
 				std::cout << " Trigger input not found " << std::endl;
 				break;
