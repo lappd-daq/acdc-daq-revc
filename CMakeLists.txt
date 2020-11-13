@@ -61,13 +61,14 @@ add_executable(connectedBoards ${EXECUTABLE_SOURCE_DIR}/connectedBoards.cpp)
 add_executable(calibratePed ${EXECUTABLE_SOURCE_DIR}/calibratePed.cpp)
 add_executable(debug ${EXECUTABLE_SOURCE_DIR}/debug.cpp)
 add_executable(listenForData ${EXECUTABLE_SOURCE_DIR}/listenForData.cpp)
-
-
-
+add_executable(onlyListen ${EXECUTABLE_SOURCE_DIR}/onlyListen.cpp)
+add_executable(onlySetup ${EXECUTABLE_SOURCE_DIR}/onlySetup.cpp)
 
 target_link_libraries(connectedBoards PUBLIC myusb)
 target_link_libraries(calibratePed PUBLIC ACC)
 target_link_libraries(debug PUBLIC myusb)
 target_link_libraries(listenForData PUBLIC ACC Scope)
+target_link_libraries(onlyListen PUBLIC ACC Scope)
+target_link_libraries(onlySetup PUBLIC ACC)
 
 
