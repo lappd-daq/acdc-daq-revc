@@ -10,6 +10,9 @@
 
 int main(int argc, char *argv[])
 {
+
+	ACC acc;
+
 	int retval;
 	int triggermode;
 	unsigned int boardmask;
@@ -26,7 +29,7 @@ int main(int argc, char *argv[])
 	bool flag = true;
 	int oscopeMode;
 
-	
+	triggermode = acc.getTriggermode();
 	while(true)
 	{
 		std::cout << "Do you want the raw data? (0/1)" << std::endl;
@@ -75,8 +78,6 @@ int main(int argc, char *argv[])
 			break;
 		}
 	}
-
-	ACC acc;
 
 	eventCounter = 0;
 	failCounter = 0;

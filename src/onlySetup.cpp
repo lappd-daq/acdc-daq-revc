@@ -147,7 +147,8 @@ int main(int argc, char *argv[])
 				break;
 		}
 	}
-
+	acc.setTriggerMode(triggermode);
+	
 	while(true)
 	{
 		std::cout << "Please select which boards to use from 0x00 to 0xFF (default)" << std::endl;
