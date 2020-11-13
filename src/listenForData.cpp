@@ -42,7 +42,7 @@ int main(int argc, char *argv[])
 			break;
 		}else if (ped==1)
 		{
-			system("./bin/calibratePed ");
+			system("./bin/calibratePed");
 			usleep(10000);
 			break;
 		}

@@ -60,7 +60,8 @@ int main(int argc, char *argv[])
 	usb->sendData(command);
 
 	usleep(10000);
-	command = 0x000200FF; //Reserts RX buffer
+
+	command = 0x000200FF; //Reset the RX buffer
 	usb->sendData(command);
 	command = 0xFFD00000; //Request a 32 word ACDC ID frame containing all important infomations
 	usb->sendData(command);

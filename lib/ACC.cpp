@@ -253,50 +253,51 @@ int ACC::parsePedsAndConversions()
 	map<int, vector<double>> tempMap2; 
 
 	//loop over all connected boards
-	ACDC* a;
-	//look for the PED and LIN files for this index
-	string pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG)  + ".txt";
-	string linfilename = string(CALIBRATION_DIRECTORY) + string(LIN_TAG)  + ".txt";
-	ifstream ifped(pedfilename);
-	ifstream iflin(linfilename);
-	
-	//if the associated file does not exist
-	//set default values defined above. 
-	if(!(bool)ifped)
+	for(ACDC* a: acdcs)
 	{
-		cout << "WARNING: Your boards do not have a pedestal calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
-		pedCounter++;
-		for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
+		//look for the PED and LIN files for this index
+		string pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG)  + ".txt";
+		string linfilename = string(CALIBRATION_DIRECTORY) + string(LIN_TAG)  + ".txt";
+		ifstream ifped(pedfilename);
+		ifstream iflin(linfilename);
+		
+		//if the associated file does not exist
+		//set default values defined above. 
+		if(!(bool)ifped)
 		{
-			for(int channel = 0; channel < a->getNumCh(); channel++)
+			cout << "WARNING: Your boards do not have a pedestal calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
+			pedCounter++;
+			for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
 			{
-				tempMap[bi][channel] = defaultPed;
+				for(int channel = 0; channel < a->getNumCh(); channel++)
+				{
+					tempMap[bi][channel] = defaultPed;
+				}
 			}
-		}
-		a->setPeds(tempMap);	 
-	}else //otherwise, parse the file.
-	{
-		a->readPedsFromFile(ifped);
-	}
-
-	if(!(bool)iflin)
-	{
-		cout << "WARNING: Your boards do not have a linearity scan calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
-		linCounter++;
-		for(int channel = 1; channel <= a->getNumCh(); channel++)
+			a->setPeds(tempMap);	 
+		}else //otherwise, parse the file.
 		{
-			vector<double> vtemp(a->getNumSamp(), defaultConversion); //vector of defaults
-			tempMap2[channel] = vtemp;
+			a->readPedsFromFile(ifped);
 		}
-		a->setConv(tempMap2);
-	}
-	else //otherwise, parse the file. 
-	{
-		a->readConvsFromFile(iflin);
-	}
-	ifped.close();
-	iflin.close();
 
+		if(!(bool)iflin)
+		{
+			cout << "WARNING: Your boards do not have a linearity scan calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
+			linCounter++;
+			for(int channel = 1; channel <= a->getNumCh(); channel++)
+			{
+				vector<double> vtemp(a->getNumSamp(), defaultConversion); //vector of defaults
+				tempMap2[channel] = vtemp;
+			}
+			a->setConv(tempMap2);
+		}
+		else //otherwise, parse the file. 
+		{
+			a->readConvsFromFile(iflin);
+		}
+		ifped.close();
+		iflin.close();
+	}
 	return linCounter;
 }
 
@@ -487,32 +488,46 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	//a fullRam flag on ACC indicating
 	//that ACDCs have sent data to the ACC
 	vector<int> boardsReadyForRead;
+
     enableTransfer(0);
 	unsigned int command = 0x00210000;
 	usb->sendData(command);
     enableTransfer(1);
+
+    int maxCounter=0;
 	while(true)
 	{
-			command = 0x00200000;
-			usb->sendData(command);
+		command = 0x00200000;
+		usb->sendData(command);
 
-			lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-			
-			for(int k=0; k<MAX_NUM_BOARDS; k++)
+		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+		
+		if(lastAccBuffer.size()==0)
+		{
+			maxCounter++;
+			continue;
+		}
+
+		for(int k=0; k<MAX_NUM_BOARDS; k++)
+		{
+			if(lastAccBuffer.at(16+k)==7795)
 			{
-				if(lastAccBuffer.at(16+k)==7795)
-				{
-					boardsReadyForRead.push_back(k);
-					usleep(1000);
-				}
+				boardsReadyForRead.push_back(k);
+				usleep(1000);
 			}
-			if(boardsReadyForRead.size()>0)
-			{
-				break;
-			}
+		}
+		if(boardsReadyForRead.size()>0)
+		{
+			break;
+		}
+		maxCounter++;
+		if(maxCounter>15)
+		{
+			return 2;
+		}
 	}
 
-	enableTransfer(1);
+	//enableTransfer(1);
 
 	string outfilename = "./Results/";
 
@@ -524,7 +539,7 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 	//on whether it finds any corrupt buffers.
 	//each ACDC needs to be queried individually
 	//by the ACC for its buffer. 
-	for(int bi: alignedAcdcIndices)
+	for(int bi: boardsReadyForRead)
 	{
 		usleep(10000);
 		unsigned int command = 0x00210000; //base command for set readmode
@@ -611,8 +626,6 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 		}
 	}
 
-
-
 	return 0;
 }
 
@@ -660,10 +673,12 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
     sa.sa_handler = got_signal;
     sigfillset(&sa.sa_mask);
     sigaction(SIGINT,&sa,NULL);
+
     enableTransfer(0);
 	unsigned int command = 0x00210000;
 	usb->sendData(command);
     enableTransfer(1);
+
 	try
 	{
 		while(true)
@@ -692,6 +707,11 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 			lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 			
+			if(lastAccBuffer.size()==0)
+			{
+				continue;
+			}
+
 			for(int k=0; k<MAX_NUM_BOARDS; k++)
 			{
 				if(lastAccBuffer.at(16+k)==7795)

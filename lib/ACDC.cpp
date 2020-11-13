@@ -119,7 +119,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 		return 2;
 	}
 
-	if((pedestal.size() == 0 || conv.size() == 0) && !raw)
+	if((peds.size() == 0 || conv.size() == 0) && !raw)
 	{
 		cout << "Found no pedestal or LUT conversion data but was told to parse data." << endl;
 		cout << "Please check the ACC class for an initialization of this calibration data" << endl;
@@ -357,8 +357,6 @@ void ACDC::writeDataToFile(ofstream& d, ofstream& m, int oscopeOnOff)
 			}
 			d << endl;
 		}
-
-		cout << "done" << endl;
 		return;
 	}else if(oscopeOnOff==1)
 	{

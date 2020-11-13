@@ -72,27 +72,35 @@ int main() {
 	int calibMode = 1;
 	int nevents = 50; //old software read 50 times for ped calibration. 
 	double sum;
+	int retval;
 	
 	ACC* acc = new ACC();
 
-	acc->initializeForDataReadout(trigMode,boardMask,calibMode);
+	retval = acc->initializeForDataReadout(trigMode,boardMask,calibMode);
+	if(retval != 0)
+	{
+		cout << "Initialization failed!" << endl;
+		return 0;
+	}
 
 	map<int, map<int, vector<double>>> tempdata;
 	map<int, map<int, vector<double>>> runsum;
 	map<int, map<int, double>> pedMap;
-	for(int i=0; i< nevents; i++){
+	for(int i=0; i<nevents; i++){
 		acc->softwareTrigger();
 
-		acc->listenForAcdcData(trigMode,true,1,0);
-
+		retval = acc->listenForAcdcData(trigMode,true,1,0);
+		if (retval!=0)
+		{
+			cout << "retval " << retval << endl;
+			i--;
+			continue;
+		}
 		tempdata = acc->returnPedData();
-
 		for(int bi=0; bi<tempdata.size(); bi++)
 		{
-			cout << tempdata.size() << endl;
 			for(int ch=0; ch<tempdata[bi].size(); ch++)
 			{
-				cout << tempdata[bi].size() << endl;
 				sum = accumulate(tempdata[bi][ch].begin(), tempdata[bi][ch].end() , 0);
 				runsum[bi][ch].push_back(sum);
 			}
@@ -102,11 +110,15 @@ int main() {
 	pedMap = calculatePedMap(runsum);
 
 
-		//open files that will hold the most-recent PED data. 
-		datafn = CALIBRATION_DIRECTORY;
-		datafn += PED_TAG; 
-		datafn += ".txt";
-		ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
+	//open files that will hold the most-recent PED data. 
+	datafn = CALIBRATION_DIRECTORY;
+	string mkdata = "mkdir -p ";
+	mkdata += CALIBRATION_DIRECTORY;
+	system(mkdata.c_str());
+	datafn += PED_TAG; 
+	datafn += ".txt";
+	cout << datafn << endl;
+	ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
 	for(int bi=0; bi<8; bi++)
 	{
 		for(int ch=0; ch<30; ch++)
