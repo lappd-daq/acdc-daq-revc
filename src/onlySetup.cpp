@@ -147,7 +147,7 @@ int main(int argc, char *argv[])
 				break;
 		}
 	}
-	acc.setTriggerMode(triggermode);
+	acc.setTriggermode(triggermode);
 	
 	while(true)
 	{
