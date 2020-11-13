@@ -53,6 +53,6 @@ plot\
 "./Results/Data_b0_evno0.txt" using 1:30 lw 2 with lines title 'CHAN 5',\
 "./Results/Data_b0_evno0.txt" using 1:31 lw 2 with lines title 'CHAN 6',\
 
-pause 0.1
+pause 0.2
 reread
 
