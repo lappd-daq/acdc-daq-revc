@@ -220,7 +220,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 				//apply a pedestal subtraction
 				sampleValue = sampleValue - peds[bi][channelCount-1]; //adc counts
 				//apply a linearity corrected mV conversion
-				sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
+				//sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
 			}
 			
 			//save in the vector. vector is saved in the data map when
