@@ -2,6 +2,10 @@
 #include <bitset>
 #include <sstream>
 #include <fstream>
+#include <chrono> 
+#include <iomanip>
+#include <numeric>
+#include <ctime>
 
 using namespace std;
 
@@ -15,7 +19,7 @@ ACDC::ACDC()
 
 ACDC::~ACDC()
 {
-	cout << "Calling acdc detructor" << endl;
+	cout << "Calling acdc destructor" << endl;
 }
 
 void ACDC::printMetadata(bool verbose)
@@ -115,14 +119,15 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 	//filled. if not, there is nothing to be done.
 	if(lastAcdcBuffer.size() == 0)
 	{
-		cout << "You tried to parse ACDC data without pulling/setting an ACDC buffer" << endl;
+		string err_msg = "You tried to parse ACDC data without pulling/setting an ACDC buffer";
+		writeErrorLog(err_msg);
 		return 2;
 	}
 
 	if((peds.size() == 0 || conv.size() == 0) && !raw)
 	{
-		cout << "Found no pedestal or LUT conversion data but was told to parse data." << endl;
-		cout << "Please check the ACC class for an initialization of this calibration data" << endl;
+		string err_msg = "Found no pedestal or LUT conversion data but was told to parse data. Please check the ACC class for an initialization of this calibration data";
+		writeErrorLog(err_msg);
 		return 2;
 	}
 
@@ -157,7 +162,12 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 			if(waveform.size() != NUM_SAMP)
 			{
 				//got a corrupt data buffer, throw event away
-				cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (1)" << endl;
+				string err_msg = "Got a corrupt buffer with ";
+				err_msg += to_string(waveform.size());
+				err_msg += " number of samples on a chip after saving ";
+				err_msg += to_string(channelCount);
+				err_msg += " channels (1)";
+				writeErrorLog(err_msg);
 				data.clear();
 
 				return 1;
@@ -180,7 +190,12 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 				if(waveform.size() != NUM_SAMP)
 				{
 					//got a corrupt data buffer, throw event away
-					cout << "Got a corrupt buffer with " << waveform.size() << " number of samples on a chip after saving " << channelCount << " channels (2)" << endl;
+					string err_msg = "Got a corrupt buffer with ";
+					err_msg += to_string(waveform.size());
+					err_msg += " number of samples on a chip after saving ";
+					err_msg += to_string(channelCount);
+					err_msg += " channels (2)";
+					writeErrorLog(err_msg);
 					data.clear();
 					return 1;
 				} 
@@ -220,7 +235,10 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 	//will happily record fewer than NUM_CH. 
 	if(channelCount != NUM_CH)
 	{
-		cout << "Got a corrupt buffer with " << channelCount << " number of channels " << endl;
+		string err_msg = "Got a corrupt buffer with ";
+		err_msg += to_string(channelCount);
+		err_msg += " number of channels";
+		writeErrorLog(err_msg);
 		data.clear();
 		return 1;
 	}
@@ -537,6 +555,23 @@ void ACDC::readConvsFromFile(ifstream& ifs)
 	return;
 }
 
+void ACDC::writeErrorLog(string errorMsg)
+{
+    string err = "errorlog.txt";
+    cout << "------------------------------------------------------------" << endl;
+    cout << errorMsg << endl;
+    cout << "------------------------------------------------------------" << endl;
+    ofstream os_err(err, ios_base::app);
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
+    os_err << "------------------------------------------------------------" << endl;
+    os_err << ss.str() << endl;
+    os_err << errorMsg << endl;
+    os_err << "------------------------------------------------------------" << endl;
+    os_err.close();
+}
 
 //takes a datafile and loads the data member with evno's data. 
 //this is used for minor analysis codes independent of some
@@ -587,9 +622,6 @@ map<int, vector<double>> ACDC::readDataFromFile(vector<string> fileLines, int ev
 
 	setData(returnData);
 	return returnData;
-
-	
-
 }
 
 

@@ -51,7 +51,7 @@ public:
 	void dumpData(); //tells ACDCs to clear their ram
 	bool setPedestals(unsigned int ped, vector<int> boards = {});
   	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
-
+	void writeErrorLog(string errorMsg);
 
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 

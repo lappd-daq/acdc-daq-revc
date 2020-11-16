@@ -4,6 +4,10 @@
 #include <bitset>
 #include <iostream>
 #include <cmath>
+#include <chrono> 
+#include <iomanip>
+#include <numeric>
+#include <ctime>
 
 using namespace std;
 
@@ -266,8 +270,10 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     bool corruptBuffer = false;
 	if(start_indices.size() != NUM_PSEC)
 	{
-        cout << "***********************************************************" << endl;
-		cout << "In parsing ACDC buffer, found " << start_indices.size() << " matadata flag bytes." << endl;
+        string err_msg = "In parsing ACDC buffer, found ";
+        err_msg += to_string(start_indices.size());
+        err_msg += " matadata flag bytes.";
+        writeErrorLog(err_msg);
 		cout << "Metadata for this event will likely be jarbled. Please throw this out!" << endl;
         string fnnn = "acdc-corrupt-buffer.txt";
         cout << "Printing to file : " << fnnn << endl;
@@ -349,17 +355,15 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     if(ac_info[0][5] != 0xEEEE)
     {
     	corruptBuffer = true;
-        cout << "------------------------------------------------------------" << endl;
-        cout << " PSEC frame data, trigger info 0 at info 6 is not right" << endl;
-        cout << "------------------------------------------------------------" << endl;
+        string err_msg = "PSEC frame data, trigger_info (0,0) at psec info 6 is not right";
+        writeErrorLog(err_msg);
         return corruptBuffer;
     }
     if(ac_info[4][5] != 0xEEEE)
     {
     	corruptBuffer = true;
-        cout << "------------------------------------------------------------" << endl;
-        cout << " PSEC frame data, trigger info 0 at info 6 is not right" << endl;
-        cout << "------------------------------------------------------------" << endl;
+        string err_msg = "PSEC frame data, trigger_info (0,4) at psec info 6 is not right";
+        writeErrorLog(err_msg);
         return corruptBuffer;
     }
     //Trigger PSEC settings
@@ -494,4 +498,22 @@ void Metadata::initializeMetadataKeys()
         }
     }
     metadata_keys.push_back("combined_trigger_rate_count");
+}
+
+void Metadata::writeErrorLog(string errorMsg)
+{
+    string err = "errorlog.txt";
+    cout << "------------------------------------------------------------" << endl;
+    cout << errorMsg << endl;
+    cout << "------------------------------------------------------------" << endl;
+    ofstream os_err(err, ios_base::app);
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
+    os_err << "------------------------------------------------------------" << endl;
+    os_err << ss.str() << endl;
+    os_err << errorMsg << endl;
+    os_err << "------------------------------------------------------------" << endl;
+    os_err.close();
 }

@@ -5,13 +5,16 @@
 #include <string> 
 #include <thread> 
 #include <algorithm> 
-#include <chrono> 
 #include <thread> 
 #include <fstream> 
 #include <atomic> 
 #include <signal.h> 
 #include <unistd.h> 
 #include <cstring>
+#include <chrono> 
+#include <iomanip>
+#include <numeric>
+#include <ctime>
 
 using namespace std;
 
@@ -29,7 +32,7 @@ ACC::ACC()
 	usb = new stdUSB();
 	if(!usb->isOpen())
 	{
-		cout << "Usb was unable to connect to ACC" << endl;
+		writeErrorLog("Usb was unable to connect to ACC");
 		delete usb;
 		exit(EXIT_FAILURE);
 	}
@@ -118,13 +121,16 @@ void ACC::emptyUsbLine()
 		}
 		if(send_counter > max_sends)
 		{
-			cout << "Something wrong with USB line, waking it up. got " << tempbuff.size() << " words" << endl;
+			string err_msg = "Something wrong with USB line, waking it up. got ";
+			err_msg += to_string(tempbuff.size());
+			err_msg += " words";
+			writeErrorLog(err_msg);
 			usbWakeup();
 			tempbuff = usb->safeReadData(SAFE_BUFFERSIZE);
 			if(tempbuff.size() == 32){
-				cout << "Usb woke up. Problem is fixed" << endl;
+				writeErrorLog("Usb woke up. Problem is fixed");
 			}else{
-				cout << "Usb still sleeping. Problem is not fixed." << endl;
+				writeErrorLog("Usb still sleeping. Problem is not fixed.");
  			}
 			loop_breaker = true;
 		}
@@ -138,7 +144,7 @@ bool ACC::checkUSB()
 		bool retval = usb->createHandles();
 		if(!retval)
 		{
-			cout << "Cannot connect to ACC usb" << endl;
+			writeErrorLog("Cannot connect to ACC usb");
 			return false;
 		}
 	}else{
@@ -171,7 +177,7 @@ vector<unsigned short> ACC::readAccBuffer()
 	vector<unsigned short> v_buffer = sendAndRead(command, SAFE_BUFFERSIZE/4);
 	if(v_buffer.size() == 0)
 	{
-		cout << "USB comms to ACC are broken" << endl;
+		writeErrorLog("USB comms to ACC are broken");
 		cout << "(1) Turn off the ACC" << endl;
 		cout << "(2) Unplug the USB cable power" << endl;
 		cout << "(3) Turn on ACC" << endl;
@@ -213,7 +219,7 @@ int ACC::createAcdcs()
 	//if there are no ACDCs, return 0
 	if(alignedAcdcIndices.size() == 0)
 	{
-		cout << "No aligned Acdc indices" << endl;
+		writeErrorLog("No aligned Acdc indices");
 		return 0;
 	}
 	
@@ -265,7 +271,9 @@ int ACC::parsePedsAndConversions()
 		//set default values defined above. 
 		if(!(bool)ifped)
 		{
-			cout << "WARNING: Your boards do not have a pedestal calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
+			string err_msg = "WARNING: Your boards do not have a pedestal calibration in the calibration folder: ";  
+			err_msg += CALIBRATION_DIRECTORY;
+			writeErrorLog(err_msg);
 			pedCounter++;
 			for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
 			{
@@ -282,7 +290,9 @@ int ACC::parsePedsAndConversions()
 
 		if(!(bool)iflin)
 		{
-			cout << "WARNING: Your boards do not have a linearity scan calibration in the calibration folder: " << CALIBRATION_DIRECTORY << endl;
+			string err_msg = "WARNING: Your boards do not have a linearity scan calibration in the calibration folder: ";  
+			err_msg += CALIBRATION_DIRECTORY;
+			writeErrorLog(err_msg);
 			linCounter++;
 			for(int channel = 1; channel <= a->getNumCh(); channel++)
 			{
@@ -356,7 +366,9 @@ vector<int> ACC::whichAcdcsConnected(bool pullNew)
 	vector<int> connectedBoards;
 	if(lastAccBuffer.size() != 32) //Check if buffer size is 32 words
 	{
-		cout << "Something wrong with ACC buffer, size: " << lastAccBuffer.size() << endl;
+		string err_msg = "Something wrong with ACC buffer, size: ";  
+		err_msg += to_string(lastAccBuffer.size());
+		writeErrorLog(err_msg);
 		return connectedBoards;
 	}
 
@@ -552,7 +564,7 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 		usleep(10000);
 		if(acdc_buffer.size() !=  7795){
-			cout << "Size of  Acdc buffer: " << acdc_buffer.size() << endl;
+			writeErrorLog("Couldn't read 7795 words as expected! Tryingto fix it!");
 		}
 		bool corruptBuffer = false;
 		if(acdc_buffer.size() == 0)
@@ -573,7 +585,7 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 
 		if(corruptBuffer)
 		{
-			cout << "******************** Early corrupt buffer *************************" << endl;
+			writeErrorLog("Early corrupt buffer");
 			return 1;
 		}
 
@@ -593,15 +605,16 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 					//a->readPED(acdc_buffer);
 				}
 				
-				retval = a->parseDataFromBuffer(acdc_buffer, raw); 
+				retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
 
 				if(retval !=0)
 				{
-					cout << "********* Corrupt buffer caught at PSEC data level (2) ****************" << endl;
+					string err_msg = "Corrupt buffer caught at PSEC data level (2)";
 					if(retval == 3)
 					{
-						cout << "Because of the Metadata buffer" << endl;
+						err_msg += "Because of the Metadata buffer";
 					}
+					writeErrorLog(err_msg);
 					corruptBuffer = true;
 
 					a->writeRawBufferToFile(acdc_buffer);	
@@ -609,7 +622,9 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 
 				if(corruptBuffer)
 				{
-					cout << "********* got a corrupt buffer with retval " << retval << " ****************" << endl;
+					string err_msg = "got a corrupt buffer with retval ";
+					err_msg += to_string(retval);
+					writeErrorLog(err_msg);
 					return 1;
 				}
 
@@ -747,7 +762,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 			if(acdc_buffer.size()!=7795)
 			{
-				cout << "Buffer size " << acdc_buffer.size() << endl;
+				writeErrorLog("Couldn't read 7795 words as expected! Tryingto fix it!");
 				break;
 			}
 			//----corrupt buffer checks begin
@@ -757,7 +772,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 			bool corruptBuffer = false;
 			if(acdc_buffer.size() == 0)
 			{
-				cout << "Buffer size " << acdc_buffer.size() << endl;
+				writeErrorLog("Empty Psec buffer read!");
 				corruptBuffer = true;
 			}
 			int nonzerocount = 0;
@@ -774,7 +789,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 			if(corruptBuffer)
 			{
-				cout << "******************** Early corrupt buffer *************************" << endl;
+				writeErrorLog("Early corrupt buffer");
 				return 1;
 			}
 
@@ -797,11 +812,12 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 					retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
 					if(retval !=0)
 					{
-						cout << "********* Corrupt buffer caught at PSEC data level (2) ****************" << endl;
+						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
 						if(retval == 3)
 						{
-							cout << "Because of the Metadata buffer" << endl;
+							err_msg += "Because of the Metadata buffer";
 						}
+					writeErrorLog(err_msg);
 						corruptBuffer = true;
 
 						a->writeRawBufferToFile(acdc_buffer);	
@@ -809,7 +825,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 					if(corruptBuffer)
 					{
-						cout << "********* got a corrupt buffer with retval " << retval << " ****************" << endl;
+						string err_msg = "got a corrupt buffer with retval ";
+						err_msg += to_string(retval);
+						writeErrorLog(err_msg);
 						return 1;
 					}
 
@@ -994,7 +1012,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			usb->sendData(command);
 			break;
 		default: // ERROR case
-			cout << "Specified trigger is not known!" << endl;
+			writeErrorLog("Specified trigger is not known!");
 			break;
 		selfsetup:
  			command = 0xFFB10000;
@@ -1100,7 +1118,11 @@ bool ACC::setPedestals(unsigned int ped, vector<int> boards)
 			retval = usb->sendData(command); //set ped on that chip
 			if(retval != 0)
 			{
-				cout << "Failed setting pedestal on board " << bi << " chip " << chip << endl;
+				string err_msg = "Failed setting pedestal on board ";
+				err_msg += to_string(bi);
+				err_msg += " chip ";
+				err_msg += to_string(chip);
+				writeErrorLog(err_msg);
 				return false;
 			}
 		}
@@ -1145,7 +1167,10 @@ void ACC::toggleCal(int onoff, unsigned int channelmask)
 void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 {
 	if(src > 9){
-		cout << "Source: " << src << " will cause an error for setting Hardware triggers. Source has to be <9" << endl;
+		string err_msg = "Source: ";
+		err_msg += to_string(src);
+		err_msg += " will cause an error for setting Hardware triggers. Source has to be <9";
+		writeErrorLog(err_msg);
 	}
 
 	//ACC hardware trigger
@@ -1158,7 +1183,25 @@ void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 	usb->sendData(command);
 }
 
-//------------reset functions
+void ACC::writeErrorLog(string errorMsg)
+{
+    string err = "errorlog.txt";
+    cout << "------------------------------------------------------------" << endl;
+    cout << errorMsg << endl;
+    cout << "------------------------------------------------------------" << endl;
+    ofstream os_err(err, ios_base::app);
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
+    os_err << "------------------------------------------------------------" << endl;
+    os_err << ss.str() << endl;
+    os_err << errorMsg << endl;
+    os_err << "------------------------------------------------------------" << endl;
+    os_err.close();
+}
+
+//------------seperate functions
 
 //the lightest reset. does not
 //try to realign LVDS, does not try

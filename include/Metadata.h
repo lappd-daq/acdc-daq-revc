@@ -28,6 +28,7 @@ public:
 	//two metadatas that are known externally need to be set by ACDC class.
 	void setBoardAndEvent(unsigned short board, int event); 
 	int getEventNumber();
+	void writeErrorLog(string errorMsg);
 
 
 private:
