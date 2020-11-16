@@ -8,6 +8,9 @@
 #include <unistd.h>
 #include <limits>
 
+
+ACC* acc = new ACC();
+
 int main(int argc, char *argv[])
 {
 	int retval;
@@ -25,8 +28,6 @@ int main(int argc, char *argv[])
 	int failCounter;
 	bool flag = true;
 	int oscopeMode;
-
-	ACC* acc = new ACC();
 
 	system("mkdir -p Results");
 	
