@@ -663,7 +663,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 {
 	bool waitForAll = false;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
-
+	unsigned int command;
 	//this function is simply readAcdcBuffers
 	//if the trigMode is software
 	if(trigMode == 1)
