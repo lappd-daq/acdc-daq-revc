@@ -500,13 +500,17 @@ int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 	//a fullRam flag on ACC indicating
 	//that ACDCs have sent data to the ACC
 	vector<int> boardsReadyForRead;
+	unsigned int command;
+    	enableTransfer(0);	
+	for(int ref: alignedAcdcIndices)
+	{
+		command = 0x00210000;
+		command = command | ref;
+		usb->sendData(command);
+	}
+    	enableTransfer(1);
 
-    enableTransfer(0);
-	unsigned int command = 0x00210000;
-	usb->sendData(command);
-    enableTransfer(1);
-
-    int maxCounter=0;
+    	int maxCounter=0;
 	while(true)
 	{
 		command = 0x00200000;
@@ -682,15 +686,19 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 	//setup a sigint capturer to safely
 	//reset the boards if a ctrl-c signal is found
 	struct sigaction sa;
-    memset( &sa, 0, sizeof(sa) );
-    sa.sa_handler = got_signal;
-    sigfillset(&sa.sa_mask);
-    sigaction(SIGINT,&sa,NULL);
+	memset( &sa, 0, sizeof(sa) );
+	sa.sa_handler = got_signal;
+	sigfillset(&sa.sa_mask);
+	sigaction(SIGINT,&sa,NULL);
 
-    enableTransfer(0);
-	unsigned int command = 0x00210000;
-	usb->sendData(command);
-    enableTransfer(1);
+    	enableTransfer(0);
+	for(int ref: alignedAcdcIndices)
+	{
+		command = 0x00210000;
+		command = command | ref;
+		usb->sendData(command);
+	}
+    	enableTransfer(1);
 
 	try
 	{
