@@ -65,15 +65,16 @@ To use full extend of the software use `./bin/listenForData` (important is that 
 - self trigger threshold, coincidence minimum number of channels, sign, detection mode, etc...
 - the validation window start and length  
 ```
+3. Choose the acdc boards you want to set the settings for. Bits `31-24` each represent one of the 8 acdc board slots on the acc card. By entering an 8bit hex number from `0x00` to `0xFF` individual boards can be selected. If all boards shlould be set the same use `0xFF`, which is also the default. To set individual settings it is best to use `./bin/onlySetup` since its can be run repedetly without reading data.
 
-3. Set the calibration mode on/off (The calibration mode clones the signal input via on the SMA on ACC/ACDC to all available PSEC channels). Only use this if there is nothing connected to the Samtec connector.
+4. Set the calibration mode on/off (The calibration mode clones the signal input via on the SMA on ACC/ACDC to all available PSEC channels). Only use this if there is nothing connected to the Samtec connector.
 
-4. Choose between raw output or calibrated output.
+5. Choose between raw output or calibrated output.
 ```bash
 raw on - outputs the channel data as a number between 0 and 4095 and an offset of around 1500 to 2000 (~600 mV) is visible for the baseline if not set before.
 raw off- outputs the channel data converted to mV and the baseline is actively corrected to 0.
 ```
-5. Choose between Oscope mode or save mode:
+6. Choose between Oscope mode or save mode:
 ```bash
 oscope mode - only one file is saved and overwritten constantly. This file is then plotted by gnuplot into five windows, each being one psec chip.
 save mode   - a specified number of waveforms will be saved on the computer as txt files. In addition Metadata files will be saved as well.
