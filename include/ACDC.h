@@ -40,16 +40,10 @@ public:
 	void writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer);
 	void writeRawDataToFile(vector<unsigned short> buffer, ofstream& d);
 	void printByte(ofstream& ofs, unsigned short val);
-	void writePedsToFile(ofstream& ofs);
 	void readPedsFromFile(ifstream& ifs);
-	void writeConvsToFile(ofstream& ofs);
 	void readConvsFromFile(ifstream& ifs);
 	void writeErrorLog(string errorMsg);
 
-	map<int, vector<double>> readDataFromFile(vector<string>, int evno); //takes a datafile and loads the data member with evno's data. 
-
-	void readPED(vector<unsigned short> acdc_buffer);
-	void setPed(vector<double> p){pedestal = p;}
 	map<int, vector<double>> returnData(){return data;}
 
 
@@ -62,7 +56,6 @@ private:
 	map<int, vector<double>> data; //data[channel][waveform samples] channel starts at 1. 
 	map<int, map<int, double>> peds; //peds[channel][waveform samples] from a calibration file.
 	map<int, vector<double>> conv; //conversion factor from adc counts to mv from calibration file. 
-	vector<double> pedestal;
 
 	void convertMaskToChannels();
 	void fillData(); //parses the acdc buffer and fills the data map

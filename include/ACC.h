@@ -45,7 +45,7 @@ public:
 	void softwareTrigger(); //sends the software trigger
 	void enableTransfer(int onoff=0);
 	void toggleCal(int onoff, unsigned int channelmask = 0x7FFF); //toggles calibration input switch on boards
-	int readAcdcBuffers(bool waitForAll = false, bool raw = false, int evno=0, int oscopeOnOff=0); //reads the acdc buffers
+	int readAcdcBuffers(bool raw = false, int evno=0, int oscopeOnOff=0); //reads the acdc buffers
 	int listenForAcdcData(int trigMode, bool raw = false, int evno=0,int oscopeOnOff=0); //almost identical to readAcdcBuffers but intended for real data triggering
 	int initializeForDataReadout(int trigMode = 0,unsigned int boardMask = 0xFF, int calibMode = 0);
 	void dumpData(); //tells ACDCs to clear their ram
@@ -90,7 +90,7 @@ private:
 
 
 	//-----------parsing functions (no usb comms)
-	vector<int> whichAcdcsConnected(bool pullNew = false);
+	vector<int> whichAcdcsConnected();
 	void printByte(unsigned short val, char* format);
 	vector<unsigned short> sendAndRead(unsigned int command, int buffsize); //wakes the usb line, only called in constructor. 
 	bool checkUSB(); //checking usb line and returning or couting appropriately.  

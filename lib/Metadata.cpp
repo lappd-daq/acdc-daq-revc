@@ -53,7 +53,7 @@ void Metadata::writeMetadataToFile(ofstream& m, string delim)
 {
     for(string k: metadata_keys)
     {
-        m << k << "\t"; 
+        m << k << delim; 
         stringstream ss;
         ss << std::hex << metadata[k]; 
         string hexstr(ss.str());

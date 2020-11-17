@@ -345,7 +345,7 @@ void ACC::printByte(unsigned short val, int format)
 	}
 }
 
-vector<int> ACC::whichAcdcsConnected(bool pullNew)
+vector<int> ACC::whichAcdcsConnected()
 {
 	//New sequence to ask the ACC to reply with the number of boards connected 
 	enableTransfer(0); //Disables the PSEC4 frame data transfer for this sequence. Has to be set to HIGH later again
@@ -494,7 +494,7 @@ void ACC::softwareTrigger()
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
+int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -631,8 +631,8 @@ int ACC::readAcdcBuffers(bool waitForAll, bool raw, int evno, int oscopeOnOff)
 				//filename logistics
 				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-				ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
-				ofstream metaofs(metafn.c_str(), ios_base::trunc); //trunc overwrites
+				ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
+				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 				a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
 
 				ped_data[bi] = a->returnData();
@@ -664,11 +664,10 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 	//if the trigMode is software
 	if(trigMode == 1)
 	{
-		waitForAll = true;
 		int retval;
 		//The ACC already sent a trigger, so
 		//tell it not to send another during readout. 
-		retval = readAcdcBuffers(waitForAll, raw, evno, oscopeOnOff);
+		retval = readAcdcBuffers(raw, evno, oscopeOnOff);
 		return retval;
 	}
 
@@ -835,8 +834,8 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					//string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-					ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
-					ofstream metaofs(metafn.c_str(), ios_base::trunc); //trunc overwrites
+					ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
+					ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 
 					a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
 				}

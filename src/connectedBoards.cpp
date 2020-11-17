@@ -50,7 +50,7 @@ vector<unsigned short> sendAndRead(unsigned int command, int buffsize)
 	return tempbuff;
 }
 
-int main(int argc, char *argv[])
+int main()
 {
 	
 	usb = new stdUSB();

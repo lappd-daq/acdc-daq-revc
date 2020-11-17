@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <limits>
 
-int main(int argc, char *argv[])
+int main()
 {
 	int retval;
 	int triggermode;

@@ -97,9 +97,9 @@ int main() {
 			continue;
 		}
 		tempdata = acc->returnPedData();
-		for(int bi=0; bi<tempdata.size(); bi++)
+		for(int bi=0; bi<(int)tempdata.size(); bi++)
 		{
-			for(int ch=0; ch<tempdata[bi].size(); ch++)
+			for(int ch=0; ch<(int)tempdata[bi].size(); ch++)
 			{
 				sum = accumulate(tempdata[bi][ch].begin(), tempdata[bi][ch].end() , 0);
 				runsum[bi][ch].push_back(sum);

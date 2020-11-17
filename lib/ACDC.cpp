@@ -254,96 +254,6 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 
 }
 
-void ACDC::readPED(vector<unsigned short> acdc_buffer)
-{
-	unsigned short startword = 0xF005; 
-	unsigned short endword = 0xBA11;  
-	int channelCount = 1; //iterates every 256 samples and when a startword is found 
-	int sampleCount = 0; //for checking if we hit 256 samples. 
-	double sampleValue = 0.0; //temporary holder for the sample in ADC-counts/mV
-	bool dataFlag = false; //if we are currently on psec-data bytes. 
-	vector<double> waveform; //the current channel's data as a vector of doubles. 
-	int n_sample = 64;
-	double sum, num, mean, delta;
-	vector<double> pedestal;
-	double limit = 200;
-
-	for(unsigned short byte: acdc_buffer)
-	{
-		if(byte == startword && !dataFlag)
-		{
-			//re-initialize for a new PSEC chip
-			dataFlag = true;
-			sampleCount = 0;
-			continue;
-		}
-
-		if(byte == endword && dataFlag)
-		{
-			dataFlag = false;
-			waveform.clear();
-			continue;
-		}
-
-		if(dataFlag)
-		{
-			//here is where we assume every
-			//channel to have NUM_SAMP samples. 
-			if(sampleCount == NUM_SAMP-1)
-			{
-				sum = 0;
-				num = 0;
-				// use waveform to make pedestal
-				for(int i=0; i< n_sample; i++)
-				{
-					delta = waveform[i] - waveform[i+1];
-					if(abs(delta) > limit)
-					{
-						break;
-					}
-					sum += waveform[i];
-					num++;
-				}
-				mean = sum/num;
-				//cout << "ch " << channelCount << " mean: " << mean << endl;
-				pedestal.push_back(mean);
-
-				sampleCount = 0;
-				waveform.clear();
-				channelCount++;
-				continue;
-			}
-			if(channelCount > NUM_CH)
-			{
-				//we are done here.
-				channelCount--; //reset to = NUM_CH 
-				break; //could also be continue.
-			}
-
-			//---these lines fill a waveform vector
-			//---that will be inserted into the data map
-			sampleValue = (double)byte; //adc counts
-
-			//save in the vector. vector is saved in the data map when
-			//the channel count is iterated. 
-			waveform.push_back(sampleValue); 
-			sampleCount++;
-			continue;
-		}
-	}
-	setPed(pedestal);
-	if(pedestal.size() != 30)
-	{
-		cout << "Couldn't get 30 pedestal values"  << endl;
-		for(double val: pedestal)
-		{
-			cout << val << ", "; //decimal
-		}
-		cout << endl;
-	}
-	pedestal.clear();
-}
-
 
 //writes data from the presently stored event
 // to file assuming file has header already
@@ -355,7 +265,7 @@ void ACDC::writeDataToFile(ofstream& d, ofstream& m, int oscopeOnOff)
 	{
 		//metadata part is simple and contained
 		//in that class. 
-		meta.writeMetadataToFile(m, delim);
+		meta.writeMetadataToFile(m, "\t");
 
 		int evno = meta.getEventNumber();
 
@@ -405,39 +315,6 @@ void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 }
 
 
-
-//writes pedestals to file in a new
-//file format relative to the old software. 
-//<channel> <sample 1> <sample 2> ...
-//<channel> ...
-//samples in ADC counts. 
-void ACDC::writePedsToFile(ofstream& ofs)
-{/*
-	string delim = " ";
-
-	map<int, vector<double>>::iterator mit;
-	vector<double>::iterator vit;
-	vector<double> tempwav; //ped data
-	int ch; //channel
-	for(mit = peds.begin(); mit != peds.end(); ++mit)
-	{
-		tempwav = mit->second;
-		ch = mit->first;
-
-		
-		ofs << ch << delim;//print channel to file with a delim
-		for(vit = tempwav.begin(); vit != tempwav.end(); ++vit)
-		{
-			ofs << *vit << delim; //print ped value for that sample 
-		}
-		ofs << endl;
-	}
-
-	return;
-	*/
-}
-
-
 //reads pedestals to file in a new
 //file format relative to the old software. 
 //<channel> <sample 1> <sample 2> ...
@@ -476,38 +353,6 @@ void ACDC::readPedsFromFile(ifstream& ifs)
 	//call public member of this class to set the pedestal map
 	setPeds(tempPeds);
 	return;
-}
-
-
-//writes LUT conversions to file in a new
-//file format relative to the old software. 
-//<channel> <sample 1> <sample 2> ...
-//<channel> ...
-//samples in ADC counts. 
-void ACDC::writeConvsToFile(ofstream& ofs)
-{
-	string delim = " ";
-
-	map<int, vector<double>>::iterator mit;
-	vector<double>::iterator vit;
-	vector<double> tempwav; //conv data
-	int ch; //channel
-	for(mit = conv.begin(); mit != conv.end(); ++mit)
-	{
-		tempwav = mit->second;
-		ch = mit->first;
-
-		
-		ofs << ch << delim;//print channel to file with a delim
-		for(vit = tempwav.begin(); vit != tempwav.end(); ++vit)
-		{
-			ofs << *vit << delim; //print conv value for that sample 
-		}
-		ofs << endl;
-	}
-
-	return;
-	
 }
 
 
@@ -573,56 +418,6 @@ void ACDC::writeErrorLog(string errorMsg)
     os_err.close();
 }
 
-//takes a datafile and loads the data member with evno's data. 
-//this is used for minor analysis codes independent of some
-//ACC. It is somewhat inefficient. 
-map<int, vector<double>> ACDC::readDataFromFile(vector<string> fileLines, int evno)
-{
-	map<int, vector<double>> returnData;
-	string word;
-	int ch; //channel curent
-	int ev; //event number current
-	int bo; //board index present in file
-	char delim = ' ';
-
-	//Inefficient loop through 
-	//a vector to find the right event and board. 
-	for(string line: fileLines)
-	{
-      stringstream ssline(line); //the current line in the file
-      getline(ssline, word, delim); //first word is the event
-      ev = stoi(word);
-      getline(ssline, word, delim);
-      bo = stoi(word); //board is 2nd word
-      getline(ssline, word, delim);
-      ch = stoi(word); //channel is third word;
-      //we are on an acceptable line
-      if(ev == evno && bo == boardIndex)
-      {
-          vector<double> tempwav;
-          //get all of the adc counts in the channel
-          while(getline(ssline, word, delim))
-          {
-              tempwav.push_back(stod(word));
-          }
-          //error check
-          if(tempwav.size() != NUM_SAMP)
-          {
-              cout << "In reading data, found an event that has not the expected number of samples: " << tempwav.size() << endl;
-          }
-          returnData.insert(pair<int, vector<double>>(ch, tempwav));
-		   }
-	}
-
-	//error checking
-	if(returnData.size() != NUM_CH)
-	{
-		cout << "In reading data, found an event with different number of channels than expected: " << returnData.size() << endl;
-	}
-
-	setData(returnData);
-	return returnData;
-}
 
 
 
