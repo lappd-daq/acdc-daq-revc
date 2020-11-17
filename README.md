@@ -78,6 +78,12 @@ raw off- outputs the channel data converted to mV and the baseline is actively c
 oscope mode - only one file is saved and overwritten constantly. This file is then plotted by gnuplot into five windows, each being one psec chip.
 save mode   - a specified number of waveforms will be saved on the computer as txt files. In addition Metadata files will be saved as well.
 ```
+### onlySetup
+Executes only the setup portion of the `./bin/listenForData` command.
+
+### onlyListen (experimental)
+Executes only the data-readout portion of the `./bin/listenForData` command. This way data can be read without complete setup of the trigger every time.
+If a different trigger is desired `./onlySetup` needs to be executed again.
 
 ## Settings for the Oscilloscope
 All settings and plot commands for the oscilloscope are handled in seperate gnu files. 
@@ -86,11 +92,6 @@ All settings and plot commands for the oscilloscope are handled in seperate gnu 
 ./oscilloscope/settings_raw.gnu	-> sets the y axis to arbitrary numbers from 0 to 4095 instead od mV
 ./oscilloscope/liveplot.gnu		-> contains all the plot handling, especially the seperation into 5 PSEC chips and the repeated updating
 ```
-### onlySetup
-Executes only the setup portion of the `./bin/listenForData` command.
 
-### onlyListen (experimental)
-Executes only the data-readout portion of the `./bin/listenForData` command. This way data can be read without complete setup of the trigger every time.
-If a different trigger is desired `./onlySetup` needs to be executed again.
 
 
