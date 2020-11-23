@@ -627,15 +627,17 @@ int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 				}
 				
 				string outfilename = "./Results/";
+				string datafn;
+				string metafn;
 				//filename logistics
 				if(oscopeOnOff==0)
 				{
-					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 				}else if(oscopeOnOff==1)
 				{
-					string datafn = outfilename + "Data_Oscope.txt";
-					string metafn = outfilename + "Meta_Oscope.txt";
+					datafn = outfilename + "Data_Oscope.txt";
+					metafn = outfilename + "Meta_Oscope.txt";
 				}
 				ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
 				ofstream metaofs(metafn.c_str(), ios_base::trunc); //trunc overwrites
@@ -836,18 +838,20 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 
 					//filename logistics
 					string outfilename = "./Results/";
+					string datafn;
+					string metafn;
 					//filename logistics
 					if(oscopeOnOff==0)
 					{
-						string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-						string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+						datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+						metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
 					}else if(oscopeOnOff==1)
 					{
-						string datafn = outfilename + "Data_Oscope.txt";
-						string metafn = outfilename + "Meta_Oscope.txt";
+						datafn = outfilename + "Data_Oscope.txt";
+						metafn = outfilename + "Meta_Oscope.txt";
 					}
-					ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
-					ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
+					ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
+					ofstream metaofs(metafn.c_str(), ios_base::trunc); //trunc overwrites
 
 					a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
 				}
