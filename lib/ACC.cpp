@@ -500,17 +500,13 @@ int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 	//a fullRam flag on ACC indicating
 	//that ACDCs have sent data to the ACC
 	vector<int> boardsReadyForRead;
-	unsigned int command;
-    	enableTransfer(0);	
-	for(int ref: alignedAcdcIndices)
-	{
-		command = 0x00210000;
-		command = command | ref;
-		usb->sendData(command);
-	}
-    	enableTransfer(1);
 
-    	int maxCounter=0;
+    enableTransfer(0);
+	unsigned int command = 0x00210000;
+	usb->sendData(command);
+    enableTransfer(1);
+
+    int maxCounter=0;
 	while(true)
 	{
 		command = 0x00200000;
@@ -544,8 +540,6 @@ int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 	}
 
 	//enableTransfer(1);
-
-	string outfilename = "./Results/";
 
 	//----corrupt buffer checks begin
 	//sometimes the ACDCs dont send back good
@@ -631,12 +625,20 @@ int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 					writeErrorLog(err_msg);
 					return 1;
 				}
-
+				
+				string outfilename = "./Results/";
 				//filename logistics
-				string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-				string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-				ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
-				ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
+				if(oscopeOnOff==0)
+				{
+					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+				}else if(oscopeOnOff==1)
+				{
+					string datafn = outfilename + "Data_Oscope.txt";
+					string metafn = outfilename + "Meta_Oscope.txt";
+				}
+				ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
+				ofstream metaofs(metafn.c_str(), ios_base::trunc); //trunc overwrites
 				a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
 
 				ped_data[bi] = a->returnData();
@@ -663,7 +665,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 {
 	bool waitForAll = false;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
-	unsigned int command;
+
 	//this function is simply readAcdcBuffers
 	//if the trigMode is software
 	if(trigMode == 1)
@@ -686,19 +688,15 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 	//setup a sigint capturer to safely
 	//reset the boards if a ctrl-c signal is found
 	struct sigaction sa;
-	memset( &sa, 0, sizeof(sa) );
-	sa.sa_handler = got_signal;
-	sigfillset(&sa.sa_mask);
-	sigaction(SIGINT,&sa,NULL);
+    memset( &sa, 0, sizeof(sa) );
+    sa.sa_handler = got_signal;
+    sigfillset(&sa.sa_mask);
+    sigaction(SIGINT,&sa,NULL);
 
-    	enableTransfer(0);
-	for(int ref: alignedAcdcIndices)
-	{
-		command = 0x00210000;
-		command = command | ref;
-		usb->sendData(command);
-	}
-    	enableTransfer(1);
+    enableTransfer(0);
+	unsigned int command = 0x00210000;
+	usb->sendData(command);
+    enableTransfer(1);
 
 	try
 	{
@@ -749,8 +747,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 	
 		//each ACDC needs to be queried individually
 		//by the ACC for its buffer. 
-		
-		string outfilename = "./Results/";
 		
 
 		for(int bi: boardsReadyForRead)
@@ -839,9 +835,17 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 					}
 
 					//filename logistics
-					string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-					string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-					//string rawfn = outfilename + "Raw_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					string outfilename = "./Results/";
+					//filename logistics
+					if(oscopeOnOff==0)
+					{
+						string datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+						string metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					}else if(oscopeOnOff==1)
+					{
+						string datafn = outfilename + "Data_Oscope.txt";
+						string metafn = outfilename + "Meta_Oscope.txt";
+					}
 					ofstream dataofs(datafn.c_str(), ios_base::out); //trunc overwrites
 					ofstream metaofs(metafn.c_str(), ios_base::out); //trunc overwrites
 
