@@ -7,6 +7,19 @@
 #include <bitset>
 #include <unistd.h>
 #include <limits>
+#include <chrono> 
+#include <iomanip>
+#include <numeric>
+#include <ctime>
+
+string getTime()
+{
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y%d%m%X");
+    return ss.str();
+}
 
 ACC acc;
 
@@ -27,6 +40,7 @@ int main()
 	int failCounter;
 	bool flag = true;
 	int oscopeMode;
+	string timestamp;
 
 	system("mkdir -p Results");
 
@@ -98,6 +112,9 @@ int main()
 
 	eventCounter = 0;
 	failCounter = 0;
+	int reTime = 500;
+	int mult = 1;
+	timestamp = getTime();
 	if(oscopeMode==0)
 	{
 		while(eventCounter<eventNumber)
@@ -106,7 +123,12 @@ int main()
 			{
 				acc.softwareTrigger();
 			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
+			if(eventCounter>reTime*mult)
+			{
+				timestamp = getTime();
+				mult++;
+			}
+			retval = acc.listenForAcdcData(triggermode, rawBool, timestamp, oscopeMode);
 			switch(retval)
 			{
 				case 0:
@@ -137,6 +159,19 @@ int main()
 		}
 	}else if(oscopeMode==1)
 	{
+		int bNum;
+		while(true)
+		{
+			std::cout << "Do you want to use 2 boards for evaluation? If yes (1) only use port 0 and 2. Else choose (0)." << std::endl;
+			cin >> bNum;
+			cin.ignore(numeric_limits<streamsize>::max(),'\n');
+
+			if(bNum == 0 || bNum == 1)
+			{
+				break;
+			}
+		}
+
 		Scope scp;
 		int first = 0;
 
@@ -146,13 +181,13 @@ int main()
 			{
 				acc.softwareTrigger();
 			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
+			retval = acc.listenForAcdcData(triggermode, rawBool, timestamp, oscopeMode);
 			switch(retval)
 			{
 				case 0:
 					if(first == 0)
 					{
-						scp.plot(rawBool);
+						scp.plot(rawBool, bNum);
 						first++;
 					}
 					break;

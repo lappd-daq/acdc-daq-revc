@@ -89,7 +89,7 @@ int main() {
 	for(int i=0; i<nevents; i++){
 		acc->softwareTrigger();
 
-		retval = acc->listenForAcdcData(trigMode,true,1,0);
+		retval = acc->listenForAcdcData(trigMode,true,"calibrate",1);
 		if (retval!=0)
 		{
 			cout << "retval " << retval << endl;

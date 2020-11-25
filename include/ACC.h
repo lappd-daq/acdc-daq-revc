@@ -45,13 +45,14 @@ public:
 	void softwareTrigger(); //sends the software trigger
 	void enableTransfer(int onoff=0);
 	void toggleCal(int onoff, unsigned int channelmask = 0x7FFF); //toggles calibration input switch on boards
-	int readAcdcBuffers(bool raw = false, int evno=0, int oscopeOnOff=0); //reads the acdc buffers
-	int listenForAcdcData(int trigMode, bool raw = false, int evno=0,int oscopeOnOff=0); //almost identical to readAcdcBuffers but intended for real data triggering
+	int readAcdcBuffers(bool raw = false, string timestamp ="invalidTime", int oscopeOnOff=0); //reads the acdc buffers
+	int listenForAcdcData(int trigMode, bool raw = false, string timestamp="invalidTime",int oscopeOnOff=0); //almost identical to readAcdcBuffers but intended for real data triggering
 	int initializeForDataReadout(int trigMode = 0,unsigned int boardMask = 0xFF, int calibMode = 0);
 	void dumpData(); //tells ACDCs to clear their ram
 	bool setPedestals(unsigned int ped, vector<int> boards = {});
   	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
 	void writeErrorLog(string errorMsg);
+	void writePsecData(ofstream& d); 
 
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 
@@ -66,13 +67,15 @@ public:
 	void setInvertMode(int in){invertMode = in;}
 	void setChCoin(unsigned int in){ChCoin = in;}	
 	void setEnableCoin(int in){enableCoin = in;}
+	void setThreshold(int in){threshold = in;}
 	void setTriggermode(int in){trigMode = in;}
 	int getTriggermode(){return trigMode;}
 	
-	map<int, map<int, vector<double>>> returnPedData(){return ped_data;}
+	map<int, map<int, vector<double>>> returnPedData(){return map_data;}
 
 private:
 	stdUSB* usb;
+	Metadata meta;
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port)
 	vector<ACDC*> acdcs; //a vector of active acdc boards. 
@@ -83,7 +86,9 @@ private:
 	int enableCoin;
 	int trigMode;
 	unsigned int ChCoin;
-	map<int, map<int, vector<double>>> ped_data;
+	unsigned int threshold;
+	map<int, map<int, vector<double>>> map_data;
+	map<int, map<string, unsigned short>> map_meta;
 
 	//-----------functions that involve usb comms
 	vector<unsigned short> readAccBuffer();

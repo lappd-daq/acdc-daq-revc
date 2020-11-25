@@ -63,8 +63,6 @@ int main()
 
 	command = 0x000200FF; //Reset the RX buffer
 	usb->sendData(command);
-	command = 0x00030000; //Sends a reset for detected ACDC boards to the ACC
-	usb->sendData(command);
 	command = 0xFFD00000; //Request a 32 word ACDC ID frame containing all important infomations
 	usb->sendData(command);
 

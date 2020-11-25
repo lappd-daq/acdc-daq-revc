@@ -7,6 +7,19 @@
 #include <bitset>
 #include <unistd.h>
 #include <limits>
+#include <chrono> 
+#include <iomanip>
+#include <numeric>
+#include <ctime>
+
+string getTime()
+{
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%Y%d%m%X");
+    return ss.str();
+}
 
 int main()
 {
@@ -26,6 +39,8 @@ int main()
 	bool flag = true;
 	int oscopeMode;
 	int setup;
+	int threshold;
+	string timestamp;
 
 	ACC acc;
 
@@ -134,13 +149,21 @@ int main()
 					ss >> std::hex >> hexstr;
 					acc.setChCoin(hexstr);
 				}
-				std::cout << "Use normal polarity (0) or inverted polarity (1) on ACDC SMA?" << std::endl;
+				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge)?" << std::endl;
 				cin >> invertMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				std::cout << "Use edge detect (0) or level detect (1) on ACDC SMA?" << std::endl;
+				std::cout << "Use edge detect (0) or level detect (1)?" << std::endl;
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				std::cout << "Set the threshold of the self trigger in adc counts from 0 to 4095" << std::endl;
+				cin >> threshold;
+				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				stringstream ss2;
+				unsigned int adcstr;
+				ss2 << threshold;
+				ss2 >> std::hex >> adcstr;
 
+				acc.setThreshold(adcstr);
 				acc.setEnableCoin(enableCoin);
 				acc.setInvertMode(invertMode);
 				acc.setDetectionMode(detectionMode);
@@ -197,7 +220,6 @@ int main()
 	while(flag)
 	{
 		std::cout << "Do you want to use SAVE mode(0) or OSCOPE(1) mode?" << std::endl;
-
 		cin >> oscopeMode;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
@@ -232,18 +254,25 @@ int main()
 		return 0;
 	}
 
-
+	timestamp = getTime();
 	eventCounter = 0;
 	failCounter = 0;
+	int reTime = 500;
+	int mult = 1;
 	if(oscopeMode==0)
-	{
+	{	
 		while(eventCounter<eventNumber)
 		{
 			if(triggermode == 1)
 			{
 				acc.softwareTrigger();
 			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
+			if(eventCounter>reTime*mult)
+			{
+				timestamp = getTime();
+				mult++;
+			}
+			retval = acc.listenForAcdcData(triggermode, rawBool, timestamp, oscopeMode);
 			switch(retval)
 			{
 				case 0:
@@ -274,6 +303,19 @@ int main()
 		}
 	}else if(oscopeMode==1)
 	{
+		int bNum;
+		while(true)
+		{
+			std::cout << "Do you want to use 2 boards for evaluation? If yes (1) only use port 0 and 2. Else choose (0)." << std::endl;
+			cin >> bNum;
+			cin.ignore(numeric_limits<streamsize>::max(),'\n');
+
+			if(bNum == 0 || bNum == 1)
+			{
+				break;
+			}
+		}
+		
 		Scope scp;
 		int first = 0;
 
@@ -283,13 +325,13 @@ int main()
 			{
 				acc.softwareTrigger();
 			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, eventCounter, oscopeMode);
+			retval = acc.listenForAcdcData(triggermode, rawBool, timestamp, oscopeMode);
 			switch(retval)
 			{
 				case 0:
 					if(first == 0)
 					{
-						scp.plot(rawBool);
+						scp.plot(rawBool,bNum);
 						first++;
 					}
 					break;

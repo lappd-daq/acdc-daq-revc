@@ -494,12 +494,17 @@ void ACC::softwareTrigger()
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
+int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
 	//that ACDCs have sent data to the ACC
 	vector<int> boardsReadyForRead;
+
+	//filename logistics
+	string outfilename = "./Results/";
+	string datafn;
+	ofstream dataofs;
 
     enableTransfer(0);
 	unsigned int command = 0x00210000;
@@ -626,28 +631,26 @@ int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 					return 1;
 				}
 				
-				string outfilename = "./Results/";
-				string datafn;
-				string metafn;
 				//filename logistics
 				if(oscopeOnOff==0)
 				{
-					datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-					metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+					datafn = outfilename + "Data_" + timestamp + ".txt";
+					dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
 				}else if(oscopeOnOff==1)
 				{
-					datafn = outfilename + "Data_Oscope.txt";
-					metafn = outfilename + "Meta_Oscope.txt";
+					datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+					dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
+					a->writeDataForOscope(dataofs);
 				}
-				ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
-				ofstream metaofs(metafn.c_str(), ios_base::trunc); //trunc overwrites
-				a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
-
-				ped_data[bi] = a->returnData();
+				map_data[bi] = a->returnData();
+				map_meta[bi] = a->returnMeta();
 			}
 		}
 	}
-
+	if(oscopeOnOff==0)
+	{
+		writePsecData(dataofs);
+	}
 	return 0;
 }
 
@@ -663,10 +666,15 @@ int ACC::readAcdcBuffers(bool raw, int evno, int oscopeOnOff)
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
+int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeOnOff)
 {
 	bool waitForAll = false;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
+
+	//filename logistics
+	string outfilename = "./Results/";
+	string datafn;
+	ofstream dataofs;
 
 	//this function is simply readAcdcBuffers
 	//if the trigMode is software
@@ -675,7 +683,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 		int retval;
 		//The ACC already sent a trigger, so
 		//tell it not to send another during readout. 
-		retval = readAcdcBuffers(raw, evno, oscopeOnOff);
+		retval = readAcdcBuffers(raw, timestamp, oscopeOnOff);
 		return retval;
 	}
 
@@ -822,7 +830,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 						{
 							err_msg += "Because of the Metadata buffer";
 						}
-					writeErrorLog(err_msg);
+						writeErrorLog(err_msg);
 						corruptBuffer = true;
 
 						a->writeRawBufferToFile(acdc_buffer);	
@@ -837,25 +845,24 @@ int ACC::listenForAcdcData(int trigMode, bool raw, int evno, int oscopeOnOff)
 					}
 
 					//filename logistics
-					string outfilename = "./Results/";
-					string datafn;
-					string metafn;
-					//filename logistics
 					if(oscopeOnOff==0)
 					{
-						datafn = outfilename + "Data_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
-						metafn = outfilename + "Meta_b" + to_string(bi) + "_evno" + to_string(evno) + ".txt";
+						datafn = outfilename + "Data_" + timestamp + ".txt";
+						dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
 					}else if(oscopeOnOff==1)
 					{
-						datafn = outfilename + "Data_Oscope.txt";
-						metafn = outfilename + "Meta_Oscope.txt";
+						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+						dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
+						a->writeDataForOscope(dataofs);
 					}
-					ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
-					ofstream metaofs(metafn.c_str(), ios_base::trunc); //trunc overwrites
-
-					a->writeDataToFile(dataofs, metaofs, oscopeOnOff);
+					map_data[bi] = a->returnData();
+					map_meta[bi] = a->returnMeta();
 				}
 			}
+		}
+		if(oscopeOnOff==0)
+		{
+			writePsecData(dataofs);
 		}
 	
 	}
@@ -955,6 +962,10 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			command = command | enableCoin;
 			usb->sendData(command);
 
+			command = 0xFFA60000;
+			command = command | (0x1F << 12) | threshold;
+			usb->sendData(command);
+
 			break;				
 		case 5: //Self trigger with SMA validation on ACC
  			setHardwareTrigSrc(trigMode,boardMask);
@@ -1051,6 +1062,11 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 
 			command = 0xFFB18000;
 			command = command | enableCoin;
+			usb->sendData(command);
+
+			command = 0xFFA60000;
+			command = command | (0x1F << 12) | threshold;
+			usb->sendData(command);
 	}
 
 	return 0;
@@ -1214,6 +1230,32 @@ void ACC::writeErrorLog(string errorMsg)
     os_err << errorMsg << endl;
     os_err << "------------------------------------------------------------" << endl;
     os_err.close();
+}
+
+void ACC::writePsecData(ofstream& d)
+{
+	vector<string> keys;
+	keys = meta.getMetaKeys();
+
+	string delim = " ";
+	for(int enm=0; enm<NUM_SAMP; enm++)
+	{
+		for(int bi=0; bi<(int)map_data.size(); bi++)
+		{
+			d << enm << delim;
+			for(int ch=0; ch<NUM_CH; ch++)
+			{
+				d << map_data[bi][ch][enm] << delim;
+			}
+			if(enm<220)
+			{
+				d << map_meta[bi][keys[enm]] << delim;
+			}else{
+				d << 0 << delim;
+			}
+		}
+		d << endl;
+	}
 }
 
 //------------seperate functions

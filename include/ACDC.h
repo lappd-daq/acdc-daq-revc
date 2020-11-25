@@ -36,7 +36,7 @@ public:
 	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
 	void setData(map<int, vector<double>>& d){data = d;} //sets data map
 	int parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw = false, int bi=0); //parses only the psec data component of the ACDC buffer
-	void writeDataToFile(ofstream& d, ofstream& m, int oscopeOnOff); //writes data and metadata to filestream
+	void writeDataForOscope(ofstream& d); //writes data and metadata to filestream
 	void writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer);
 	void writeRawDataToFile(vector<unsigned short> buffer, ofstream& d);
 	void printByte(ofstream& ofs, unsigned short val);
@@ -45,7 +45,7 @@ public:
 	void writeErrorLog(string errorMsg);
 
 	map<int, vector<double>> returnData(){return data;}
-
+	map<string, unsigned short> returnMeta(){return map_meta;}
 
 private:
 	int boardIndex;
@@ -56,6 +56,7 @@ private:
 	map<int, vector<double>> data; //data[channel][waveform samples] channel starts at 1. 
 	map<int, map<int, double>> peds; //peds[channel][waveform samples] from a calibration file.
 	map<int, vector<double>> conv; //conversion factor from adc counts to mv from calibration file. 
+	map<string, unsigned short> map_meta;
 
 	void convertMaskToChannels();
 	void fillData(); //parses the acdc buffer and fills the data map

@@ -228,7 +228,9 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 			waveform.push_back(sampleValue); 
 			sampleCount++;
 			continue;
-		}	
+		}
+
+
 	}
 
 	//depending on the type of corrupt buffer, the above loop
@@ -246,6 +248,8 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 	bool corruptBuffer;
 	corruptBuffer = meta.parseBuffer(acdc_buffer);
 
+	map_meta = meta.getMetadata();
+
 	if(corruptBuffer)
 	{
 		return 3;
@@ -257,49 +261,21 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 
 //writes data from the presently stored event
 // to file assuming file has header already
-void ACDC::writeDataToFile(ofstream& d, ofstream& m, int oscopeOnOff)
+void ACDC::writeDataForOscope(ofstream& d)
 {
 	string delim = " ";
 
-	if(oscopeOnOff == 0)
+	for(int row = 1; row<=NUM_SAMP; row++)
 	{
-		//metadata part is simple and contained
-		//in that class. 
-		meta.writeMetadataToFile(m, "\t");
-
-		int evno = meta.getEventNumber();
-
-		vector<double> waveform;//temporary storage of wave data
-		int channel; //temporary storage of channel
-		map<int, vector<double>>::iterator it;
-		for(it = data.begin(); it != data.end(); ++it)
+		d << row << delim;
+		for(int column=1; column<=NUM_CH; column++)
 		{
-			waveform = it->second;
-			channel = it->first;
-			//first three columns are event, board, channel
-			d << evno << delim << boardIndex << delim << channel;
-			//loop the vector and print values
-			for(double s: waveform)
-			{
-				d << delim << s;
-			}
-			d << endl;
+			d << data[column][row-1] << delim; 
 		}
-		return;
-	}else if(oscopeOnOff==1)
-	{
-		for(int row = 1; row<=NUM_SAMP; row++)
-		{
-			d << row << delim;
-			for(int column=1; column<=NUM_CH; column++)
-			{
-				d << data[column][row-1] << delim; 
-			}
-			d << endl;
-		}
-		
+		d << endl;
 	}
 }
+
 
 //writes data from the presently stored event
 // to file assuming file has header already

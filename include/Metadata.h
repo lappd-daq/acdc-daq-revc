@@ -29,6 +29,8 @@ public:
 	void setBoardAndEvent(unsigned short board, int event); 
 	int getEventNumber();
 	void writeErrorLog(string errorMsg);
+	map<string, unsigned short> getMetadata(){return metadata;}
+	vector<string> getMetaKeys(){return metadata_keys;}
 
 
 private:
