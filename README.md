@@ -100,7 +100,7 @@ The new data format saves all available channels for up to 8 ACDC boards includi
 |Enumeration | Channel 0 ... Channel 29 & Metadata | ... | Channel 0 ... Channel 29 & Metadata |
 
 which will look like this in the file:
-
+| | | | | 
 |--|----------------------|-----|-----------------------| 
 |0 | data + meta sample 1 | ... |  data + meta sample 1 |
 |...| ... | ... | ... |
