@@ -102,8 +102,8 @@ The new data format saves all available channels for up to 8 ACDC boards includi
 which will look like this in the file:
 | | | | | 
 |--|----------------------|-----|-----------------------| 
-|0 | data + meta sample 1 | ... |  data + meta sample 1 |
+|0 | 30 data + 1 meta sample 1 | ... |  30 data + 1 meta sample 1 |
 |...| ... | ... | ... |
-|255 | data + meta sample 256 | ... |  data + meta sample 256 |
+|255 | 30 data + 1 meta sample 256 | ... |  30 data + 1 meta sample 256 |
 
 each consecutive event is appended at the end of the file 
