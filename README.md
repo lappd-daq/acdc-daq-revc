@@ -93,6 +93,17 @@ All settings and plot commands for the oscilloscope are handled in seperate gnu 
 ./oscilloscope/settings_raw.gnu	-> sets the y axis to arbitrary numbers from 0 to 4095 instead od mV
 ./oscilloscope/liveplot.gnu		-> contains all the plot handling, especially the seperation into 5 PSEC chips and the repeated updating
 ```
+## Data format
+The new data format saves all available channels for up to 8 ACDC boards including the metadata into one file. The structure is
+| | Board 0 | ... | Board 7 |
+|-|---------|-----|---------|    
+|Enumeration | Channel 0 ... Channel 29 & Metadata | ... | Channel 0 ... Channel 29 & Metadata |
 
+which will look like this in the file:
 
+|--|----------------------|-----|-----------------------| 
+|0 | data + meta sample 1 | ... |  data + meta sample 1 |
+|...| ... | ... | ... |
+|255 | data + meta sample 256 | ... |  data + meta sample 256 |
 
+each consecutive event is appended at the end of the file 
