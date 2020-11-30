@@ -1,5 +1,5 @@
 # acdc-daq-revc
-Here will be a new readme soon!
+New read-me in pregress
 
 ## Prerequisites
 This code is built using `cmake` and requires `libusb` headers as well as `gnuplot` if you want to use the oscilloscope mode.
@@ -38,6 +38,7 @@ It is possible to execute  `./bin/calibratePed` after `./bin/setPed <...>` but n
 
 ### debug
 The `./bin/debug` command allows the user to send seperate usb commands to the acc/acdc board. There is no limit to commands on can append to `./bin/debug`, they just need to be seperated by ' '. To get a response after a command use `command r`.
+**IMPORTANT IT SEEMS DEBUG IS NOT WORKING PERFECTLY SO BE CAREFUL USING IT. IT SHOULD BE FIXED**
 
 ### connectedBoards
 This command allows the user to check on the connected acdc boards. After executing the command a responce for all possible 8 boards is given. Only boards with a 32 word responde are connected. 
@@ -79,6 +80,7 @@ raw off- outputs the channel data converted to mV and the baseline is actively c
 oscope mode - only one file is saved and overwritten constantly. This file is then plotted by gnuplot into five windows, each being one psec chip.
 save mode   - a specified number of waveforms will be saved on the computer as txt files. In addition Metadata files will be saved as well.
 ```
+
 ### onlySetup
 Executes only the setup portion of the `./bin/listenForData` command.
 
@@ -92,6 +94,7 @@ All settings and plot commands for the oscilloscope are handled in seperate gnu 
 ./oscilloscope/settings.gnu 	-> sets the axis limits, labels as well as line and point settings 
 ./oscilloscope/settings_raw.gnu	-> sets the y axis to arbitrary numbers from 0 to 4095 instead od mV
 ./oscilloscope/liveplot.gnu		-> contains all the plot handling, especially the seperation into 5 PSEC chips and the repeated updating
+./oscilloscope/liveplot_b2.gnu	-> experimental plot mode in which 60 channels (2 acdc boards) are plotted instead of 30. A promt will ask for this
 ```
 ## Data format
 The new data format saves all available channels for up to 8 ACDC boards including the metadata into one file. The structure is
@@ -100,10 +103,118 @@ The new data format saves all available channels for up to 8 ACDC boards includi
 |Enumeration | Channel 0 ... Channel 29 & Metadata | ... | Channel 0 ... Channel 29 & Metadata |
 
 which will look like this in the file:
-| | | | | 
+
 |--|----------------------|-----|-----------------------| 
-|0 | 30 data + 1 meta sample 1 | ... |  30 data + 1 meta sample 1 |
+|0 | data + meta sample 1 | ... |  data + meta sample 1 |
 |...| ... | ... | ... |
-|255 | 30 data + 1 meta sample 256 | ... |  30 data + 1 meta sample 256 |
+|255 | data + meta sample 256 | ... |  data + meta sample 256 |
 
 each consecutive event is appended at the end of the file 
+
+## Metadata format 
+Metadata is saved with the data in one file. It is always in the coloumn after the 30 channels of an acdc board (e.g. 31 [Because 0 is the enumeration and 1-30 the channels], 62, 93, ...).
+The entries are the following:
+
+| Line | Meta key |
+|------|--------- |    
+| 1 | Eventnumber | 
+| 2 | Boardnumber | 
+| 3 | feedback count psec 0 | 
+| 4 | feedback target count psec 0 | 
+| 5 | Vbias setting psec 0 | 
+| 6 | selftrigger threshold setting psec 0 | 
+| 7 | PROVDD setting psec 0 | 
+| 8 | VCDL count lo psec 0 | 
+| 9 | VCDL count hi psec 0 | 
+| 10 | DLLVDD setting  psec 0 | 
+| 11 | feedback count psec 1 | 
+| 12 | feedback target count psec 1 | 
+| 13 | Vbias setting psec 1 | 
+| 14 | selftrigger threshold setting psec 1 | 
+| 15 | PROVDD setting psec 1 | 
+| 16 | VCDL count lo psec 1 | 
+| 17 | VCDL count hi psec 1 | 
+| 18 | DLLVDD setting  psec 1 | 
+| 19 | feedback count psec 2 | 
+| 20 | feedback target count psec 2 | 
+| 21 | Vbias setting psec 2 | 
+| 22 | selftrigger threshold setting psec 2 | 
+| 23 | PROVDD setting psec 2 | 
+| 24 | VCDL count lo psec 2 | 
+| 25 | VCDL count hi psec 2 | 
+| 26 | DLLVDD setting  psec 2 | 
+| 27 | feedback count psec 3 | 
+| 28 | feedback target count psec 3 | 
+| 29 | Vbias setting psec 3 | 
+| 30 | selftrigger threshold setting psec 3 | 
+| 31 | PROVDD setting psec 3 | 
+| 32 | VCDL count lo psec 3 | 
+| 33 | VCDL count hi psec 3 | 
+| 34 | DLLVDD setting  psec 3 | 
+| 35 | feedback count psec 4 | 
+| 36 | feedback target count psec 4 | 
+| 37 | Vbias setting psec 4 | 
+| 38 | selftrigger threshold setting psec 4 | 
+| 39 | PROVDD setting psec 4 | 
+| 40 | VCDL count lo psec 4 | 
+| 41 | VCDL count hi psec 4 | 
+| 42 | DLLVDD setting  psec 4 | 
+| 43 | trigger mode | 
+| 44 | trigger validation window start | 
+| 45 | trigger validation window length | 
+| 46 | trigger sma invert | 
+| 47 | trigger sma detection mode | 
+| 48 | trigger acc invert | 
+| 49 | trigger acc detection mode | 
+| 50 | trigger self sign | 
+| 51 | trigger self detection mode | 
+| 52 | trigger self coin | 
+| 53 | trigger selfmask psec 0 | 
+| 54 | trigger selfmask psec 1 | 
+| 55 | trigger selfmask psec 2 | 
+| 56 | trigger selfmask psec 3 | 
+| 57 | trigger selfmask psec 4 | 
+| 58 | trigger self threshold psec 0 | 
+| 59 | trigger self threshold psec 1 | 
+| 60 | trigger self threshold psec 2 | 
+| 61 | trigger self threshold psec 3 | 
+| 62 | trigger self threshold psec 4 | 
+| 63 | timestamp part 0 | 
+| 64 | timestamp part 1 | 
+| 65 | timestamp part 2 | 
+| 66 | timestamp part 3 | 
+| 67 | clockcycle bits | 
+| 68 | event count lo | 
+| 69 | event count hi | 
+| 70 | self trigger rate count psec0 ch0 | 
+| 71 | self trigger rate count psec0 ch1 | 
+| 72 | self trigger rate count psec0 ch2 | 
+| 73 | self trigger rate count psec0 ch3 | 
+| 74 | self trigger rate count psec0 ch4 | 
+| 75 | self trigger rate count psec0 ch5 | 
+| 76 | self trigger rate count psec1 ch0 | 
+| 77 | self trigger rate count psec1 ch1 | 
+| 78 | self trigger rate count psec1 ch2 | 
+| 79 | self trigger rate count psec1 ch3 | 
+| 80 | self trigger rate count psec1 ch4 | 
+| 81 | self trigger rate count psec1 ch5 | 
+| 82 | self trigger rate count psec2 ch0 | 
+| 83 | self trigger rate count psec2 ch1 | 
+| 84 | self trigger rate count psec2 ch2 | 
+| 85 | self trigger rate count psec2 ch3 | 
+| 86 | self trigger rate count psec2 ch4 | 
+| 87 | self trigger rate count psec2 ch5 | 
+| 88 | self trigger rate count psec3 ch0 | 
+| 89 | self trigger rate count psec3 ch1 | 
+| 90 | self trigger rate count psec3 ch2 | 
+| 91 | self trigger rate count psec3 ch3 | 
+| 92 | self trigger rate count psec3 ch4 | 
+| 93 | self trigger rate count psec3 ch5 | 
+| 94 | self trigger rate count psec4 ch0 | 
+| 95 | self trigger rate count psec4 ch1 | 
+| 96 | self trigger rate count psec4 ch2 | 
+| 97 | self trigger rate count psec4 ch3 | 
+| 98 | self trigger rate count psec4 ch4 | 
+| 99 | self trigger rate count psec4 ch5 | 
+| 100 | combined trigger rate count | 
+|101-255 | 0 |

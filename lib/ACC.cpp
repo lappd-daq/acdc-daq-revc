@@ -609,7 +609,13 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				}
 				
 				retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
-
+				corruptBuffer = meta.parseBuffer(acdc_buffer);
+				if(corruptBuffer)
+				{
+					writeErrorLog("Metadata error not parsed correctly");
+					return 1;
+				}
+				map_meta[bi] = meta.getMetadata();
 				if(retval !=0)
 				{
 					string err_msg = "Corrupt buffer caught at PSEC data level (2)";
@@ -643,7 +649,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 					a->writeDataForOscope(dataofs);
 				}
 				map_data[bi] = a->returnData();
-				map_meta[bi] = a->returnMeta();
 			}
 		}
 	}
@@ -823,6 +828,14 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					}
 					
 					retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
+					corruptBuffer = meta.parseBuffer(acdc_buffer);
+					if(corruptBuffer)
+					{
+						writeErrorLog("Metadata error not parsed correctly");
+						return 1;
+					}
+					map_meta[bi] = meta.getMetadata();
+
 					if(retval !=0)
 					{
 						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
@@ -856,7 +869,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 						a->writeDataForOscope(dataofs);
 					}
 					map_data[bi] = a->returnData();
-					map_meta[bi] = a->returnMeta();
 				}
 			}
 		}
@@ -1235,7 +1247,12 @@ void ACC::writeErrorLog(string errorMsg)
 void ACC::writePsecData(ofstream& d)
 {
 	vector<string> keys;
-	keys = meta.getMetaKeys();
+	map<string, unsigned short> extra_key;
+	extra_key = map_meta[0];
+	for(map<string, unsigned short>::iterator it = extra_key.begin(); it != extra_key.end(); ++it) 
+	{
+		keys.push_back(it->first);
+	}
 
 	string delim = " ";
 	for(int enm=0; enm<NUM_SAMP; enm++)
@@ -1247,10 +1264,11 @@ void ACC::writePsecData(ofstream& d)
 			{
 				d << map_data[bi][ch][enm] << delim;
 			}
-			if(enm<220)
+			if(enm<(int)keys.size())
 			{
 				d << map_meta[bi][keys[enm]] << delim;
-			}else{
+			}else
+			{
 				d << 0 << delim;
 			}
 		}

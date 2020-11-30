@@ -248,7 +248,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 	bool corruptBuffer;
 	corruptBuffer = meta.parseBuffer(acdc_buffer);
 
-	map_meta = meta.getMetadata();
+	//map_meta = meta.getMetadata();
 
 	if(corruptBuffer)
 	{

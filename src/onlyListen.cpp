@@ -41,6 +41,7 @@ int main()
 	bool flag = true;
 	int oscopeMode;
 	string timestamp;
+	int py_anal;
 
 	system("mkdir -p Results");
 
@@ -134,6 +135,7 @@ int main()
 				case 0:
 					std::cout << "Successfully found data and parsed" << std::endl;
 					eventCounter++;
+					failCounter = 0;
 					break;
 				case 1:
 					std::cout << "Successfully found data and but buffer corrupted" << std::endl;
@@ -154,6 +156,7 @@ int main()
 			}
 			if(failCounter >= 50)
 			{
+				std::cout << "Too many failed attempts to read data. Please check everything and try again" << std::endl;
 				break;
 			}
 		}
@@ -207,9 +210,24 @@ int main()
 					break;
 			}
 		}
-
 	}
+	while(true)
+	{
+		std::cout << "Do you want to use python for the PSEC analysis?(0/1)" << std::endl;
+		cin >> py_anal;
+		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
+		if(py_anal==0){
+			break;
+		}else if(py_anal==1)
+		{
+			string cmd = "python3 ./analysis/PSEC_analysis.py ./Results/Data_";
+			cmd += timestamp;
+			cmd += ".txt";
+			system(cmd.c_str());
+			break;
+		}
+	}
 	return 1;
 }
 

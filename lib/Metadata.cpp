@@ -308,19 +308,14 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 		chip_count++;
 	}
 
-    map<int, vector<unsigned short>> trigger_info;
-    vector<unsigned short> insert_buffer;
-    int colomn = 0;
-    for(int chip=0; chip<NUM_PSEC; chip++)
+    map<int, unsigned short> trigger_info;
+    vector<unsigned short> buffer;
+    for(int ch=0; ch<NUM_CH; ch++)
     {
-        for(int it = 0; it<NUM_CH; it++)
-        {
-            bit = acdcBuffer.begin() + it + start_indices[4]+15;
-            insert_buffer.push_back(*bit);
-        }
-        trigger_info.insert(pair<int, vector<unsigned short>>(colomn, insert_buffer));
-        colomn++;
+        bit = acdcBuffer.begin() + ch + start_indices[4]+15;
+        trigger_info[ch] = *bit;
     }
+    //trigger_info.insert(pair<int, unsigned short>(ch, bit));
 
     unsigned short combined_trigger = acdcBuffer[7792];
 
@@ -402,12 +397,9 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     checkAndInsert("event_count_lo", ac_info[0][9]); //Info 10 PSEC0 later bit(15-0)
     checkAndInsert("event_count_hi", ac_info[1][9]); //Info 10 PSEC1 later bit(31-16)
 
-    for(int chip=0; chip<NUM_PSEC; chip++)
+    for(int ch=0; ch<NUM_CH; ch++)
     {
-        for(int ch=0; ch<NUM_CH; ch++)
-        {
-            checkAndInsert("self_trigger_rate_count_psec"+to_string(chip)+"_ch"+to_string(ch), trigger_info[chip][ch]);
-        }
+        checkAndInsert("self_trigger_rate_count_psec_ch"+to_string(ch), trigger_info[ch]);
     }
     checkAndInsert("combined_trigger_rate_count", combined_trigger);
 
@@ -490,12 +482,9 @@ void Metadata::initializeMetadataKeys()
     metadata_keys.push_back("event_count_lo"); //Info 10 PSEC0 later bit(15-0)
     metadata_keys.push_back("event_count_hi"); //Info 10 PSEC1 later bit(31-16)
 
-    for(int chip=0; chip<NUM_PSEC; chip++)
+    for(int ch=0; ch<NUM_CH; ch++)
     {
-        for(int ch=0; ch<NUM_CH; ch++)
-        {
-            metadata_keys.push_back("self_trigger_rate_count_psec"+to_string(chip)+"_ch"+to_string(ch));
-        }
+         metadata_keys.push_back("self_trigger_rate_count_psec_ch"+to_string(ch));
     }
     metadata_keys.push_back("combined_trigger_rate_count");
 }

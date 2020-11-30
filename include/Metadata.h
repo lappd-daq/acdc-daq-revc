@@ -8,6 +8,7 @@
 
 #define NUM_PSEC 5
 #define NUM_CH 30
+#define NUM_CH_PER_PSEC 6
 
 using namespace std;
 
