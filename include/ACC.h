@@ -52,7 +52,7 @@ public:
 	bool setPedestals(unsigned int ped, vector<int> boards = {});
   	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
 	void writeErrorLog(string errorMsg);
-	void writePsecData(ofstream& d); 
+	void writePsecData(ofstream& d, vector<int> boardsReadyForRead); 
 
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 

@@ -6,7 +6,7 @@ N_SAMPLE = 256 # Number of samples per waveform
 N_CHANNEL = 30 # Number of channels per acdc board
 N_BOARDS = 8 # Maximum number of acdc boards
 SIGN = -1 # Setting for the expected sign of the pulse
-THRESHOLD = 300 # Setting for the threshold to count a pulse as a pulse
+THRESHOLD = 500 # Setting for the threshold to count a pulse as a pulse
 
 # Function to load a set of events from one acdc board at a time
 def load_board_data(filename, offset):

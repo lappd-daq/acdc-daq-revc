@@ -500,6 +500,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	//a fullRam flag on ACC indicating
 	//that ACDCs have sent data to the ACC
 	vector<int> boardsReadyForRead;
+	unsigned int command;
 
 	//filename logistics
 	string outfilename = "./Results/";
@@ -507,8 +508,12 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	ofstream dataofs;
 
     enableTransfer(0);
-	unsigned int command = 0x00210000;
-	usb->sendData(command);
+    for(int bi: alignedAcdcIndices)
+    {
+		command = 0x00210000;
+		command = command | bi;
+		usb->sendData(command);
+	}
     enableTransfer(1);
 
     int maxCounter=0;
@@ -654,7 +659,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	}
 	if(oscopeOnOff==0)
 	{
-		writePsecData(dataofs);
+		writePsecData(dataofs, boardsReadyForRead);
 	}
 	return 0;
 }
@@ -675,7 +680,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 {
 	bool waitForAll = false;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
-
+	unsigned int command;
 	//filename logistics
 	string outfilename = "./Results/";
 	string datafn;
@@ -709,8 +714,12 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
     sigaction(SIGINT,&sa,NULL);
 
     enableTransfer(0);
-	unsigned int command = 0x00210000;
-	usb->sendData(command);
+    for(int bi: alignedAcdcIndices)
+    {
+		command = 0x00210000;
+		command = command | bi;
+		usb->sendData(command);
+	}
     enableTransfer(1);
 
 	try
@@ -874,7 +883,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		}
 		if(oscopeOnOff==0)
 		{
-			writePsecData(dataofs);
+			writePsecData(dataofs, boardsReadyForRead);
 		}
 	
 	}
@@ -1244,11 +1253,14 @@ void ACC::writeErrorLog(string errorMsg)
     os_err.close();
 }
 
-void ACC::writePsecData(ofstream& d)
+void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 {
 	vector<string> keys;
 	map<string, unsigned short> extra_key;
-	extra_key = map_meta[0];
+	for(int bi: boardsReadyForRead)
+	{
+		extra_key = map_meta[bi];
+	}
 	for(map<string, unsigned short>::iterator it = extra_key.begin(); it != extra_key.end(); ++it) 
 	{
 		keys.push_back(it->first);
@@ -1257,16 +1269,17 @@ void ACC::writePsecData(ofstream& d)
 	string delim = " ";
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
-		for(int bi=0; bi<(int)map_data.size(); bi++)
+		for(int bi: boardsReadyForRead)
 		{
 			d << enm << delim;
-			for(int ch=0; ch<NUM_CH; ch++)
+			for(int ch=1; ch<NUM_CH+1; ch++)
 			{
 				d << map_data[bi][ch][enm] << delim;
 			}
 			if(enm<(int)keys.size())
 			{
-				d << map_meta[bi][keys[enm]] << delim;
+				d << hex << map_meta[bi][keys[enm]] << delim;
+
 			}else
 			{
 				d << 0 << delim;
