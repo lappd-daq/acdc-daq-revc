@@ -1261,9 +1261,9 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	{
 		extra_key = map_meta[bi];
 	}
-	for(map<string, unsigned short>::iterator it = extra_key.begin(); it != extra_key.end(); ++it) 
-	{
-		keys.push_back(it->first);
+
+	for (auto const& element : extra_key) {
+		keys.push_back(element.first);
 	}
 
 	string delim = " ";
@@ -1287,6 +1287,15 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		}
 		d << endl;
 	}
+
+    string kl = "keylist.txt";
+    ofstream ofs(kl);
+    for(string k: keys)
+    {
+        ofs << k << endl; //decimal
+
+    }
+    ofs.close();
 }
 
 //------------seperate functions
