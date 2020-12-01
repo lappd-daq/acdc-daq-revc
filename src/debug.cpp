@@ -45,7 +45,7 @@ void printReadBuffer(vector<unsigned short> b)
 int main(int argc, char *argv[])
 {
 	
-	stdUSB* usb;
+	stdUSB* usb = new stdUSB();
 	if(!usb->isOpen())
 	{
 		cout << "Usb was unable to connect to ACC" << endl;
