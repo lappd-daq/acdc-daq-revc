@@ -31,15 +31,15 @@ def getPedestal(channel, meta_event):
     # Depending on the current channels corresponding PSEC chip
     # read the metadata coloumn to get the set pedestal value
     if ch>=0 and ch<=5:
-        pedestal = int(meta_event[4],16)
-    elif ch>=6 and ch<=11:
-        pedestal = int(meta_event[12],16)
-    elif ch>=12 and ch<=17:
         pedestal = int(meta_event[20],16)
+    elif ch>=6 and ch<=11:
+        pedestal = int(meta_event[21],16)
+    elif ch>=12 and ch<=17:
+        pedestal = int(meta_event[22],16)
     elif ch>=18 and ch<=23:
-        pedestal = int(meta_event[28],16)
+        pedestal = int(meta_event[23],16)
     elif ch>=24 and ch<=29:
-        pedestal = int(meta_event[36],16)
+        pedestal = int(meta_event[24],16)
     else:
         print("Pedestal error")
     # Return the pedestal value
@@ -170,7 +170,7 @@ if __name__ == "__main__":
                 # Grab only the respective metadata 
                 meta_event = meta[0+event:256+event]
                 # and extract the clockcycle bit
-                bit = int(meta_event[66],16)
+                bit = int(meta_event[25],16)
                 # Grab only the respective data
                 y = data[0+event:256+event,ch]
                 # and restructure it with the clockcycle bit
