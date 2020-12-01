@@ -7,6 +7,7 @@ N_CHANNEL = 30 # Number of channels per acdc board
 N_BOARDS = 8 # Maximum number of acdc boards
 SIGN = -1 # Setting for the expected sign of the pulse
 THRESHOLD = 500 # Setting for the threshold to count a pulse as a pulse
+WIDTH_NS = 5
 
 # Function to load a set of events from one acdc board at a time
 def load_board_data(filename, offset):
@@ -85,8 +86,7 @@ def checkSign(data, pedestal):
     elif delta_max<THRESHOLD and delta_min>THRESHOLD:
         sign = -1
     # Catch the sign just being empty
-    if sign==0 or sign==2:
-        print("ERROR sign is " + str(sign))
+
     # Compare the calculated sign with the expected sign
     if sign==SIGN:
         return True
