@@ -86,7 +86,8 @@ def checkSign(data, pedestal):
     elif delta_max<THRESHOLD and delta_min>THRESHOLD:
         sign = -1
     # Catch the sign just being empty
-
+    if sign==0 or sign==2:
+        print("ERROR sign is " + str(sign))
     # Compare the calculated sign with the expected sign
     if sign==SIGN:
         return True

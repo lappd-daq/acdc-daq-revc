@@ -891,13 +891,8 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 	{
 		cout << mechanism << endl;
 		return 2;
-	}
-
-
-
-	
+	}	
 	return 0;
-
 }
 
 
@@ -1271,7 +1266,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	{
 		for(int bi: boardsReadyForRead)
 		{
-			d << enm << delim;
+			d << (int)enm << delim;
 			for(int ch=1; ch<NUM_CH+1; ch++)
 			{
 				d << map_data[bi][ch][enm] << delim;
@@ -1287,6 +1282,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		}
 		d << endl;
 	}
+	d.close();
 
     string kl = "keylist.txt";
     ofstream ofs(kl);

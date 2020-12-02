@@ -268,7 +268,7 @@ int main()
 			{
 				acc.softwareTrigger();
 			}
-			if(eventCounter>reTime*mult)
+			if(eventCounter>=reTime*mult)
 			{
 				timestamp = getTime();
 				mult++;

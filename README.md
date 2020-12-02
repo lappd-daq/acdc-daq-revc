@@ -116,105 +116,103 @@ Metadata is saved with the data in one file. It is always in the coloumn after t
 The entries are the following:
 
 | Line | Meta key |
-|------|--------- |    
-| 1 | Eventnumber | 
-| 2 | Boardnumber | 
-| 3 | feedback count psec 0 | 
-| 4 | feedback target count psec 0 | 
-| 5 | Vbias setting psec 0 | 
-| 6 | selftrigger threshold setting psec 0 | 
-| 7 | PROVDD setting psec 0 | 
-| 8 | VCDL count lo psec 0 | 
-| 9 | VCDL count hi psec 0 | 
-| 10 | DLLVDD setting  psec 0 | 
-| 11 | feedback count psec 1 | 
-| 12 | feedback target count psec 1 | 
-| 13 | Vbias setting psec 1 | 
-| 14 | selftrigger threshold setting psec 1 | 
-| 15 | PROVDD setting psec 1 | 
-| 16 | VCDL count lo psec 1 | 
-| 17 | VCDL count hi psec 1 | 
-| 18 | DLLVDD setting  psec 1 | 
-| 19 | feedback count psec 2 | 
-| 20 | feedback target count psec 2 | 
-| 21 | Vbias setting psec 2 | 
-| 22 | selftrigger threshold setting psec 2 | 
-| 23 | PROVDD setting psec 2 | 
-| 24 | VCDL count lo psec 2 | 
-| 25 | VCDL count hi psec 2 | 
-| 26 | DLLVDD setting  psec 2 | 
-| 27 | feedback count psec 3 | 
-| 28 | feedback target count psec 3 | 
-| 29 | Vbias setting psec 3 | 
-| 30 | selftrigger threshold setting psec 3 | 
-| 31 | PROVDD setting psec 3 | 
-| 32 | VCDL count lo psec 3 | 
-| 33 | VCDL count hi psec 3 | 
-| 34 | DLLVDD setting  psec 3 | 
-| 35 | feedback count psec 4 | 
-| 36 | feedback target count psec 4 | 
-| 37 | Vbias setting psec 4 | 
-| 38 | selftrigger threshold setting psec 4 | 
-| 39 | PROVDD setting psec 4 | 
-| 40 | VCDL count lo psec 4 | 
-| 41 | VCDL count hi psec 4 | 
-| 42 | DLLVDD setting  psec 4 | 
-| 43 | trigger mode | 
-| 44 | trigger validation window start | 
-| 45 | trigger validation window length | 
-| 46 | trigger sma invert | 
-| 47 | trigger sma detection mode | 
-| 48 | trigger acc invert | 
-| 49 | trigger acc detection mode | 
-| 50 | trigger self sign | 
-| 51 | trigger self detection mode | 
-| 52 | trigger self coin | 
-| 53 | trigger selfmask psec 0 | 
-| 54 | trigger selfmask psec 1 | 
-| 55 | trigger selfmask psec 2 | 
-| 56 | trigger selfmask psec 3 | 
-| 57 | trigger selfmask psec 4 | 
-| 58 | trigger self threshold psec 0 | 
-| 59 | trigger self threshold psec 1 | 
-| 60 | trigger self threshold psec 2 | 
-| 61 | trigger self threshold psec 3 | 
-| 62 | trigger self threshold psec 4 | 
-| 63 | timestamp part 0 | 
-| 64 | timestamp part 1 | 
-| 65 | timestamp part 2 | 
-| 66 | timestamp part 3 | 
-| 67 | clockcycle bits | 
-| 68 | event count lo | 
-| 69 | event count hi | 
-| 70 | self trigger rate count psec0 ch0 | 
-| 71 | self trigger rate count psec0 ch1 | 
-| 72 | self trigger rate count psec0 ch2 | 
-| 73 | self trigger rate count psec0 ch3 | 
-| 74 | self trigger rate count psec0 ch4 | 
-| 75 | self trigger rate count psec0 ch5 | 
-| 76 | self trigger rate count psec1 ch0 | 
-| 77 | self trigger rate count psec1 ch1 | 
-| 78 | self trigger rate count psec1 ch2 | 
-| 79 | self trigger rate count psec1 ch3 | 
-| 80 | self trigger rate count psec1 ch4 | 
-| 81 | self trigger rate count psec1 ch5 | 
-| 82 | self trigger rate count psec2 ch0 | 
-| 83 | self trigger rate count psec2 ch1 | 
-| 84 | self trigger rate count psec2 ch2 | 
-| 85 | self trigger rate count psec2 ch3 | 
-| 86 | self trigger rate count psec2 ch4 | 
-| 87 | self trigger rate count psec2 ch5 | 
-| 88 | self trigger rate count psec3 ch0 | 
-| 89 | self trigger rate count psec3 ch1 | 
-| 90 | self trigger rate count psec3 ch2 | 
-| 91 | self trigger rate count psec3 ch3 | 
-| 92 | self trigger rate count psec3 ch4 | 
-| 93 | self trigger rate count psec3 ch5 | 
-| 94 | self trigger rate count psec4 ch0 | 
-| 95 | self trigger rate count psec4 ch1 | 
-| 96 | self trigger rate count psec4 ch2 | 
-| 97 | self trigger rate count psec4 ch3 | 
-| 98 | self trigger rate count psec4 ch4 | 
-| 99 | self trigger rate count psec4 ch5 | 
-| 100 | combined trigger rate count | 
-|101-255 | 0 |
+|------|-------------- |    
+| 1 | DLLVDD_setting_0 |    
+| 2 | DLLVDD_setting_1 |    
+| 3 | DLLVDD_setting_2 |    
+| 4 | DLLVDD_setting_3 |    
+| 5 | DLLVDD_setting_4 |    
+| 6 | PROVDD_setting_0 |    
+| 7 | PROVDD_setting_1 |    
+| 8 | PROVDD_setting_2 |    
+| 9 | PROVDD_setting_3 |    
+| 10 | PROVDD_setting_4 |    
+| 11 | VCDL_count_hi_0 |    
+| 12 | VCDL_count_hi_1 |    
+| 13 | VCDL_count_hi_2 |    
+| 14 | VCDL_count_hi_3 |    
+| 15 | VCDL_count_hi_4 |    
+| 16 | VCDL_count_lo_0 |    
+| 17 | VCDL_count_lo_1 |    
+| 18 | VCDL_count_lo_2 |    
+| 19 | VCDL_count_lo_3 |    
+| 20 | VCDL_count_lo_4 |    
+| 21 | Vbias_setting_0 |    
+| 22 | Vbias_setting_1 |    
+| 23 | Vbias_setting_2 |    
+| 24 | Vbias_setting_3 |    
+| 25 | Vbias_setting_4 |    
+| 26 | clockcycle_bits |    
+| 27 | combined_trigger_rate_count |    
+| 28 | event_count_hi |    
+| 29 | event_count_lo |    
+| 30 | feedback_count_0 |    
+| 31 | feedback_count_1 |    
+| 32 | feedback_count_2 |    
+| 33 | feedback_count_3 |    
+| 34 | feedback_count_4 |    
+| 35 | feedback_target_count_0 |    
+| 36 | feedback_target_count_1 |    
+| 37 | feedback_target_count_2 |    
+| 38 | feedback_target_count_3 |    
+| 39 | feedback_target_count_4 |    
+| 40 | self_trigger_rate_count_psec_ch0 |    
+| 41 | self_trigger_rate_count_psec_ch1 |    
+| 42 | self_trigger_rate_count_psec_ch10 |    
+| 43 | self_trigger_rate_count_psec_ch11 |    
+| 44 | self_trigger_rate_count_psec_ch12 |    
+| 45 | self_trigger_rate_count_psec_ch13 |    
+| 46 | self_trigger_rate_count_psec_ch14 |    
+| 47 | self_trigger_rate_count_psec_ch15 |    
+| 48 | self_trigger_rate_count_psec_ch16 |    
+| 49 | self_trigger_rate_count_psec_ch17 |    
+| 50 | self_trigger_rate_count_psec_ch18 |    
+| 51 | self_trigger_rate_count_psec_ch19 |    
+| 52 | self_trigger_rate_count_psec_ch2 |    
+| 53 | self_trigger_rate_count_psec_ch20 |    
+| 54 | self_trigger_rate_count_psec_ch21 |    
+| 55 | self_trigger_rate_count_psec_ch22 |    
+| 56 | self_trigger_rate_count_psec_ch23 |    
+| 57 | self_trigger_rate_count_psec_ch24 |    
+| 58 | self_trigger_rate_count_psec_ch25 |    
+| 59 | self_trigger_rate_count_psec_ch26 |    
+| 60 | self_trigger_rate_count_psec_ch27 |    
+| 61 | self_trigger_rate_count_psec_ch28 |    
+| 62 | self_trigger_rate_count_psec_ch29 |    
+| 63 | self_trigger_rate_count_psec_ch3 |    
+| 64 | self_trigger_rate_count_psec_ch4 |    
+| 65 | self_trigger_rate_count_psec_ch5 |    
+| 66 | self_trigger_rate_count_psec_ch6 |    
+| 67 | self_trigger_rate_count_psec_ch7 |    
+| 68 | self_trigger_rate_count_psec_ch8 |    
+| 69 | self_trigger_rate_count_psec_ch9 |    
+| 70 | selftrigger_threshold_setting_0 |    
+| 71 | selftrigger_threshold_setting_1 |    
+| 72 | selftrigger_threshold_setting_2 |    
+| 73 | selftrigger_threshold_setting_3 |    
+| 74 | selftrigger_threshold_setting_4 |    
+| 75 | timestamp_0 |    
+| 76 | timestamp_1 |    
+| 77 | timestamp_2 |    
+| 78 | timestamp_3 |    
+| 79 | trigger_acc_detection_mode |    
+| 80 | trigger_acc_invert |    
+| 81 | trigger_mode |    
+| 82 | trigger_self_coin |    
+| 83 | trigger_self_detection_mode |    
+| 84 | trigger_self_sign |    
+| 85 | trigger_self_threshold_0 |    
+| 86 | trigger_self_threshold_1 |    
+| 87 | trigger_self_threshold_2 |    
+| 88 | trigger_self_threshold_3 |    
+| 89 | trigger_self_threshold_4 |    
+| 90 | trigger_selfmask_0 |    
+| 91 | trigger_selfmask_1 |    
+| 92 | trigger_selfmask_2 |    
+| 93 | trigger_selfmask_3 |    
+| 94 | trigger_selfmask_4 |    
+| 95 | trigger_sma_detection_mode |    
+| 96 | trigger_sma_invert |    
+| 97 | trigger_validation_window_length |    
+| 98 | trigger_validation_window_start |    
+|99 - 255 | 0 |
