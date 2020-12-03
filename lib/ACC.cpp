@@ -647,7 +647,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
                 readoutSize[k] = lastAccBuffer.at(22+k);
             }
         }
-
         //old trigger
         if(boardsReadyForRead==alignedAcdcIndices)
         {

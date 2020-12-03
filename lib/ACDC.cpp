@@ -51,7 +51,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> buffer)
     data.clear();
 
     //check for fixed words in header
-    if(buffer[0] != 0x9cac || buffer[17] != 0xc9ca)
+    if(buffer[0] != 0xac9c || buffer[15] != 0xcac9)
     {
         std::cout << "Data buffer header corrupt" << std::endl;
         return -2;
@@ -59,7 +59,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> buffer)
 
     //Fill data map
     int channel_count = 0;
-    for(int i = 18; i < 18 + 256*30; i += 256)
+    for(int i = 16; i < 16 + 256*30; i += 256)
     {
         data.emplace(std::piecewise_construct, std::forward_as_tuple(channel_count), std::forward_as_tuple(buffer.begin()+i, buffer.begin()+(i+256)));
         channel_count++;
