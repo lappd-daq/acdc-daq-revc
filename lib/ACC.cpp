@@ -1280,7 +1280,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 			{
 				if(enm==0)
 				{
-					cout << "Writing board " << bi << " and ch " << ch << endl;
+					cout << "Writing board " << bi << " and ch " << ch << ": " << map_data[bi][ch+1][enm] << endl;
 				}
 				d << map_data[bi][ch+1][enm] << delim;
 			}
