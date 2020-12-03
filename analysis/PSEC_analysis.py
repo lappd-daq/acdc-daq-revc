@@ -7,7 +7,7 @@ N_CHANNEL = 30 # Number of channels per acdc board
 N_BOARDS = 8 # Maximum number of acdc boards
 SIGN = -1 # Setting for the expected sign of the pulse
 THRESHOLD = 500 # Setting for the threshold to count a pulse as a pulse
-WIDTH_NS = 5
+WIDTH_NS = 5 # Setting for the expected width of a puse
 
 # Function to load a set of events from one acdc board at a time
 def load_board_data(filename, offset):
@@ -185,6 +185,18 @@ if __name__ == "__main__":
                 # Check the waveform for a pulse by checking on the 
                 # correct sign as well as pulse height
 ####################################################################
+# From this point on you have x and y available as arrays to work with 
+## x is a set arrays from 0 to 255 representing the samples
+## y is the array containing the data of one waveform (which is already 
+# restructured by correcting the clockcycle with the trigger in it)
+# Right here is within 3 for loops going over boards>channels>events to 
+# allow for event to event evaluation.
+# Additional information available for one event:
+## pedestal which reads the set pedestal value from the metadata
+## meta_event which is the entire array of metadata available
+### The following evaluation is just a quick example/test evaluation to count
+### pulses per channel and represent them.
+####################################################################
                 chk_sign = checkSign(y, pedestal)
                 chk_height = checkHeight(y, pedestal)
                 chk_width = checkWidth(y, pedestal)
@@ -192,10 +204,8 @@ if __name__ == "__main__":
                 # otherwise tell why not
                 if chk_sign==True and chk_height== True and chk_width==True:
                     chk_counter+=1
-####################################################################
             count_table[int(counter)] = chk_counter
             counter+=1
     # Print how many channels had events in them
     print(count_table)
-    bar_x = range(0,N_CHANNEL*int(num_boards))
-    plt.bar(bar_x,count_table)
+####################################################################

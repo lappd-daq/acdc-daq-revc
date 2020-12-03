@@ -1302,7 +1302,6 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
     for(string k: keys)
     {
         ofs << k << endl; //decimal
-
     }
     ofs.close();
 }
