@@ -870,7 +870,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					if(oscopeOnOff==0)
 					{
 						datafn = outfilename + "Data_" + timestamp + ".txt";
-						dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
 					}else if(oscopeOnOff==1)
 					{
 						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
@@ -883,6 +882,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		}
 		if(oscopeOnOff==0)
 		{
+			dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
 			writePsecData(dataofs, boardsReadyForRead);
 		}
 	
@@ -1264,9 +1264,9 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	string delim = " ";
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
+		d << (int)enm << delim;
 		for(int bi: boardsReadyForRead)
 		{
-			d << (int)enm << delim;
 			for(int ch=1; ch<NUM_CH+1; ch++)
 			{
 				d << map_data[bi][ch][enm] << delim;
