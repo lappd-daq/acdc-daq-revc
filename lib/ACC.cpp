@@ -202,6 +202,9 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 		case 1: //Software trigger
 			setSoftwareTrigger(boardMask);
 			break;
+		case 2: //Self trigger
+			setHardwareTrigSrc(trigMode,boardMask);
+			break;
 		case 3: //Self trigger with validation 
 			setHardwareTrigSrc(trigMode,boardMask);
                         //timeout 
@@ -223,20 +226,6 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 			command = 0x00350000;
 			command = command | PPSBeamMultiplexer;
-			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-			goto selfsetup;
-			break;
-		case 6: //Self trigger with SMA validation on ACDC
-			setHardwareTrigSrc(trigMode,boardMask);
-			command = 0x00B20000;
-			command = (command | (boardMask << 24)) | ACDC_sign;
-			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-
-			command = 0x00320000;
-			command = command | validation_start;
-			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-			command = 0x00330000;
-			command = command | validation_window;
 			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 			goto selfsetup;
 			break;
@@ -318,6 +307,37 @@ void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 		err_msg += " will cause an error for setting Hardware triggers. Source has to be <9";
 		writeErrorLog(err_msg);
 	}
+
+        int ACCtrigMode = 0;
+        int ACDCtrigMode = 0;
+        switch(src)
+        {
+        case 0:
+            ACCtrigMode = 0;
+            ACDCtrigMode = 0;
+            break;
+        case 1:
+            ACCtrigMode = 1;
+            ACDCtrigMode = 1;
+            break;
+        case 2:
+            ACCtrigMode = 0;
+            ACDCtrigMode = 2;
+            break;
+        case 3:
+            ACCtrigMode = 1;
+            ACDCtrigMode = 3;
+            break;
+        case 4:
+            ACCtrigMode = 2;
+            ACDCtrigMode = 1;
+            break;
+        default:
+            ACCtrigMode = 0;
+            ACDCtrigMode = 0;
+            break;
+        
+        }
 
 	//ACC hardware trigger
 	unsigned int command = 0x00300000;
