@@ -325,7 +325,7 @@ int main()
 
 	while(eventCounter<eventNumber)
 	{
-		if(triggermode == 1)
+		if(triggermode == 1 || triggermode == 4)
 		{
 			acc.softwareTrigger();
 		}

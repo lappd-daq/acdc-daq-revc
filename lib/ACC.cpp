@@ -212,6 +212,9 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			command = (command | (boardMask << 24)) | 40;
 			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 			break;
+                case 4:
+			setHardwareTrigSrc(trigMode,boardMask);
+			break;
 		case 5: //Self trigger with SMA validation on ACC
  			setHardwareTrigSrc(trigMode,boardMask);
 			command = 0x00310000;
@@ -341,11 +344,11 @@ void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 
 	//ACC hardware trigger
 	unsigned int command = 0x00300000;
-	command = (command | (boardMask << 4)) | (unsigned short)src;
+	command = (command | (boardMask << 4)) | (unsigned short)ACCtrigMode;
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 	//ACDC hardware trigger
 	command = 0x00B00000;
-	command = (command | (boardMask << 24)) | (unsigned short)src;
+	command = (command | (boardMask << 24)) | (unsigned short)ACDCtrigMode;
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 }
 
