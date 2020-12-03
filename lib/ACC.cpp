@@ -646,7 +646,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				if(oscopeOnOff==0)
 				{
 					datafn = outfilename + "Data_" + timestamp + ".txt";
-					dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
 				}else if(oscopeOnOff==1)
 				{
 					datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
@@ -659,6 +658,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	}
 	if(oscopeOnOff==0)
 	{
+		dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
 		writePsecData(dataofs, boardsReadyForRead);
 	}
 	return 0;
@@ -882,7 +882,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		}
 		if(oscopeOnOff==0)
 		{
-			dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
+			dataofs.open(datafn.c_str(), ios_base::app); 
 			writePsecData(dataofs, boardsReadyForRead);
 		}
 	
@@ -1255,9 +1255,13 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	for(int bi: boardsReadyForRead)
 	{
 		extra_key = map_meta[bi];
+		if(extra_key.size()!=0)
+		{
+			break;
+		}
 	}
 
-	for (auto const& element : extra_key) {
+	for(auto const& element : extra_key) {
 		keys.push_back(element.first);
 	}
 
@@ -1267,9 +1271,14 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		d << dec << enm << delim;
 		for(int bi: boardsReadyForRead)
 		{
-			for(int ch=1; ch<NUM_CH+1; ch++)
+			if(map_data[bi].size()==0)
 			{
-				d << map_data[bi][ch][enm] << delim;
+				cout << "Mapdata is empty" << endl;
+				writeErrorLog("Mapdata empty");
+			}
+			for(int ch=0; ch<NUM_CH; ch++)
+			{
+				d << map_data[bi][ch+1][enm] << delim;
 			}
 			if(enm<(int)keys.size())
 			{
