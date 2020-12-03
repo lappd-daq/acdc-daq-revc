@@ -538,7 +538,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				usleep(1000);
 			}
 		}
-		if(boardsReadyForRead.size()>0)
+		if(boardsReadyForRead.size()==alignedAcdcIndices.size())
 		{
 			break;
 		}
@@ -763,7 +763,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					usleep(1000);
 				}
 			}
-			if(boardsReadyForRead.size()>0)
+			if(boardsReadyForRead.size()==alignedAcdcIndices.size())
 			{
 				break;
 			}
