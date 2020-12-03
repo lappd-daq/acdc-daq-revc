@@ -1264,7 +1264,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	string delim = " ";
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
-		d << (int)enm << delim;
+		d << dec << enm << delim;
 		for(int bi: boardsReadyForRead)
 		{
 			for(int ch=1; ch<NUM_CH+1; ch++)
