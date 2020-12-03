@@ -125,7 +125,9 @@ int main()
 		std::cout << "Please select triggermode: " << std::endl; 
 		std::cout << "(0) Off" << std::endl;
 		std::cout << "(1) Software trigger" << std::endl;
-		std::cout << "(2) Self-trigger with validation ACC" << std::endl;
+		std::cout << "(2) Self-trigger" << std::endl;
+                std::cout << "(3) Self-trigger with validation ACC" << std::endl;
+                std::cout << "(4) ACC hardware trigger with perferal software trigger" << std::endl;
 		std::cout << "Set it to: ";
 
 		std::cin >> triggermode;
@@ -138,10 +140,15 @@ int main()
 
 		switch(triggermode)
 		{
-			case 5: 
+                    
+			case 2:
+                        case 3:
 				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA validation?" << std::endl;
 				std::cout << "Enter: ";
 				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+
+				acc.setSign(invertMode, 2);
+                                if(triggermode == 2) goto selfsetup;
 
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
 				std::cout << "Enter in ns: ";
@@ -155,16 +162,19 @@ int main()
 				ss4 << std::hex << (int)(validationWindow/25);
 				valstr2 = std::stoul(ss4.str(),nullptr,16);
 
-				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
-				std::cout << "Enter : ";
-				cin >> BeamgateMultiplexer;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-		
+//				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
+//				std::cout << "Enter : ";
+//				cin >> BeamgateMultiplexer;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//		
 				acc.setValidationStart(valstr);
 				acc.setValidationWindow(valstr2);
-				acc.setPPSBeamMultiplexer(BeamgateMultiplexer);
-				acc.setSign(invertMode, 2);
+//				acc.setPPSBeamMultiplexer(BeamgateMultiplexer);
 
 				goto selfsetup;
+                        case 4:
+                                //hi there
+                                goto selfsetup;
+                                
 			default:
 				std::cout << " Trigger input not found " << std::endl;
 				break;
@@ -226,12 +236,12 @@ int main()
 		}
 	}
 
-	std::cout << "What should be the PPS divide ratio in seconds?" << std::endl;
-	std::cout << "Enter in s: ";
-	cin >> PPS_divide_ratio;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-	ss5 << std::hex << (int)(PPS_divide_ratio);
-	valstr3 = std::stoul(ss5.str(),nullptr,16);
-	acc.setPPSRatio(valstr3);
+//	std::cout << "What should be the PPS divide ratio in seconds?" << std::endl;
+//	std::cout << "Enter in s: ";
+//	cin >> PPS_divide_ratio;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//	ss5 << std::hex << (int)(PPS_divide_ratio);
+//	valstr3 = std::stoul(ss5.str(),nullptr,16);
+//	acc.setPPSRatio(valstr3);
 
 	while(true)
 	{
