@@ -30,7 +30,7 @@ using namespace std;
 #define NUM_CH_PER_PSEC 6 
 #define NUM_BOARDS 8
 #define NUM_SAMPLE 256
-#define N_EVENTS 5
+#define N_EVENTS 100
 std::atomic<bool> quit(false); //signal flag
 
 void got_signal(int)
