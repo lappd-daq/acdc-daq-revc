@@ -217,6 +217,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 
 			if(!raw)
 			{	
+
 				//apply a pedestal subtraction
 				sampleValue = sampleValue - peds[bi][channelCount-1][sampleCount]; //adc counts
 				//apply a linearity corrected mV conversion
@@ -229,8 +230,6 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 			sampleCount++;
 			continue;
 		}
-
-
 	}
 
 	//depending on the type of corrupt buffer, the above loop
@@ -299,31 +298,37 @@ void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 void ACDC::readPedsFromFile(ifstream& ifs, int bi)
 {
 	char delim = ' '; //in between ADC counts
-	map<int, map<int, vector<double>>> tempPeds;//temporary holder for the new pedestal map
+	map<int, vector<double>> tempPeds;//temporary holder for the new pedestal map
+
 
 	//temporary variables for line parsing
 	string lineFromFile; //full line
 	string adcCountStr; //string representing adc counts of ped
 	double avg; //int for the current channel key
 	int ch=0;
-	
+
 	//loop over each line of file
-	while(getline(ifs, lineFromFile))
+	for(int i=0; i<NUM_SAMP; i++)
 	{
+		getline(ifs, lineFromFile);
 		stringstream line(lineFromFile); //stream of characters delimited
 
 		//loop over each sample index
-		while(getline(line, adcCountStr, delim))
+		for(int j=0; j<NUM_CH; j++)
 		{
-			avg = stoi(adcCountStr); //channel key for a while
-			tempPeds[bi][ch].push_back(avg);
-			ch++;
+			getline(line, adcCountStr, delim);
+			avg = stod(adcCountStr); //channel key for a while
+			tempPeds[j].push_back(avg);
 		}
 	}
 
+	for(int k=0; k<30; k++)
+	{
+		cout << tempPeds[k].size() << endl;
+	}
+
 	//call public member of this class to set the pedestal map
-	setPeds(tempPeds);
-	return;
+	setPeds(tempPeds, bi);
 }
 
 

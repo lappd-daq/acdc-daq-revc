@@ -32,7 +32,7 @@ public:
 	int getNumPsec() {int a = NUM_PSEC; return a;}
 	int getNumSamp() {int a = NUM_SAMP; return a;}
 	vector<int> getMaskedChannels(); //get this private var. 
-	void setPeds(map<int, map<int, vector<double>>>& p){peds = p;} //sets pedestal map
+	void setPeds(map<int, vector<double>> p, int bi){peds[bi] = p;} //sets pedestal map
 	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
 	void setData(map<int, vector<double>>& d){data = d;} //sets data map
 	int parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw = false, int bi=0); //parses only the psec data component of the ACDC buffer

@@ -255,7 +255,7 @@ int ACC::parsePedsAndConversions()
 	int pedCounter = 0; //counts how many board numbers DO NOT have matching ped files
 	double defaultConversion = 1200.0/4096.0; //default for ADC-to-mv conversion
 	double defaultPed = 0.0; //sets the baseline around 600mV
-	map<int, map<int, vector<double>>> tempMap; 
+	map<int, vector<double>> tempMap; 
 	map<int, vector<double>> tempMap2; 
 	string pedfilename;
 	ifstream ifped;
@@ -268,7 +268,7 @@ int ACC::parsePedsAndConversions()
 			if(bi==a->getBoardIndex())
 			{
 				//look for the PED and LIN files for this index
-				pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG)  + "_boards" + to_string(bi) + ".txt";
+				pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG)  + "_board" + to_string(bi) + ".txt";
 				ifped.open(pedfilename, ios_base::in);
 
 				//if the associated file does not exist
@@ -284,11 +284,11 @@ int ACC::parsePedsAndConversions()
 					{
 						for(int smp=0; smp<NUM_SAMP; smp++)
 						{
-							tempMap[bi][channel].push_back(defaultPed);
+							tempMap[channel].push_back(defaultPed);
 						}
 					}
 
-					a->setPeds(tempMap);	 
+					a->setPeds(tempMap, bi);	 
 				}else //otherwise, parse the file.
 				{
 					a->readPedsFromFile(ifped, bi);
