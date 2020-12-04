@@ -217,7 +217,6 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 
 			if(!raw)
 			{	
-
 				//apply a pedestal subtraction
 				sampleValue = sampleValue - peds[bi][channelCount-1][sampleCount]; //adc counts
 				//apply a linearity corrected mV conversion
@@ -320,11 +319,6 @@ void ACDC::readPedsFromFile(ifstream& ifs, int bi)
 			avg = stod(adcCountStr); //channel key for a while
 			tempPeds[j].push_back(avg);
 		}
-	}
-
-	for(int k=0; k<30; k++)
-	{
-		cout << tempPeds[k].size() << endl;
 	}
 
 	//call public member of this class to set the pedestal map
