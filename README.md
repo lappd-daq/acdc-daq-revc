@@ -116,7 +116,8 @@ Metadata is saved with the data in one file. It is always in the coloumn after t
 The entries are the following:
 
 | Line | Meta key |
-|------|-------------- |    
+|------|-------------- |  
+| 0 | Boardnumber |
 | 1 | DLLVDD_setting_0 |    
 | 2 | DLLVDD_setting_1 |    
 | 3 | DLLVDD_setting_2 |    
