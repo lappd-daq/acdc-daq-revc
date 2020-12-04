@@ -279,16 +279,15 @@ int ACC::parsePedsAndConversions()
 					err_msg += CALIBRATION_DIRECTORY;
 					writeErrorLog(err_msg);
 					pedCounter++;
-					for(int bi: alignedAcdcIndices)
+
+					for(int channel = 0; channel < a->getNumCh(); channel++)
 					{
-						for(int channel = 0; channel < a->getNumCh(); channel++)
+						for(int smp=0; smp<NUM_SAMP; smp++)
 						{
-							for(int smp=0; smp<NUM_SAMP; smp++)
-							{
-								tempMap[bi][channel][smp] = defaultPed;
-							}
+							tempMap[bi][channel].push_back(defaultPed);
 						}
 					}
+
 					a->setPeds(tempMap);	 
 				}else //otherwise, parse the file.
 				{
