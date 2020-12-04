@@ -30,7 +30,7 @@ using namespace std;
 #define NUM_CH_PER_PSEC 6 
 #define NUM_BOARDS 8
 #define NUM_SAMPLE 256
-#define N_EVENTS 100
+#define N_EVENTS 5
 std::atomic<bool> quit(false); //signal flag
 
 void got_signal(int)
@@ -140,14 +140,15 @@ int main()
 
 	cout << "Starting write" << endl;
 	//open files that will hold the most-recent PED data.
-	datafn = CALIBRATION_DIRECTORY;
-	string mkdata = "mkdir -p ";
-	mkdata += CALIBRATION_DIRECTORY;
-	system(mkdata.c_str());
-	datafn += PED_TAG; 
-	datafn += "_board";
 	for(int bi: boardsRead)
 	{
+		datafn = CALIBRATION_DIRECTORY;
+		string mkdata = "mkdir -p ";
+		mkdata += CALIBRATION_DIRECTORY;
+		system(mkdata.c_str());
+		datafn += PED_TAG; 
+		datafn += "_board";
+
 		datafn += to_string(bi);
 		datafn += ".txt";
 		ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
