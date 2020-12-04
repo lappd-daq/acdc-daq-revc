@@ -71,7 +71,7 @@ public:
 	void setTriggermode(int in){trigMode = in;}
 	int getTriggermode(){return trigMode;}
 	
-	map<int, map<int, vector<double>>> returnPedData(){return map_data;}
+	map<int, map<int, vector<double>>> returnData(){return map_data;}
 
 private:
 	stdUSB* usb;

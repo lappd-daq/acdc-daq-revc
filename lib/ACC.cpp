@@ -255,39 +255,51 @@ int ACC::parsePedsAndConversions()
 	int pedCounter = 0; //counts how many board numbers DO NOT have matching ped files
 	double defaultConversion = 1200.0/4096.0; //default for ADC-to-mv conversion
 	double defaultPed = 0.0; //sets the baseline around 600mV
-	map<int, map<int, double>> tempMap; 
+	map<int, map<int, vector<double>>> tempMap; 
 	map<int, vector<double>> tempMap2; 
+	string pedfilename;
+	ifstream ifped;
 
 	//loop over all connected boards
 	for(ACDC* a: acdcs)
 	{
-		//look for the PED and LIN files for this index
-		string pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG)  + ".txt";
-		string linfilename = string(CALIBRATION_DIRECTORY) + string(LIN_TAG)  + ".txt";
-		ifstream ifped(pedfilename);
-		ifstream iflin(linfilename);
-		
-		//if the associated file does not exist
-		//set default values defined above. 
-		if(!(bool)ifped)
+		for(int bi: alignedAcdcIndices)
 		{
-			string err_msg = "WARNING: Your boards do not have a pedestal calibration in the calibration folder: ";  
-			err_msg += CALIBRATION_DIRECTORY;
-			writeErrorLog(err_msg);
-			pedCounter++;
-			for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
+			if(bi==a->getBoardIndex())
 			{
-				for(int channel = 0; channel < a->getNumCh(); channel++)
+				//look for the PED and LIN files for this index
+				pedfilename = string(CALIBRATION_DIRECTORY) + string(PED_TAG)  + "_boards" + to_string(bi) + ".txt";
+				ifped.open(pedfilename, ios_base::in);
+
+				//if the associated file does not exist
+				//set default values defined above. 
+				if(!(bool)ifped)
 				{
-					tempMap[bi][channel] = defaultPed;
+					string err_msg = "WARNING: Your boards do not have a pedestal calibration in the calibration folder: ";  
+					err_msg += CALIBRATION_DIRECTORY;
+					writeErrorLog(err_msg);
+					pedCounter++;
+					for(int bi: alignedAcdcIndices)
+					{
+						for(int channel = 0; channel < a->getNumCh(); channel++)
+						{
+							for(int smp=0; smp<NUM_SAMP; smp++)
+							{
+								tempMap[bi][channel][smp] = defaultPed;
+							}
+						}
+					}
+					a->setPeds(tempMap);	 
+				}else //otherwise, parse the file.
+				{
+					a->readPedsFromFile(ifped, bi);
 				}
 			}
-			a->setPeds(tempMap);	 
-		}else //otherwise, parse the file.
-		{
-			a->readPedsFromFile(ifped);
 		}
+		ifped.close();
 
+		string linfilename = string(CALIBRATION_DIRECTORY) + string(LIN_TAG)  + ".txt";
+		ifstream iflin(linfilename);
 		if(!(bool)iflin)
 		{
 			string err_msg = "WARNING: Your boards do not have a linearity scan calibration in the calibration folder: ";  
@@ -305,7 +317,7 @@ int ACC::parsePedsAndConversions()
 		{
 			a->readConvsFromFile(iflin);
 		}
-		ifped.close();
+
 		iflin.close();
 	}
 	return linCounter;
@@ -604,6 +616,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		{
 			if(a->getBoardIndex() == bi)
 			{
+				meta.checkAndInsert("Board", bi);
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
 				int retval;
@@ -827,6 +840,8 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 			{
 				if(a->getBoardIndex() == bi)
 				{
+					meta.checkAndInsert("Board", bi); 
+
 					//tells it explicitly to load the data
 					//component of the buffer into private memory. 
 					int retval;
@@ -1280,7 +1295,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 			{
 				if(enm==0)
 				{
-					cout << "Writing board " << bi << " and ch " << ch << ": " << map_data[bi][ch+1][enm] << endl;
+					//cout << "Writing board " << bi << " and ch " << ch << ": " << map_data[bi][ch+1][enm] << endl;
 				}
 				d << map_data[bi][ch+1][enm] << delim;
 			}

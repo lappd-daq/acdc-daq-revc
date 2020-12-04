@@ -25,9 +25,12 @@ using namespace std;
 //during real data-taking. These pedestals are
 //subtracted live during data-taking. 
 
-
-
-
+#define NUM_CH 30
+#define NUM_PSEC 5
+#define NUM_CH_PER_PSEC 6 
+#define NUM_BOARDS 8
+#define NUM_SAMPLE 256
+#define N_EVENTS 5
 std::atomic<bool> quit(false); //signal flag
 
 void got_signal(int)
@@ -35,34 +38,66 @@ void got_signal(int)
 	quit.store(true);
 }
 
-map<int, map<int, double>> calculatePedMap(map<int, map<int, vector<double>>> runsum)
+vector<int> getBoards(map<int, map<int, map<int, vector<double>>>> mapdata)
 {
-	map<int, map<int, double>> tempdata;
-	map<int, map<int, double>> avgdata;
-	double sum,mean;
+	int evn = 0;
+	vector<int> boards;
 
-	for(int bi=0; bi<8; bi++)
-	{
-		for(int ch=0; ch<30; ch++)
-		{
-			sum = accumulate(runsum[bi][ch].begin(), runsum[bi][ch].end() , 0);
-			tempdata[bi][ch] = sum;
-		}
+	for(auto const& element : mapdata[evn]) {
+		boards.push_back(element.first);
 	}
-	for(int bi=0; bi<8; bi++)
-	{
-		for(int ch=0; ch<30; ch++)
-		{
-			mean = tempdata[bi][ch]/(50*256);
-			avgdata[bi][ch] = mean;
-		}
-	}
-	return avgdata;
+
+	return boards;
 }
 
-int main() {
+map<int, map<int, vector<double>>> getAverage(map<int, map<int, map<int, vector<double>>>> mapdata, vector<int> boards)
+{
+	cout << "Average start" << endl;
+	map<int, map<int, vector<double>>> sum;
+	vector<double> insert;
 
-	string datafn;//file to ultimately save avg
+	for(int bi: boards)
+	{
+		for(int ch=0; ch<NUM_CH; ch++)
+		{
+			for(int smp=0; smp<NUM_SAMPLE; smp++)
+			{
+				insert.push_back(0);
+			}
+			sum[bi][ch] = insert;				
+		}
+	}
+
+	for(int evn=0; evn<N_EVENTS; evn++)
+	{
+		for(int bi: boards)
+		{
+			for(int ch=0; ch<NUM_CH; ch++){
+				for(int smp=0; smp<NUM_SAMPLE; smp++)
+				{
+					sum[bi][ch][smp] += mapdata[evn][bi][ch+1][smp];
+				}				
+			}
+		}
+	}
+
+	for(int bi: boards)
+	{
+		for(int ch=0; ch<NUM_CH; ch++){
+			for(int smp=0; smp<NUM_SAMPLE; smp++)
+			{
+				sum[bi][ch][smp] = sum[bi][ch][smp]/N_EVENTS;
+			}				
+		}
+	}
+	
+	cout << "Average done" << endl;
+	return sum;
+}
+
+int main()
+{
+	ACC acc;
 
 	//immediately enter a data collection loop
 	//that will save data without pedestals subtracted
@@ -70,65 +105,64 @@ int main() {
 	int trigMode = 1; //software trigger for calibration
 	unsigned int boardMask = 0xFF;
 	int calibMode = 1;
-	int nevents = 50; //old software read 50 times for ped calibration. 
-	double sum;
+	int oscope = 0;
+	bool raw = true;
 	int retval;
-	
-	ACC* acc = new ACC();
+	string datafn;//file to ultimately save avg
+	map<int, map<int, map<int, vector<double>>>> mapdata; //<event, board, channel, data vector>
+	map<int, map<int, vector<double>>> avg_data; //<board, channel, data vector>
+	vector<int> boardsRead;
 
-	retval = acc->initializeForDataReadout(trigMode,boardMask,calibMode);
+	retval = acc.initializeForDataReadout(trigMode, boardMask, calibMode);
 	if(retval != 0)
 	{
 		cout << "Initialization failed!" << endl;
 		return 0;
 	}
 
-	map<int, map<int, vector<double>>> tempdata;
-	map<int, map<int, vector<double>>> runsum;
-	map<int, map<int, double>> pedMap;
-	for(int i=0; i<nevents; i++){
-		acc->softwareTrigger();
+	for(int i=0; i<N_EVENTS; i++){
+		acc.softwareTrigger();
 
-		retval = acc->listenForAcdcData(trigMode,true,"calibrate",1);
+		acc.listenForAcdcData(trigMode, raw, "Config", oscope);
 		if (retval!=0)
 		{
 			cout << "retval " << retval << endl;
 			i--;
 			continue;
 		}
-		tempdata = acc->returnPedData();
-		for(int bi=0; bi<(int)tempdata.size(); bi++)
-		{
-			for(int ch=0; ch<(int)tempdata[bi].size(); ch++)
-			{
-				sum = accumulate(tempdata[bi][ch].begin(), tempdata[bi][ch].end() , 0);
-				runsum[bi][ch].push_back(sum);
-			}
-		}
+		mapdata[i] = acc.returnData();
 	}
 
-	pedMap = calculatePedMap(runsum);
+	cout << "Getting boards" << endl;
+	boardsRead = getBoards(mapdata);
+	cout << "Getting average" << endl;
+	avg_data = getAverage(mapdata, boardsRead);
 
-
-	//open files that will hold the most-recent PED data. 
+	cout << "Starting write" << endl;
+	//open files that will hold the most-recent PED data.
 	datafn = CALIBRATION_DIRECTORY;
 	string mkdata = "mkdir -p ";
 	mkdata += CALIBRATION_DIRECTORY;
 	system(mkdata.c_str());
 	datafn += PED_TAG; 
-	datafn += ".txt";
-	cout << datafn << endl;
-	ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
-	for(int bi=0; bi<8; bi++)
+	datafn += "_board";
+	for(int bi: boardsRead)
 	{
-		for(int ch=0; ch<30; ch++)
+		datafn += to_string(bi);
+		datafn += ".txt";
+		ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
+		cout << "Generating " << datafn << " ..." << endl;
+
+		string delim = " ";
+		for(int enm=0; enm<NUM_SAMPLE; enm++)
 		{
-			dataofs << pedMap[bi][ch] << " ";
+			for(int ch=0; ch<NUM_CH; ch++)
+			{
+				dataofs << avg_data[bi][ch][enm] << delim;
+			}
+			dataofs << endl;
 		}
-		dataofs << endl;
+		dataofs.close();
 	}
-
-	dataofs.close();
-
 	return 1;
 }

@@ -32,7 +32,7 @@ public:
 	int getNumPsec() {int a = NUM_PSEC; return a;}
 	int getNumSamp() {int a = NUM_SAMP; return a;}
 	vector<int> getMaskedChannels(); //get this private var. 
-	void setPeds(map<int, map<int, double>>& p){peds = p;} //sets pedestal map
+	void setPeds(map<int, map<int, vector<double>>>& p){peds = p;} //sets pedestal map
 	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
 	void setData(map<int, vector<double>>& d){data = d;} //sets data map
 	int parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw = false, int bi=0); //parses only the psec data component of the ACDC buffer
@@ -40,7 +40,7 @@ public:
 	void writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer);
 	void writeRawDataToFile(vector<unsigned short> buffer, ofstream& d);
 	void printByte(ofstream& ofs, unsigned short val);
-	void readPedsFromFile(ifstream& ifs);
+	void readPedsFromFile(ifstream& ifs, int bi);
 	void readConvsFromFile(ifstream& ifs);
 	void writeErrorLog(string errorMsg);
 
@@ -54,7 +54,7 @@ private:
 	vector<int> maskedChannels;
 	Metadata meta;
 	map<int, vector<double>> data; //data[channel][waveform samples] channel starts at 1. 
-	map<int, map<int, double>> peds; //peds[channel][waveform samples] from a calibration file.
+	map<int, map<int, vector<double>>> peds; //peds[channel][waveform samples] from a calibration file.
 	map<int, vector<double>> conv; //conversion factor from adc counts to mv from calibration file. 
 	map<string, unsigned short> map_meta;
 

@@ -32,14 +32,14 @@ public:
 	void writeErrorLog(string errorMsg);
 	map<string, unsigned short> getMetadata(){return metadata;}
 	vector<string> getMetaKeys(){return metadata_keys;}
-
+	void checkAndInsert(string key, unsigned short val); //inserts vals into metadata map. 
 
 private:
 	map<string, unsigned short> metadata;
 
 	vector<string> metadata_keys;
 	void initializeMetadataKeys();
-	void checkAndInsert(string key, unsigned short val); //inserts vals into metadata map. 
+	
 };
 
 
