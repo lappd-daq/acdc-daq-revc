@@ -183,7 +183,7 @@ int main(int argc, char *argv[])
 						{
 							getline(line, adcCountStr, delim);
 							cout << adcCountStr << endl;
-							mapmeta[evn][bi]["clockcycle_bits"] = stoi(adcCountStr);
+							mapmeta[evn][bi]["clockcycle_bits"] = stod(adcCountStr);
 						}
 						break;
 					}
