@@ -72,6 +72,7 @@ public:
 	int getTriggermode(){return trigMode;}
 	
 	map<int, map<int, vector<double>>> returnData(){return map_data;}
+	map<int, map<string, unsigned short>> returnMeta(){return map_meta;}
 
 private:
 	stdUSB* usb;

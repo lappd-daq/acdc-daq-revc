@@ -584,6 +584,9 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		usleep(10000);
 		if(acdc_buffer.size() !=  7795){
 			writeErrorLog("Couldn't read 7795 words as expected! Tryingto fix it!");
+			if(acdc_buffer.size()==7827){
+				cout << "Acdc buffer 7827!" << endl;
+			}
 		}
 		bool corruptBuffer = false;
 		if(acdc_buffer.size() == 0)
@@ -788,7 +791,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		for(int bi: boardsReadyForRead)
 		{
 			//cout << "Read for board " << bi << endl;
-			
+			usleep(5000);
 			unsigned int command = 0x00210000; //base command for set readmode
 			command = command | (unsigned int)(bi); //which board to read
 			usb->sendData(command);
@@ -802,7 +805,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 			if(acdc_buffer.size()!=7795)
 			{
 				writeErrorLog("Couldn't read 7795 words as expected! Tryingto fix it!");
-				break;
+				if(acdc_buffer.size()==7827){
+					cout << "Acdc buffer 7827!" << endl;
+				}
 			}
 			//----corrupt buffer checks begin
 			//sometimes the ACDCs dont send back good
@@ -898,8 +903,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		{
 			dataofs.open(datafn.c_str(), ios_base::app); 
 			writePsecData(dataofs, boardsReadyForRead);
-		}
-	
+		}	
 	}
 	catch(string mechanism)
 	{

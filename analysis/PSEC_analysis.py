@@ -32,15 +32,15 @@ def getPedestal(channel, meta_event):
     # Depending on the current channels corresponding PSEC chip
     # read the metadata coloumn to get the set pedestal value
     if ch>=0 and ch<=5:
-        pedestal = int(meta_event[20],16)
-    elif ch>=6 and ch<=11:
         pedestal = int(meta_event[21],16)
-    elif ch>=12 and ch<=17:
+    elif ch>=6 and ch<=11:
         pedestal = int(meta_event[22],16)
-    elif ch>=18 and ch<=23:
-        pedestal = int(meta_event[23],16)
-    elif ch>=24 and ch<=29:
+    elif ch>=12 and ch<=17:
         pedestal = int(meta_event[24],16)
+    elif ch>=18 and ch<=23:
+        pedestal = int(meta_event[25],16)
+    elif ch>=24 and ch<=29:
+        pedestal = int(meta_event[26],16)
     else:
         print("Pedestal error")
     # Return the pedestal value
@@ -145,6 +145,9 @@ def checkWidth(data, pedestal):
 if __name__ == "__main__":
     # Set the filename from an input argument
     filename = sys.argv[1]
+    calibfile = sys.argv[2]
+    savefolder = sys.argv[3]
+    calib = np.loadtxt(calibfile, delimiter=" ", usecols=range(0,30));
     # Get the number of acdc boards that were read out
     num_boards = (get_board_number(filename)-1)/31
     # Create helper variables like a arbitrary x axis
@@ -171,11 +174,11 @@ if __name__ == "__main__":
                 # Grab only the respective metadata 
                 meta_event = meta[0+event:256+event]
                 # and extract the clockcycle bit
-                bit = int(meta_event[25],16)
+                bit = int(meta_event[26],16)
                 # Grab only the respective data
                 y = data[0+event:256+event,ch]
                 # and restructure it with the clockcycle bit
-                y = restructure(y,bit)
+                y = restructure(y,bit) - calib[:,ch]
                 # Catch events that are not complete
                 if len(y)!=N_SAMPLE or len(meta_event)!=N_SAMPLE:
                     print("len error")
@@ -197,15 +200,12 @@ if __name__ == "__main__":
 ### The following evaluation is just a quick example/test evaluation to count
 ### pulses per channel and represent them.
 ####################################################################
-                chk_sign = checkSign(y, pedestal)
-                chk_height = checkHeight(y, pedestal)
-                chk_width = checkWidth(y, pedestal)
-                # Only if all checks are positive count the pulse 
-                # otherwise tell why not
-                if chk_sign==True and chk_height== True and chk_width==True:
-                    chk_counter+=1
-            count_table[int(counter)] = chk_counter
-            counter+=1
-    # Print how many channels had events in them
-    print(count_table)
+                # Every event
+                plt.figure(num=ch, figsize=[25,25], facecolor='white')
+                plt.plot(x,y)
+                printname = savefolder + "Plot_ch_" + str(ch) + ".png"
+                plt.savefig(printname)
+            # Every channel
+            plt.close(ch)
+        # Every board
 ####################################################################

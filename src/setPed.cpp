@@ -78,32 +78,37 @@ int main(int argc, char *argv[]){
 	
 	printf("send 0x%08x\n",command);	
 
-	//open files that will hold the most-recent PED data. 
-	string datafn = CALIBRATION_DIRECTORY;
-	string mkdata = "mkdir -p ";
-	mkdata += CALIBRATION_DIRECTORY;
-	system(mkdata.c_str());
-	datafn += PED_TAG; 
-	datafn += ".txt";
-	cout << datafn << endl;
-	ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
+	//open files that will hold the most-recent PED data.
 	for(int bi=0; bi<8; bi++)
 	{
-		for(int ch=0; ch<30; ch++)
+		string datafn = CALIBRATION_DIRECTORY;
+		string mkdata = "mkdir -p ";
+		mkdata += CALIBRATION_DIRECTORY;
+		system(mkdata.c_str());
+		datafn += PED_TAG; 
+		datafn += "_board";
+
+		datafn += to_string(bi);
+		datafn += ".txt";
+		ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
+		cout << "Generating " << datafn << " ..." << endl;
+
+		string delim = " ";
+		for(int enm=0; enm<256; enm++)
 		{
-			if(argc ==2)
+			for(int ch=0; ch<30; ch++)
 			{
-				dataofs << atoi(argv[1]) << " ";
-			}else if(argc >= 4)
-			{
-				dataofs << atoi(argv[3]) << " ";
+				if(argc ==2)
+				{
+					dataofs << atoi(argv[1]) << " ";
+				}else if(argc >= 4)
+				{
+					dataofs << atoi(argv[3]) << " ";
+				}
 			}
-			
+			dataofs << endl;
 		}
-		dataofs << endl;
+		dataofs.close();
 	}
-
-	dataofs.close();
-
 	return 1;
 }

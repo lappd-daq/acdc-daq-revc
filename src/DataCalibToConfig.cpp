@@ -1,5 +1,4 @@
 #include <iostream>
-#include "ACC.h"
 #include <chrono>
 #include <string>
 #include <sstream>
@@ -11,6 +10,7 @@
 #include <atomic>
 #include <map>
 #include <numeric>
+#include "ACC.h"
 
 
 using namespace std;
@@ -126,9 +126,9 @@ map<int, map<int, map<int, vector<double>>>> reorder(map<int, map<int, map<int, 
 	{
 		for(int bi: boardsRead)
 		{
+			cycle = mapmeta[evn][bi]["clockcycle_bits"];
 			for(int ch=0; ch<NUM_CH; ch++){
-				temp_vec = mapdata[evn][bi][ch+1];
-				cycle = mapmeta[evn][bi]["clockcycle_bits"];
+				temp_vec = mapdata[evn][bi][ch+1];			
 				re_vec = reorder_internal(temp_vec,cycle);
 				re_data[evn][bi][ch+1] = re_vec;
 			}
@@ -137,50 +137,75 @@ map<int, map<int, map<int, vector<double>>>> reorder(map<int, map<int, map<int, 
 	return re_data;
 }
 
-int main()
+int main(int argc, char *argv[])
 {
-	ACC acc;
+	ifstream ifs(argv[1], ios_base::in);
 
-	//immediately enter a data collection loop
-	//that will save data without pedestals subtracted
-	//to get a measurement of the pedestal values. 
-	int trigMode = 1; //software trigger for calibration
-	unsigned int boardMask = 0xFF;
-	int calibMode = 1;
-	int oscope = 0;
-	bool raw = true;
-	int retval;
+	char delim = ' ';
+	string lineFromFile; //full line
+	string adcCountStr; //string representing adc counts of ped
+	double avg; //int for the current channel key
+
 	string datafn;//file to ultimately save avg
 	map<int, map<int, map<int, vector<double>>>> mapdata; //<event, board, channel, data vector>
 	map<int, map<int, map<int, vector<double>>>> re_data;
 	map<int, map<int, map<string, unsigned short>>> mapmeta;
 	map<int, map<int, vector<double>>> avg_data; //<board, channel, data vector>
 	vector<int> boardsRead;
+	vector<double> temp;
 
-	retval = acc.initializeForDataReadout(trigMode, boardMask, calibMode);
-	if(retval != 0)
+	vector<int> connectedBoards;
+	for(int arg=0; arg<argc-3; arg++)
 	{
-		cout << "Initialization failed!" << endl;
-		return 0;
+		connectedBoards.push_back(atoi(argv[arg+3]));
 	}
 
-	for(int i=0; i<N_EVENTS; i++){
-		acc.softwareTrigger();
-
-		acc.listenForAcdcData(trigMode, raw, "Config", oscope);
-		if (retval!=0)
+	for(int evn=0; evn<N_EVENTS; evn++)
+	{
+		//loop over each line of file
+		for(int i=0; i<NUM_SAMP; i++)
 		{
-			cout << "retval " << retval << endl;
-			i--;
-			continue;
+			getline(ifs, lineFromFile);
+			stringstream line(lineFromFile); //stream of characters delimited
+			for(int bi: connectedBoards)
+			{
+				//loop over each sample index
+				for(int ch=0; ch<NUM_CH+2; ch++)
+				{
+					if(ch==0)
+					{
+						getline(line, adcCountStr, delim);
+						continue;
+					}
+					if(ch==NUM_CH+1)
+					{
+						if(i==26)
+						{
+							getline(line, adcCountStr, delim);
+							cout << adcCountStr << endl;
+							mapmeta[evn][bi]["clockcycle_bits"] = stoi(adcCountStr);
+						}
+						break;
+					}
+					getline(line, adcCountStr, delim);
+					avg = stoi(adcCountStr); //channel key for a while
+					if(evn==0 && i==0)
+					{
+						cout << avg << ", ";				
+					}
+					mapdata[evn][bi][ch].push_back(avg);
+				}
+				if(evn==0 && i==0){
+					cout << endl;
+				}
+
+			}
 		}
-		mapdata[i] = acc.returnData();
-		mapmeta[i] = acc.returnMeta();
-	}
+	}	
 
 	cout << "Getting boards" << endl;
 	boardsRead = getBoards(mapdata);
-	cout << "Reordering" << endl;
+	cout << "Reordering " << endl;
 	re_data = reorder(mapdata, mapmeta, boardsRead);
 	cout << "Getting average" << endl;
 	avg_data = getAverage(re_data, boardsRead);
@@ -189,11 +214,8 @@ int main()
 	//open files that will hold the most-recent PED data.
 	for(int bi: boardsRead)
 	{
-		datafn = CALIBRATION_DIRECTORY;
-		string mkdata = "mkdir -p ";
-		mkdata += CALIBRATION_DIRECTORY;
-		system(mkdata.c_str());
-		datafn += PED_TAG; 
+		datafn = argv[2];
+		datafn += "PEDS_ACDC"; 
 		datafn += "_board";
 
 		datafn += to_string(bi);
