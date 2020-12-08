@@ -112,7 +112,6 @@ vector<double> reorder_internal(vector<double> temp_vec, unsigned short cycle)
             re_vec.push_back(temp_vec[i-(NUM_SAMPLE-clockcycle)]);
         }
     }
-
     return re_vec;
 }
 

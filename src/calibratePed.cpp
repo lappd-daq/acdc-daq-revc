@@ -142,6 +142,8 @@ int main()
 	ACC acc;
 
 	system("mkdir -p Results");
+	system("rm ./Results/Data_Config.txt")
+
 	//immediately enter a data collection loop
 	//that will save data without pedestals subtracted
 	//to get a measurement of the pedestal values. 

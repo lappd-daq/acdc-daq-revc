@@ -1,6 +1,7 @@
 import sys
 import numpy as np
 import matplotlib.pyplot as plt
+plt.rcParams.update({'font.size': 22})
 
 N_SAMPLE = 256 # Number of samples per waveform
 N_CHANNEL = 30 # Number of channels per acdc board
@@ -160,6 +161,7 @@ if __name__ == "__main__":
         # Grab the data of one acdc board and get the number of recorded events
         data = load_board_data(filename,bi*31+1)
         number_of_events = len(data[:,1])/N_SAMPLE
+        array = np.empty(int(number_of_events))
         # Create an empty final table
         count_table = np.empty(int(num_boards)*N_CHANNEL, dtype=int)
         # Grab the metadata of one acdc board
@@ -179,6 +181,8 @@ if __name__ == "__main__":
                 y = data[0+event:256+event,ch]
                 # and restructure it with the clockcycle bit
                 y = restructure(y,bit) - calib[:,ch]
+                #array[ev] = y[0]
+                #y = calib[:,ch]
                 # Catch events that are not complete
                 if len(y)!=N_SAMPLE or len(meta_event)!=N_SAMPLE:
                     print("len error")
@@ -202,7 +206,11 @@ if __name__ == "__main__":
 ####################################################################
                 # Every event
                 plt.figure(num=ch, figsize=[25,25], facecolor='white')
+            
                 plt.plot(x,y)
+                #plt.plot([0,100],[calib[0,ch],calib[0,ch]],'-r')
+                plt.xlabel('sample')
+                plt.ylabel('adc count')
                 printname = savefolder + "Plot_ch_" + str(ch) + ".png"
                 plt.savefig(printname)
             # Every channel
