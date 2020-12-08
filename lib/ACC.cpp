@@ -629,7 +629,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				}
 				string rawfn = outfilename + "Raw_b" + to_string(bi) + ".txt";
 				ofstream rawofs(rawfn.c_str(), ios_base::trunc); //trunc overwrites
-				a->writeRawDataToFile(acdc_buffer, rawofs);
+				//a->writeRawDataToFile(acdc_buffer, rawofs);
 				retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
 				corruptBuffer = meta.parseBuffer(acdc_buffer);
 				if(corruptBuffer)
@@ -858,7 +858,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					}
 					string rawfn = outfilename + "Raw_b" + to_string(bi) + ".txt";
 					ofstream rawofs(rawfn.c_str(), ios_base::trunc); //trunc overwrites
-					a->writeRawDataToFile(acdc_buffer, rawofs);
+					//a->writeRawDataToFile(acdc_buffer, rawofs);
 					retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
 					corruptBuffer = meta.parseBuffer(acdc_buffer);
 					if(corruptBuffer)

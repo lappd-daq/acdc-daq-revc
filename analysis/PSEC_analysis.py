@@ -180,9 +180,8 @@ if __name__ == "__main__":
                 # Grab only the respective data
                 y = data[0+event:256+event,ch]
                 # and restructure it with the clockcycle bit
-                y = restructure(y,bit) - calib[:,ch]
-                #array[ev] = y[0]
-                #y = calib[:,ch]
+                y = y - calib[:,ch]
+                y = restructure(y, bit)
                 # Catch events that are not complete
                 if len(y)!=N_SAMPLE or len(meta_event)!=N_SAMPLE:
                     print("len error")
@@ -204,16 +203,21 @@ if __name__ == "__main__":
 ### The following evaluation is just a quick example/test evaluation to count
 ### pulses per channel and represent them.
 ####################################################################
-                # Every event
                 plt.figure(num=ch, figsize=[25,25], facecolor='white')
-            
                 plt.plot(x,y)
-                #plt.plot([0,100],[calib[0,ch],calib[0,ch]],'-r')
                 plt.xlabel('sample')
                 plt.ylabel('adc count')
-                printname = savefolder + "Plot_ch_" + str(ch) + ".png"
+                printname = savefolder + "Plot_"+ str(ch) + ".png"
                 plt.savefig(printname)
+                h[ev] = np.amax(y+calib[:,ch])
             # Every channel
             plt.close(ch)
-        # Every board
+            plt.figure(num=ch, figsize=[25,25], facecolor='white')
+            plt.hist(h, bins=np.arange(min(h), max(h) + 1, 1))
+            plt.xlabel('pulse height in adc')
+            plt.ylabel('count')
+            printname = savefolder + "Hist_" + str(ch) + ".png"
+            plt.savefig(printname)
+            # Every channel
+            plt.close(ch)
 ####################################################################

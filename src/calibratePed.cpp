@@ -142,7 +142,7 @@ int main()
 	ACC acc;
 
 	system("mkdir -p Results");
-	system("rm ./Results/Data_Config.txt")
+	//system("rm ./Results/Data_Config.txt");
 
 	//immediately enter a data collection loop
 	//that will save data without pedestals subtracted
@@ -184,7 +184,7 @@ int main()
 	cout << "Getting boards" << endl;
 	boardsRead = getBoards(mapdata);
 	cout << "Reordering" << endl;
-	re_data = reorder(mapdata, mapmeta, boardsRead);
+	re_data = mapdata;//reorder(mapdata, mapmeta, boardsRead);
 	cout << "Getting average" << endl;
 	avg_data = getAverage(re_data, boardsRead);
 

@@ -75,7 +75,7 @@ map<int, map<int, vector<double>>> getAverage(map<int, map<int, map<int, vector<
 			for(int ch=0; ch<NUM_CH; ch++){
 				for(int smp=0; smp<NUM_SAMPLE; smp++)
 				{
-					sum[bi][ch][smp] += mapdata[evn][bi][ch+1][smp];
+					sum[bi][ch+1][smp] += mapdata[evn][bi][ch+1][smp];
 				}				
 			}
 		}
@@ -86,7 +86,7 @@ map<int, map<int, vector<double>>> getAverage(map<int, map<int, map<int, vector<
 		for(int ch=0; ch<NUM_CH; ch++){
 			for(int smp=0; smp<NUM_SAMPLE; smp++)
 			{
-				sum[bi][ch][smp] = sum[bi][ch][smp]/N_EVENTS;
+				sum[bi][ch+1][smp] = sum[bi][ch+1][smp]/N_EVENTS;
 			}				
 		}
 	}
@@ -205,7 +205,7 @@ int main(int argc, char *argv[])
 	cout << "Getting boards" << endl;
 	boardsRead = getBoards(mapdata);
 	cout << "Reordering " << endl;
-	re_data = reorder(mapdata, mapmeta, boardsRead);
+	re_data = mapdata;//reorder(mapdata, mapmeta, boardsRead);
 	cout << "Getting average" << endl;
 	avg_data = getAverage(re_data, boardsRead);
 
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
 		{
 			for(int ch=0; ch<NUM_CH; ch++)
 			{
-				dataofs << avg_data[bi][ch][enm] << delim;
+				dataofs << avg_data[bi][ch+1][enm] << delim;
 			}
 			dataofs << endl;
 		}
