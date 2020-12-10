@@ -49,11 +49,10 @@ def getPedestal(channel, meta_event):
 
 # Function to restructure the data of an acdc board given by the clockcycle 
 # the trigger happend in 
-def restructure(data, cycleBit):
+def restructure(data, cycleSample):
     # The cycleBit is given by the metadata and determines which of the 8
     # 320 MHz clockcycles the trigger happend in 32 samples * this bit is 
     # then the actual first sample 
-    cycleSample = 32 * cycleBit
     # Create an empty new array for the transformation
     new_vector = np.empty(256)
     # Loop over all available samples
@@ -181,7 +180,10 @@ if __name__ == "__main__":
                 y = data[0+event:256+event,ch]
                 # and restructure it with the clockcycle bit
                 y = y - calib[:,ch]
-                y = restructure(y, bit)
+                cycleSample = 32 * bit
+                y = restructure(y, cycleSample)
+                offset = 130 #####################################################Enter offset here
+                y = restructure(y, offset)
                 # Catch events that are not complete
                 if len(y)!=N_SAMPLE or len(meta_event)!=N_SAMPLE:
                     print("len error")
