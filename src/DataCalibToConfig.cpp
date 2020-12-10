@@ -262,7 +262,7 @@ int main(int argc, char *argv[]) //arg 1:in| arg 2: out|
 
 			//todo
 
-			for(int bi: expecBoard)
+			for(int bi=0; bi<NUM_BOARDS; bi++)
 			{
 				try
 				{
