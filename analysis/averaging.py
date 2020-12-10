@@ -78,10 +78,13 @@ if __name__ == "__main__":
 
     # Get the number of acdc boards that were read out
     num_boards = (get_board_number(filename)-1)/31
+
     # Loop ober all the read out acdc boards
     for bi in range(0,int(num_boards)):
         # Grab the data of one acdc board and get the number of recorded events
         data = load_board_data(filename,bi*31+1)
+        meta = np.loadtxt(filename, delimiter=" ", usecols = 31*(bi+1))
+        boardnumber[bi] = meta[0]
         number_of_events = len(data[:,1])/N_SAMPLE
         # Helper arrays
         array = np.empty(int(number_of_events))
@@ -127,7 +130,7 @@ if __name__ == "__main__":
                 '''
 
             print_arr[:,ch] = mu_arr   
-
+            '''
             plt.figure(num=ch, figsize=[25,25], facecolor='white')
             plt.plot(mu_arr)
             printname = savefolder + "Mu_ch" + str(ch) + ".png"
@@ -140,8 +143,8 @@ if __name__ == "__main__":
             plt.savefig(printname)
             # Every channel
             plt.close(ch)
-
-        calibsave = savefolder + "PEDS_ACDC_board0.txt"
+            '''
+        calibsave = savefolder + "PEDS_ACDC_board" + str(boardnumber[bi]) + ".txt"
         f = open(calibsave, "w")
         for i in range(0,N_SAMPLE):
             for j in range(0,N_CHANNEL):
