@@ -32,6 +32,7 @@ using namespace std;
 #define NUM_SAMPLE 256
 #define N_EVENTS 100
 std::atomic<bool> quit(false); //signal flag
+vector<string> metadata_keys;
 
 void got_signal(int)
 {
@@ -136,28 +137,120 @@ map<int, map<int, map<int, vector<double>>>> reorder(map<int, map<int, map<int, 
 	return re_data;
 }
 
-int main(int argc, char *argv[])
+void writePsecData(ofstream& d, vector<int> boardsReadyForRead, map<int, map<int, map<int, vector<double>>>> map_data, map<int, map<int, map<string, unsigned short>>> map_meta)
+{
+	vector<string> keys;
+	keys = metadata_keys;
+
+	string delim = " ";
+	for(int evn=0; evn<N_EVENTS; evn++)
+	{
+		for(int enm=0; enm<NUM_SAMP; enm++)
+		{
+			d << dec << enm << delim;
+			for(int bi: boardsReadyForRead)
+			{
+				for(int ch=0; ch<NUM_CH; ch++)
+				{
+					if(enm==0)
+					{
+						//cout << "Writing board " << bi << " and ch " << ch << ": " << map_data[bi][ch+1][enm] << endl;
+					}
+					d << map_data[evn][bi][ch+1][enm] << delim;
+				}
+				if(enm<(int)keys.size())
+				{
+					d << hex << map_meta[evn][bi][keys[enm]] << delim;
+
+				}else
+				{
+					d << 0 << delim;
+				}
+			}
+			d << endl;
+		}
+	}
+	d.close();
+}
+
+void initializeMetadataKeys()
+{
+    metadata_keys.push_back("Board");
+    //General PSEC info 
+    for(int i = 0; i < NUM_PSEC; i++)
+    {
+        metadata_keys.push_back("feedback_count_"+to_string(i)); //Info 1
+        metadata_keys.push_back("feedback_target_count_"+to_string(i)); //Info 2
+        metadata_keys.push_back("Vbias_setting_"+to_string(i)); //Info 3
+        metadata_keys.push_back("selftrigger_threshold_setting_"+to_string(i)); //Info 4
+        metadata_keys.push_back("PROVDD_setting_"+to_string(i)); // Info 5
+        metadata_keys.push_back("VCDL_count_lo_"+to_string(i)); //Info 11, later bit(15-0)
+        metadata_keys.push_back("VCDL_count_hi_"+to_string(i)); //Info 12, later bit(31-16)
+        metadata_keys.push_back("DLLVDD_setting_"+to_string(i)); //Info 13
+    }
+
+    //Trigger PSEC settings
+    metadata_keys.push_back("trigger_mode"); //Info 6, PSEC1 bit(3-0)
+    metadata_keys.push_back("trigger_validation_window_start"); //Info 6, PSEC1 bit(15-4)
+    metadata_keys.push_back("trigger_validation_window_length"); //info 6, PSEC2 bit(11-0)
+    metadata_keys.push_back("trigger_sma_invert"); // Info 6, PSEC3 bit(1)
+    metadata_keys.push_back("trigger_sma_detection_mode"); // Info 6, PSEC3 bit(0)
+    metadata_keys.push_back("trigger_acc_invert"); // Info 6, PSEC3 bit(3)
+    metadata_keys.push_back("trigger_acc_detection_mode"); // Info 6, PSEC3 bit(2)
+    metadata_keys.push_back("trigger_self_sign"); //Info 6, PSEC3 bit(5)
+    metadata_keys.push_back("trigger_self_detection_mode"); // Info 6, PSEC3 bit(4)
+    metadata_keys.push_back("trigger_self_coin"); // Info 6, PSEC3 bit(10-6)
+
+    metadata_keys.push_back("trigger_selfmask_0"); //Info 7 PSEC0
+    metadata_keys.push_back("trigger_selfmask_1"); //Info 7 PSEC1
+    metadata_keys.push_back("trigger_selfmask_2"); //Info 7 PSEC2
+    metadata_keys.push_back("trigger_selfmask_3"); //Info 7 PSEC3
+    metadata_keys.push_back("trigger_selfmask_4"); //Info 7 PSEC4
+
+    metadata_keys.push_back("trigger_self_threshold_0"); //Info 8 PSEC0 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_1"); //Info 8 PSEC1 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_2"); //Info 8 PSEC2 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_3"); //Info 8 PSEC3 bit(11-0)
+    metadata_keys.push_back("trigger_self_threshold_4"); //Info 8 PSEC4 bit(11-0)
+
+    //Timestamp data
+    metadata_keys.push_back("timestamp_0"); // Info 9 PSEC0 later bit(15-0)
+    metadata_keys.push_back("timestamp_1"); // Info 9 PSEC1 later bit(31-16)
+    metadata_keys.push_back("timestamp_2"); // Info 9 PSEC2 later bit(47-32)
+    metadata_keys.push_back("timestamp_3"); // Info 9 PSEC3 later bit(63-48)
+
+    metadata_keys.push_back("clockcycle_bits"); // Info 9 PSEC0 bit(2-0)
+
+    //Event count
+    metadata_keys.push_back("event_count_lo"); //Info 10 PSEC0 later bit(15-0)
+    metadata_keys.push_back("event_count_hi"); //Info 10 PSEC1 later bit(31-16)
+
+    for(int ch=0; ch<NUM_CH; ch++)
+    {
+         metadata_keys.push_back("self_trigger_rate_count_psec_ch"+to_string(ch));
+    }
+    metadata_keys.push_back("combined_trigger_rate_count");
+}
+
+int main(int argc, char *argv[]) //arg 1:in| arg 2: out|  
 {
 	ifstream ifs(argv[1], ios_base::in);
+	string datafn = argv[2];
+	datafn += "Reordered_Data.txt";
+	ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
 
 	char delim = ' ';
 	string lineFromFile; //full line
 	string adcCountStr; //string representing adc counts of ped
 	double avg; //int for the current channel key
 
-	string datafn;//file to ultimately save avg
 	map<int, map<int, map<int, vector<double>>>> mapdata; //<event, board, channel, data vector>
 	map<int, map<int, map<int, vector<double>>>> re_data;
 	map<int, map<int, map<string, unsigned short>>> mapmeta;
-	map<int, map<int, vector<double>>> avg_data; //<board, channel, data vector>
 	vector<int> boardsRead;
 	vector<double> temp;
 
-	vector<int> connectedBoards;
-	for(int arg=0; arg<argc-3; arg++)
-	{
-		connectedBoards.push_back(atoi(argv[arg+3]));
-	}
+	initializeMetadataKeys();
 
 	for(int evn=0; evn<N_EVENTS; evn++)
 	{
@@ -166,72 +259,48 @@ int main(int argc, char *argv[])
 		{
 			getline(ifs, lineFromFile);
 			stringstream line(lineFromFile); //stream of characters delimited
-			for(int bi: connectedBoards)
+
+			//todo
+
+			for(int bi: expecBoard)
 			{
-				//loop over each sample index
-				for(int ch=0; ch<NUM_CH+2; ch++)
+				try
 				{
-					if(ch==0)
+					//loop over each sample index
+					for(int ch=0; ch<NUM_CH+2; ch++)
 					{
-						getline(line, adcCountStr, delim);
-						continue;
-					}
-					if(ch==NUM_CH+1)
-					{
-						if(i==26)
+						if(ch==0)
 						{
 							getline(line, adcCountStr, delim);
-							cout << adcCountStr << endl;
-							mapmeta[evn][bi]["clockcycle_bits"] = stod(adcCountStr);
+							continue;
 						}
-						break;
+						if(ch==NUM_CH+1)
+						{
+								getline(line, adcCountStr, delim);
+								cout << adcCountStr << endl;
+								mapmeta[evn][bi][metadata_keys[i]] = stoi(adcCountStr);
+								continue;
+						}
+						getline(line, adcCountStr, delim);
+						cout << adcCountStr << endl;
+						avg = stod(adcCountStr); //channel key for a while
+						mapdata[evn][bi][ch].push_back(avg);
 					}
-					getline(line, adcCountStr, delim);
-					avg = stoi(adcCountStr); //channel key for a while
-					if(evn==0 && i==0)
-					{
-						cout << avg << ", ";				
-					}
-					mapdata[evn][bi][ch].push_back(avg);
-				}
-				if(evn==0 && i==0){
-					cout << endl;
-				}
-
+				}catch(string mechanism)
+				{
+					cout << mechanism << endl;
+					return 2;
+				}	
 			}
 		}
 	}	
 
 	cout << "Getting boards" << endl;
 	boardsRead = getBoards(mapdata);
-	cout << "Reordering " << endl;
-	re_data = mapdata;//reorder(mapdata, mapmeta, boardsRead);
-	cout << "Getting average" << endl;
-	avg_data = getAverage(re_data, boardsRead);
+	cout << "Reordering " << boardsRead.size() << " boards" << endl;
+	re_data = reorder(mapdata, mapmeta, boardsRead);
 
 	cout << "Starting write" << endl;
-	//open files that will hold the most-recent PED data.
-	for(int bi: boardsRead)
-	{
-		datafn = argv[2];
-		datafn += "PEDS_ACDC"; 
-		datafn += "_board";
-
-		datafn += to_string(bi);
-		datafn += ".txt";
-		ofstream dataofs(datafn.c_str(), ios_base::trunc); //trunc overwrites
-		cout << "Generating " << datafn << " ..." << endl;
-
-		string delim = " ";
-		for(int enm=0; enm<NUM_SAMPLE; enm++)
-		{
-			for(int ch=0; ch<NUM_CH; ch++)
-			{
-				dataofs << avg_data[bi][ch+1][enm] << delim;
-			}
-			dataofs << endl;
-		}
-		dataofs.close();
-	}
+	writePsecData(dataofs, boardsRead, re_data, mapmeta);
 	return 1;
 }
