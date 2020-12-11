@@ -248,49 +248,50 @@ int main(int argc, char *argv[]) //arg 1:in| arg 2: out|
 	map<int, map<int, map<int, vector<double>>>> re_data;
 	map<int, map<int, map<string, unsigned short>>> mapmeta;
 	vector<int> boardsRead;
-	vector<double> temp;
+	vector<int> temp;
 
 	initializeMetadataKeys();
 
-	for(int evn=0; evn<N_EVENTS; evn++)
+	for(int evn=0; evn<1; evn++)
 	{
 		//loop over each line of file
 		for(int i=0; i<NUM_SAMP; i++)
 		{
 			getline(ifs, lineFromFile);
 			stringstream line(lineFromFile); //stream of characters delimited
-
+			stringstream boardLine(lineFromFile);
 			//todo
-
-			for(int bi=0; bi<NUM_BOARDS; bi++)
-			{
-				try
+			if(i==0)
+			{	
+				for(int ch=0; ch<NUM_CH+2; ch++)
 				{
-					//loop over each sample index
-					for(int ch=0; ch<NUM_CH+2; ch++)
+					getline(boardLine, adcCountStr, delim);
+					if(ch==NUM_CH+1)
 					{
-						if(ch==0)
-						{
-							getline(line, adcCountStr, delim);
-							continue;
-						}
-						if(ch==NUM_CH+1)
-						{
-								getline(line, adcCountStr, delim);
-								cout << adcCountStr << endl;
-								mapmeta[evn][bi][metadata_keys[i]] = stoi(adcCountStr);
-								continue;
-						}
-						getline(line, adcCountStr, delim);
-						cout << adcCountStr << endl;
-						avg = stod(adcCountStr); //channel key for a while
-						mapdata[evn][bi][ch].push_back(avg);
+						temp.push_back(stoi(adcCountStr));
 					}
-				}catch(string mechanism)
+				}		
+			}
+			for(int bi: boardsRead)
+			{
+				//loop over each sample index
+				for(int ch=0; ch<NUM_CH+2; ch++)
 				{
-					cout << mechanism << endl;
-					return 2;
-				}	
+					if(ch==0)
+					{
+						getline(line, adcCountStr, delim);
+						continue;
+					}
+					if(ch==NUM_CH+1)
+					{
+						getline(line, adcCountStr, delim);
+						mapmeta[evn][bi][metadata_keys[i]] = stoi(adcCountStr);
+						continue;
+					}
+					getline(line, adcCountStr, delim);
+					avg = stod(adcCountStr); //channel key for a while
+					mapdata[evn][bi][ch].push_back(avg);
+				}
 			}
 		}
 	}	

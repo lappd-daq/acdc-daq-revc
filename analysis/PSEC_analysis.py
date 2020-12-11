@@ -49,7 +49,7 @@ def getPedestal(channel, meta_event):
 
 # Function to restructure the data of an acdc board given by the clockcycle 
 # the trigger happend in 
-def restructure(data, cycleSample):
+def restructure(data, cycleSample):###########################################################Change here
     # The cycleBit is given by the metadata and determines which of the 8
     # 320 MHz clockcycles the trigger happend in 32 samples * this bit is 
     # then the actual first sample 
@@ -180,9 +180,9 @@ if __name__ == "__main__":
                 y = data[0+event:256+event,ch]
                 # and restructure it with the clockcycle bit
                 y = y - calib[:,ch]
-                cycleSample = 32 * bit
+                cycleSample = 32 * bit###########################################################Change here
                 y = restructure(y, cycleSample)
-                offset = 130 #####################################################Enter offset here
+                offset = 130 ####################################################################Enter offset here
                 y = restructure(y, offset)
                 # Catch events that are not complete
                 if len(y)!=N_SAMPLE or len(meta_event)!=N_SAMPLE:
@@ -211,15 +211,4 @@ if __name__ == "__main__":
                 plt.ylabel('adc count')
                 printname = savefolder + "Plot_"+ str(ch) + ".png"
                 plt.savefig(printname)
-                h[ev] = np.amax(y+calib[:,ch])
-            # Every channel
-            plt.close(ch)
-            plt.figure(num=ch, figsize=[25,25], facecolor='white')
-            plt.hist(h, bins=np.arange(min(h), max(h) + 1, 1))
-            plt.xlabel('pulse height in adc')
-            plt.ylabel('count')
-            printname = savefolder + "Hist_" + str(ch) + ".png"
-            plt.savefig(printname)
-            # Every channel
-            plt.close(ch)
 ####################################################################

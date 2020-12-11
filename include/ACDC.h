@@ -35,7 +35,7 @@ public:
 	void setPeds(map<int, vector<double>> p, int bi){peds[bi] = p;} //sets pedestal map
 	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
 	void setData(map<int, vector<double>>& d){data = d;} //sets data map
-	int parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw = false, int bi=0); //parses only the psec data component of the ACDC buffer
+	int parseDataFromBuffer(vector<unsigned short> acdc_buffer, int oscopeOnOff=0, int bi=0); //parses only the psec data component of the ACDC buffer
 	void writeDataForOscope(ofstream& d); //writes data and metadata to filestream
 	void writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer);
 	void writeRawDataToFile(vector<unsigned short> buffer, ofstream& d);
@@ -46,6 +46,9 @@ public:
 
 	map<int, vector<double>> returnData(){return data;}
 	map<string, unsigned short> returnMeta(){return map_meta;}
+
+	map<int, vector<double>> reorder(int offset=0);
+	vector<double> reorder_internal(vector<double> temp_vec, int clockcycle=0);
 
 private:
 	int boardIndex;

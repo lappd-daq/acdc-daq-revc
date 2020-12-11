@@ -623,14 +623,10 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				//component of the buffer into private memory. 
 				int retval;
 
-				if(!raw)
-				{
-					//a->readPED(acdc_buffer);
-				}
 				string rawfn = outfilename + "Raw_b" + to_string(bi) + ".txt";
 				//ofstream rawofs(rawfn.c_str(), ios_base::trunc); //trunc overwrites
 				//a->writeRawDataToFile(acdc_buffer, rawofs);
-				retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
+				retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
 				corruptBuffer = meta.parseBuffer(acdc_buffer);
 				if(corruptBuffer)
 				{
@@ -852,14 +848,10 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					//component of the buffer into private memory. 
 					int retval;
 
-					if(!raw)
-					{
-						//a->readPED(acdc_buffer);
-					}
 					string rawfn = outfilename + "Raw_b" + to_string(bi) + ".txt";
 					//ofstream rawofs(rawfn.c_str(), ios_base::trunc); //trunc overwrites
 					//a->writeRawDataToFile(acdc_buffer, rawofs);
-					retval = a->parseDataFromBuffer(acdc_buffer, raw, bi); 
+					retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
 					corruptBuffer = meta.parseBuffer(acdc_buffer);
 					if(corruptBuffer)
 					{

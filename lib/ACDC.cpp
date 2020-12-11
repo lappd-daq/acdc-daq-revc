@@ -101,6 +101,50 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
     ofs << b.to_string(); //binary
 }
 
+vector<double> ACDC::reorder_internal(vector<double> temp_vec, int clockcycle)
+{
+	vector<double> re_vec;
+
+    for(int i=0; i<NUM_SAMP; i++)
+    {
+        if(i<(NUM_SAMP-clockcycle))
+        {
+            re_vec.push_back(temp_vec[i+clockcycle]);
+        }
+        else
+        {
+            re_vec.push_back(temp_vec[i-(NUM_SAMP-clockcycle)]);
+        }
+    }
+    return re_vec;
+}
+
+map<int, vector<double>> ACDC::reorder(int offset)
+{
+	vector<double> temp_vec;
+	unsigned short cycle;
+	vector<double> re_vec;
+	int shift;
+	map<int, vector<double>> re_data;
+
+	unsigned short cyclebit = map_meta["clockcycle_bits"];
+	shift = cyclebit*32;
+	for(int ch=0; ch<NUM_CH; ch++){
+		if(offset==0)
+		{
+			temp_vec = data[ch+1];			
+			re_vec = reorder_internal(temp_vec,shift);
+			re_data[ch+1] = re_vec;
+		}else
+		{
+			temp_vec = data[ch+1];			
+			re_vec = reorder_internal(temp_vec,shift);
+			re_vec = reorder_internal(temp_vec,offset);
+			re_data[ch+1] = re_vec;
+		}
+	}
+	return re_data;
+}
 
 //looks at the last ACDC buffer and organizes
 //all of the data into a data map. The boolean
@@ -111,9 +155,18 @@ void ACDC::printByte(ofstream& ofs, unsigned short val)
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int bi)
+int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, int oscopeOnOFF, int bi)
 {
 	lastAcdcBuffer = acdc_buffer;
+	bool raw;
+
+	if(oscopeOnOFF==0)
+	{
+		raw = true;
+	}else if(oscopeOnOFF==1)
+	{
+		raw = false;
+	}
 
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
@@ -246,7 +299,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 	bool corruptBuffer;
 	corruptBuffer = meta.parseBuffer(acdc_buffer);
 
-	//map_meta = meta.getMetadata();
+	map_meta = meta.getMetadata();
 
 	if(corruptBuffer)
 	{
@@ -261,14 +314,19 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, bool raw, int 
 // to file assuming file has header already
 void ACDC::writeDataForOscope(ofstream& d)
 {
+
+	//map_meta = meta.getMetadata();
 	string delim = " ";
+
+	map<int, vector<double>> print_data;
+	print_data = reorder(0);
 
 	for(int row = 1; row<=NUM_SAMP; row++)
 	{
 		d << row << delim;
 		for(int column=1; column<=NUM_CH; column++)
 		{
-			d << data[column][row-1] << delim; 
+			d << print_data[column][row-1] << delim; 
 		}
 		d << endl;
 	}

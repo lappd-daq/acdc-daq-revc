@@ -84,6 +84,6 @@ plot\
 "./Results/Data_Oscope_b1.txt" using 1:31 lw 2 with lines title 'b1 PSEC4 CHAN 6',\
 
 
-pause 0.5
+pause 1
 reread
 

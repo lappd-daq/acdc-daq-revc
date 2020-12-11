@@ -35,10 +35,6 @@ int main(int argc, char *argv[]){
 	
 	ACC* acc;
 	if(argc == 2){
-		cout << "Normal usage: `./bin/setPed boardmask chipmask value`" <<endl;
-		cout << "Boardmask from 0x00 to 0xFF with each bit representing one ACDC board" << endl;
-		cout << "Chipmask from 00000 to 11111 with each bit representing one PSEC chip" << endl;
-		cout << "Value from 0 to 4095 repreenting adc counts" << endl;
 		cout << "-------------------------------------------------------" << endl;
 		cout << "Only one input found using it for all boards and chips" << endl;
 	}

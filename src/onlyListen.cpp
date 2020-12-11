@@ -211,23 +211,6 @@ int main()
 			}
 		}
 	}
-	while(true)
-	{
-		std::cout << "Do you want to use python for the PSEC analysis?(0/1)" << std::endl;
-		cin >> py_anal;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(py_anal==0){
-			break;
-		}else if(py_anal==1)
-		{
-			string cmd = "python3 ./analysis/PSEC_analysis.py ./Results/Data_";
-			cmd += timestamp;
-			cmd += ".txt";
-			system(cmd.c_str());
-			break;
-		}
-	}
 	return 1;
 }
 

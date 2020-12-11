@@ -73,7 +73,7 @@ To use full extend of the software use `./bin/listenForData` (important is that 
 5. Choose between raw output or calibrated output.
 ```bash
 raw on - outputs the channel data as a number between 0 and 4095 and an offset of around 1500 to 2000 (~600 mV) is visible for the baseline if not set before.
-raw off- outputs the channel data and the baseline is actively corrected to 0.
+raw off- outputs the channel data and the baseline is actively corrected to 0 by substracting the pedestal value for each sample.
 ```
 6. Choose between Oscope mode or save mode:
 ```bash

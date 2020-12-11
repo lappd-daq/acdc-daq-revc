@@ -28,6 +28,8 @@ int main()
 	int failCounter;
 	bool flag = true;
 	int oscopeMode;
+	int setup;
+	int threshold;
 
 	system("mkdir -p Results");
 	
@@ -140,7 +142,15 @@ int main()
 				std::cout << "Use edge detect (0) or level detect (1) on ACDC SMA?" << std::endl;
 				cin >> detectionMode;
 				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				std::cout << "Set the threshold of the self trigger in adc counts from 0 to 4095" << std::endl;
+				cin >> threshold;
+				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				stringstream ss2;
+				unsigned int adcstr;
+				ss2 << threshold;
+				ss2 >> std::hex >> adcstr;
 
+				acc->setThreshold(adcstr);
 				acc->setEnableCoin(enableCoin);
 				acc->setInvertMode(invertMode);
 				acc->setDetectionMode(detectionMode);

@@ -28,7 +28,7 @@ int main()
 	unsigned int boardmask;
 	int calibMode;
 	int rawMode;
-	bool rawBool;
+	bool rawBool=false;
 	int invertMode;
 	int detectionMode;
 	int ChCoin;
@@ -41,7 +41,7 @@ int main()
 	int setup;
 	int threshold;
 	string timestamp;
-	int py_anal;
+
 
 	ACC acc;
 
@@ -199,24 +199,6 @@ int main()
 		}
 	}
 
-	while(true)
-	{
-		std::cout << "Do you want the raw data? (0/1)" << std::endl;
-
-		cin >> rawMode;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(rawMode==0)
-		{
-			rawBool = false;
-			break;
-		}else if(rawMode==1)
-		{
-			rawBool = true;
-			break;
-		}
-	}
-
 	flag = true;
 	while(flag)
 	{
@@ -353,23 +335,6 @@ int main()
 					flag =  false;
 					break;
 			}
-		}
-	}
-	while(true)
-	{
-		std::cout << "Do you want to use python for the PSEC analysis?(0/1)" << std::endl;
-		cin >> py_anal;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(py_anal==0){
-			break;
-		}else if(py_anal==1)
-		{
-			string cmd = "python3 ./analysis/PSEC_analysis.py ./Results/Data_";
-			cmd += timestamp;
-			cmd += ".txt";
-			system(cmd.c_str());
-			break;
 		}
 	}
 	return 1;
