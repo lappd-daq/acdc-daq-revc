@@ -94,16 +94,10 @@ This command `./bin/reorder <file> boardID value boardID value ...`can be used t
 2. Because of the pcb layout, track delays and also the fpga delays, as well as the number of processing clocks used in the fpga the data will have an additional offset. This will be a fixed number for every board between 0 and 255 representing the samples of a waveform. This value has to be determined experimentally and will not change unless the hardware or firmware is adapted.
 The command will read the input of the additional arguments and reorder the data according to the value that is set for the corresponding boards. Boards not included in the command won't be reordered. 
 
-| Board ID| value |
-|---------|-------|    
-| 0 | 0-255 |
-| 1 | 0-255 |
-| 2 | 0-255 |
-| 3 | 0-255 |
-| 4 | 0-255 |
-| 5 | 0-255 |
-| 6 | 0-255 |
-| 7 | 0-255 |
+| Board ID| value | Board ID| value | Board ID| value | Board ID| value |
+|---------|-------|---------|-------|---------|-------|---------|-------|    
+| 0 | 0-255 | 2 | 0-255 | 4 | 0-255 | 6 | 0-255 |
+| 1 | 0-255 | 3 | 0-255 | 5 | 0-255 | 7 | 0-255 |
 
 ## Settings for the Oscilloscope
 All settings and plot commands for the oscilloscope are handled in seperate gnu files. 
