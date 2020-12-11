@@ -93,6 +93,7 @@ This command `./bin/reorder <file> boardID value boardID value ...`can be used t
 1. Because the trigger is always in one of 8 clock cycles the correct clock cycle has to be set as the first one. This will always be done by the command by reading the metadata and extracting the cycle as a number from 0 to 7. Each clock cycle being 32 samples the allows for a reorder of the samples by a multiples of 32.
 2. Because of the pcb layout, track delays and also the fpga delays, as well as the number of processing clocks used in the fpga the data will have an additional offset. This will be a fixed number for every board between 0 and 255 representing the samples of a waveform. This value has to be determined experimentally and will not change unless the hardware or firmware is adapted.
 The command will read the input of the additional arguments and reorder the data according to the value that is set for the corresponding boards. Boards not included in the command won't be reordered. 
+
 | Board ID| value |
 |---------|-------|    
 | 0 | 0-255 |
