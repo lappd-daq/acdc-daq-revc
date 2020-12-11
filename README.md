@@ -3,6 +3,7 @@ New read-me in pregress
 
 ## Prerequisites
 This code is built using `cmake` and requires `libusb` headers as well as `gnuplot` if you want to use the oscilloscope mode.
+For the pedestal calibration `python3` with `numpy`, `scipy` and optional for plots `matplotlib`. 
 
 To install on a debian-based machine
 
@@ -27,18 +28,18 @@ $ ./bin/setPed value
 If the pedestal value should be set seperatly for different boards and chips enter:
 ```bash
 $ ./bin/setPed boardmask chipmask value
-- boardmask is a hex value from 0x00 to 0xFF and has to be entered as such. Each bit represents an acdc board
+- boardmask is a hex value from 0x01 to 0xFF and has to be entered as such. Each bit represents an acdc board
 - boardmask is a bin value from 00000 to 11111 and has to be entered as such. Each bit represents a psec chip
 ```
-After the command is started the value will be set on the acdc boards via the firmware and a config file will be generated. If raw mode is turned off (explained in later sections) the config file will be read and the values will be substracted.
+After the command is started the value will be set on the acdc boards via the firmware and config files will be generated. The generated files will be filled with the set pedestal value as a base calibration. The comamnd `./bin/calibratePed` is necessary to get the actual pedestal values. The set values can then be found again in the metadata 21-26.
 
 ### calibratePed
-This function is used if no pedestal value is manually set. The command takes some time so be patient. To get the pedestal values for each active channel an empty trace is read N times (currently 50). From these 50 traces for each channel an average is calulated and written into a config file. If raw mode is turned off (explained in later sections) the config file will be read and the values will be substracted.
-It is possible to execute  `./bin/calibratePed` after `./bin/setPed <...>` but not the other way around. This way the set pedestal value is also determined via averaging.
+This function is used to generate a config file for the connected ACDC boards. The command takes some time so be patient. To get the pedestal values for each active channel an empty trace is read N times (currently 100). From these 100 traces each sample for each channel is put in a histogram and fit with a gaussian distribution. The mean is then saved as the real pedestal value and the corresponding sigma is saved for quality control. 
+It is advides to execute  `./bin/calibratePed` after `./bin/setPed <...>` but not the other way around. This way the set pedestal value is more precisely determined via averaging. 
 
 ### debug
 The `./bin/debug` command allows the user to send seperate usb commands to the acc/acdc board. There is no limit to commands on can append to `./bin/debug`, they just need to be seperated by ' '. To get a response after a command use `command r`.
-**IMPORTANT IT SEEMS DEBUG IS NOT WORKING PERFECTLY SO BE CAREFUL USING IT. IT SHOULD BE FIXED**
+**THIS IS A COMMAND FOR DEBUGGING ONLY. BE CAREFUL USING IT FOR NORMAL OPERATION**
 
 ### connectedBoards
 This command allows the user to check on the connected acdc boards. After executing the command a responce for all possible 8 boards is given. Only boards with a 32 word responde are connected. 
@@ -71,15 +72,14 @@ To use full extend of the software use `./bin/listenForData` (important is that 
 4. Set the calibration mode on/off (The calibration mode clones the signal input via on the SMA on ACC/ACDC to all available PSEC channels). Only use this if there is nothing connected to the Samtec connector.
 
 5. Choose between raw output or calibrated output.
-```bash
-raw on - outputs the channel data as a number between 0 and 4095 and an offset of around 1500 to 2000 (~600 mV) is visible for the baseline if not set before.
-raw off- outputs the channel data and the baseline is actively corrected to 0 by substracting the pedestal value for each sample.
-```
+This has been removed due to offline calibration. The current version of the software only does an online calibration for oscope mode. In save mode the output will always be raw.
+
 6. Choose between Oscope mode or save mode:
 ```bash
 oscope mode - only one file is saved and overwritten constantly. This file is then plotted by gnuplot into five windows, each being one psec chip.
-save mode   - a specified number of waveforms will be saved on the computer as txt files. In addition Metadata files will be saved as well.
+save mode   - a specified number of waveforms will be saved on the computer as txt files. In addition Metadata will be saved in the same file.
 ```
+Please note that there is an option to use oscope mode with 60 channels (2 ACDC boards) but it is so far untested.
 
 ### onlySetup
 Executes only the setup portion of the `./bin/listenForData` command.
@@ -87,6 +87,22 @@ Executes only the setup portion of the `./bin/listenForData` command.
 ### onlyListen (experimental)
 Executes only the data-readout portion of the `./bin/listenForData` command. This way data can be read without complete setup of the trigger every time.
 If a different trigger is desired `./onlySetup` needs to be executed again.
+
+### reorder (Currently in progress)
+This command `./bin/reorder <file> boardID value boardID value ...`can be used to reorder recorded data in between recording data and analysis. If the command is executed with additional arguments an additional offset will be included in the reordering. There are two timing based reorder reasons:
+1. Because the trigger is always in one of 8 clock cycles the correct clock cycle has to be set as the first one. This will always be done by the command by reading the metadata and extracting the cycle as a number from 0 to 7. Each clock cycle being 32 samples the allows for a reorder of the samples by a multiples of 32.
+2. Because of the pcb layout, track delays and also the fpga delays, as well as the number of processing clocks used in the fpga the data will have an additional offset. This will be a fixed number for every board between 0 and 255 representing the samples of a waveform. This value has to be determined experimentally and will not change unless the hardware or firmware is adapted.
+The command will read the input of the additional arguments and reorder the data according to the value that is set for the corresponding boards. Boards not included in the command won't be reordered. 
+| Board ID| value |
+|---------|-------|    
+| 0 | 0-255 |
+| 1 | 0-255 |
+| 2 | 0-255 |
+| 3 | 0-255 |
+| 4 | 0-255 |
+| 5 | 0-255 |
+| 6 | 0-255 |
+| 7 | 0-255 |
 
 ## Settings for the Oscilloscope
 All settings and plot commands for the oscilloscope are handled in seperate gnu files. 
