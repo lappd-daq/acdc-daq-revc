@@ -549,7 +549,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				usleep(1000);
 			}
 		}
-		if(boardsReadyForRead.size()==alignedAcdcIndices.size())
+		if(boardsReadyForRead.size()>0)
 		{
 			break;
 		}
@@ -583,26 +583,14 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
 		usleep(10000);
 		if(acdc_buffer.size() !=  7795){
-			writeErrorLog("Couldn't read 7795 words as expected! Tryingto fix it!");
-			if(acdc_buffer.size()==7827){
-				cout << "Acdc buffer 7827!" << endl;
-			}
+			string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
+			err_msg += to_string(acdc_buffer.size());
+			writeErrorLog(err_msg);
 		}
 		bool corruptBuffer = false;
 		if(acdc_buffer.size() == 0)
 		{
 			corruptBuffer = true;
-		}
-		int nonzerocount = 0;
-		//if the first 20 bytes are all 0's, it is corrupt...
-		for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
-		{
-			if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
-		}
-		if(nonzerocount == 0)
-		{
-			corruptBuffer = true;
-			writeEDataToFile(acdc_buffer);
 		}
 
 		if(corruptBuffer)
@@ -776,7 +764,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					usleep(1000);
 				}
 			}
-			if(boardsReadyForRead.size()==alignedAcdcIndices.size())
+			if(boardsReadyForRead.size()>0)
 			{
 				break;
 			}
@@ -802,10 +790,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 
 			if(acdc_buffer.size()!=7795)
 			{
-				writeErrorLog("Couldn't read 7795 words as expected! Tryingto fix it!");
-				if(acdc_buffer.size()==7827){
-					cout << "Acdc buffer 7827!" << endl;
-				}
+				string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
+				err_msg += to_string(acdc_buffer.size());
+				writeErrorLog(err_msg);
 			}
 			//----corrupt buffer checks begin
 			//sometimes the ACDCs dont send back good
@@ -816,17 +803,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 			{
 				writeErrorLog("Empty Psec buffer read!");
 				corruptBuffer = true;
-			}
-			int nonzerocount = 0;
-			//if the first 20 bytes are all 0's, it is corrupt...
-			for(int i = 0; i < (int)acdc_buffer.size() && i < 20; i++)
-			{
-				if(acdc_buffer[i] != (unsigned short)0) {nonzerocount++;}
-			}
-			if(nonzerocount == 0)
-			{
-				corruptBuffer = true;
-				writeEDataToFile(acdc_buffer);
 			}
 
 			if(corruptBuffer)

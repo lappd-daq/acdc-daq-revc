@@ -65,25 +65,25 @@ if __name__ == "__main__":
                 (mu, sigma) = norm.fit(matrix[:,smp])
                 mu_arr[smp] = mu
                 sigma_arr[smp] = sigma
-                
-                ###Generates 256 Histograms for every channel and board
                 '''
-                plt.figure(num=smp, figsize=[25,25], facecolor='white')
-                plt.hist(matrix[:,smp], density=True,bins= np.arange(min(matrix[:,smp]),max(matrix[:,smp])+1,1))
+                ###Generates 256 Histograms for every channel and board
+                if ch==0 and smp<100:
+                    plt.figure(num=smp, figsize=[25,25], facecolor='white')
+                    plt.hist(matrix[:,smp], density=True,bins= np.arange(min(matrix[:,smp]),max(matrix[:,smp])+1,1))
 
-                xmin, xmax = plt.xlim()
-                x_pdf = np.linspace(xmin, xmax, 100)
-                y_pdf = norm.pdf(x_pdf, mu, sigma)
+                    xmin, xmax = plt.xlim()
+                    x_pdf = np.linspace(xmin, xmax, 100)
+                    y_pdf = norm.pdf(x_pdf, mu, sigma)
 
-                plt.plot(x_pdf, y_pdf, 'r--', linewidth=2)
+                    plt.plot(x_pdf, y_pdf, 'r--', linewidth=2)
 
-                plt.xlabel('pulse height in adc')
-                plt.ylabel('count')
-                title = "Fit results: mu = %.2f,  std = %.2f" % (mu, sigma)
-                plt.title(title)
-                printname = savefolder + "Hist_ch" + str(ch) + "_smp" + str(smp) + ".png"
-                plt.savefig(printname)
-                plt.close(smp)
+                    plt.xlabel('pulse height in adc')
+                    plt.ylabel('count')
+                    title = "Fit results: mu = %.2f,  std = %.2f" % (mu, sigma)
+                    plt.title(title)
+                    printname = savefolder + "Hist_ch" + str(ch) + "_smp" + str(smp) + ".png"
+                    plt.savefig(printname)
+                    plt.close(smp)
                 '''
             print_mat[:,ch] = mu_arr   
             ###Generates overview plots for mu and sigma -> mu/sigma over sample for every channel
