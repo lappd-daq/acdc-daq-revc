@@ -282,7 +282,7 @@ int main()
 					failCounter++;
 					break;
 			}
-			if(failCounter >= 50)
+			if(failCounter >= 10)
 			{
 				std::cout << "Too many failed attempts to read data. Please check everything and try again" << std::endl;
 				break;
