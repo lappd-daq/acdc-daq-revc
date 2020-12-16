@@ -720,9 +720,10 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		command = 0x00210000;
 		command = command | bi;
 		usb->sendData(command);
+	    	usleep(5000);
 	}
     enableTransfer(1);
-
+	
 	try
 	{
 		while(true)
@@ -748,9 +749,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 
 			command = 0x00200000;
 			usb->sendData(command);
-
+			usleep(5000);
 			lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-			
+			usleep(5000);			
 			if(lastAccBuffer.size()==0)
 			{
 				continue;
