@@ -261,7 +261,7 @@ int main()
 			switch(retval)
 			{
 				case 0:
-					std::cout << "Successfully found data and parsed" << std::endl;
+					//std::cout << "Successfully found data and parsed" << std::endl;
 					eventCounter++;
 					failCounter=0;
 					break;
