@@ -244,6 +244,7 @@ int main()
 	int mult = 1;
 	if(oscopeMode==0)
 	{	
+		auto t0 = std::chrono::high_resolution_clock::now();
 		while(eventCounter<eventNumber)
 		{
 			if(triggermode == 1)
@@ -337,6 +338,9 @@ int main()
 			}
 		}
 	}
+	auto t1 = std::chrono::high_resolution_clock::now();
+	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
+	cout << "It took "<< dt <<" second(s)."<< endl;
 	return 1;
 }
 
