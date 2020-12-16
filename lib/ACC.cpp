@@ -524,6 +524,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		command = 0x00210000;
 		command = command | bi;
 		usb->sendData(command);
+	    	usleep(5000);
 	}
     enableTransfer(1);
 
@@ -532,9 +533,9 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	{
 		command = 0x00200000;
 		usb->sendData(command);
-
+		usleep(5000);
 		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-		
+		usleep(5000);	
 		if(lastAccBuffer.size()==0)
 		{
 			maxCounter++;
