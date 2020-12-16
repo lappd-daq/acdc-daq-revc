@@ -15,7 +15,8 @@ StdUSB libusb implementation used here uses same function interface with native 
 using namespace std;
 
 #define INVALID_HANDLE_VALUE NULL
-#define USB_TOUT_MS 1 // in ms
+#define USB_TOUT_MS_WRITE 20 // in ms
+#define USB_TOUT_MS_READ 1 // in ms
 #define EP_WRITE 0x02 //USBFX2 end point address for bulk write
 #define EP_READ 0x86 //USBFX2 end point address for bulk read
 #define INTFNO 0 //USBFX2 interface number
