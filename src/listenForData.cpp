@@ -242,9 +242,10 @@ int main()
 	failCounter = 0;
 	int reTime = 500;
 	int mult = 1;
+	auto t0 = std::chrono::high_resolution_clock::now();
 	if(oscopeMode==0)
 	{	
-		auto t0 = std::chrono::high_resolution_clock::now();
+		
 		while(eventCounter<eventNumber)
 		{
 			if(triggermode == 1)
