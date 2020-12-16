@@ -512,7 +512,9 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	//that ACDCs have sent data to the ACC
 	vector<int> boardsReadyForRead;
 	unsigned int command;
-
+	command = 0x00100000;
+	usb->sendData(command);
+	usleep(5000);
 	//filename logistics
 	string outfilename = "./Results/";
 	string datafn;
