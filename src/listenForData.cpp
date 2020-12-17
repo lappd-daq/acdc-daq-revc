@@ -131,7 +131,17 @@ int main()
 				flag = false;
 				break;
 			case 8:
-				//
+				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA?" << std::endl;
+				cin >> invertMode;
+				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				std::cout << "Use edge detect (0) or level detect (1) on ACC SMA?" << std::endl;
+				cin >> detectionMode;
+				cin.ignore(numeric_limits<streamsize>::max(),'\n');
+
+				acc.setInvertMode(invertMode);
+				acc.setDetectionMode(detectionMode);
+				flag = false;
+				break;
 			default:
 				std::cout << " Trigger input not found " << std::endl;
 				break;

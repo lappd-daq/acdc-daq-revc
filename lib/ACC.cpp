@@ -16,6 +16,7 @@
 #include <numeric>
 #include <ctime>
 
+
 using namespace std;
 
 //sigint handling
@@ -512,9 +513,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	//that ACDCs have sent data to the ACC
 	vector<int> boardsReadyForRead;
 	unsigned int command;
-	command = 0x00100000;
-	usb->sendData(command);
-	usleep(5000);
+
 	//filename logistics
 	string outfilename = "./Results/";
 	string datafn;
@@ -526,18 +525,18 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		command = 0x00210000;
 		command = command | bi;
 		usb->sendData(command);
-	    	usleep(5000);
 	}
     enableTransfer(1);
+    usleep(6000);
 
     int maxCounter=0;
 	while(true)
 	{
 		command = 0x00200000;
 		usb->sendData(command);
-		usleep(5000);
+
 		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-		usleep(5000);	
+		
 		if(lastAccBuffer.size()==0)
 		{
 			maxCounter++;
@@ -549,7 +548,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 			if(lastAccBuffer.at(16+k)==7795)
 			{
 				boardsReadyForRead.push_back(k);
-				usleep(1000);
 			}
 		}
 		if(boardsReadyForRead.size()>0)
@@ -575,21 +573,30 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 	//by the ACC for its buffer. 
 	for(int bi: boardsReadyForRead)
 	{
-		usleep(10000);
 		unsigned int command = 0x00210000; //base command for set readmode
 		command = command | (unsigned int)(bi); //which board to read
 		usb->sendData(command);
-		usleep(10000);
+		usleep(6000);
 		//read only once. sometimes the buffer comes up empty. 
 		//made a choice not to pound it with a loop until it
 		//responds. 
 		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-		usleep(10000);
-		if(acdc_buffer.size() !=  7795){
+		if(acdc_buffer.size() !=  7795 && acdc_buffer.size()!=7827){
 			string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
 			err_msg += to_string(acdc_buffer.size());
 			writeErrorLog(err_msg);
 		}
+
+		if(acdc_buffer.size() == 7827)
+		{
+			auto first = acdc_buffer.cbegin() + 32;
+			auto last = acdc_buffer.cbegin() + 7827;
+
+			vector<unsigned short> tempVec(first, last);
+			acdc_buffer.clear();
+			acdc_buffer = tempVec;
+		}
+
 		bool corruptBuffer = false;
 		if(acdc_buffer.size() == 0)
 		{
@@ -723,10 +730,10 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		command = 0x00210000;
 		command = command | bi;
 		usb->sendData(command);
-	    	usleep(5000);
 	}
     enableTransfer(1);
-	
+    usleep(6000);
+
 	try
 	{
 		while(true)
@@ -752,9 +759,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 
 			command = 0x00200000;
 			usb->sendData(command);
-			usleep(5000);
+
 			lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-			usleep(5000);			
+			
 			if(lastAccBuffer.size()==0)
 			{
 				continue;
@@ -765,7 +772,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 				if(lastAccBuffer.at(16+k)==7795)
 				{
 					boardsReadyForRead.push_back(k);
-					usleep(1000);
 				}
 			}
 			if(boardsReadyForRead.size()>0)
@@ -781,16 +787,14 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		for(int bi: boardsReadyForRead)
 		{
 			//cout << "Read for board " << bi << endl;
-			usleep(5000);
 			unsigned int command = 0x00210000; //base command for set readmode
 			command = command | (unsigned int)(bi); //which board to read
 			usb->sendData(command);
-			usleep(5000);
+			usleep(6000);
 			//read only once. sometimes the buffer comes up empty. 
 			//made a choice not to pound it with a loop until it
 			//responds. 
 			vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
-			usleep(10000);
 
 			if(acdc_buffer.size()!=7795)
 			{
