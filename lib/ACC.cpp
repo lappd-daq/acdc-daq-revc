@@ -1338,7 +1338,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		d << endl;
 	}
 	d.close();
-	*/
+	
     string kl = "keylist.txt";
     ofstream ofs(kl);
     for(string k: keys)
@@ -1346,6 +1346,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
         ofs << k << endl; //decimal
     }
     ofs.close();
+    */
 }
 
 //------------seperate functions
