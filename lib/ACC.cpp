@@ -669,11 +669,15 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 			}
 		}
 	}
+	auto t0 = std::chrono::high_resolution_clock::now();
 	if(oscopeOnOff==0)
 	{
 		dataofs.open(datafn.c_str(), ios::app | ios::binary); //trunc overwrites
 		writePsecData(dataofs, boardsReadyForRead);
 	}
+	auto t1 = std::chrono::high_resolution_clock::now();
+	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
+	cout << "It took "<< dt <<" second(s)."<< endl;
 	return 0;
 }
 
