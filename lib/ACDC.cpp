@@ -337,11 +337,11 @@ void ACDC::writeDataForOscope(ofstream& d)
 // to file assuming file has header already
 void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 {
-	//d.write((char*)&buffer[0], buffer.size() * sizeof(buffer));
-	for(unsigned short k: buffer)
-	{
-		d << hex <<  k << endl;
-	}
+	d.write((char*)&buffer[0], buffer.size() * sizeof(buffer));
+	//for(unsigned short k: buffer)
+	//{
+	//	d << hex <<  k << endl;
+	//}
 
 	d.close();
 	return;
