@@ -657,7 +657,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				//filename logistics
 				if(oscopeOnOff==0)
 				{
-					datafn = outfilename + "Data_" + timestamp + ".bin";
+					datafn = outfilename + "Data_" + timestamp + ".dat";
 				}else if(oscopeOnOff==1)
 				{
 					datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
@@ -884,7 +884,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					//filename logistics
 					if(oscopeOnOff==0)
 					{
-						datafn = outfilename + "Data_" + timestamp + ".bin";
+						datafn = outfilename + "Data_" + timestamp + ".dat";
 					}else if(oscopeOnOff==1)
 					{
 						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
