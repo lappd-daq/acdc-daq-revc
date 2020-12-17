@@ -26,8 +26,6 @@ using namespace std;
 class ACC
 {
 public:
-	friend class boost::serialization::access;
-	ACC(){serialise=true;}
 
 	ACC();
 	~ACC(); 
@@ -78,13 +76,6 @@ public:
 	map<int, map<int, vector<double>>> returnData(){return map_data;}
 	map<int, map<string, unsigned short>> returnMeta(){return map_meta;}
 
-	template<class Archive>void serialize(Archive & ar, const map<int, vector<double>>)
-	{
-		if(serialise)
-		{
-			ar & map_data
-		}
-	}
 
 private:
 	stdUSB* usb;
