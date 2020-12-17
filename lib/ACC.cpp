@@ -535,7 +535,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		command = 0x00200000;
 		usb->sendData(command);
 
-		lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+		lastAccBuffer = usb->safeReadData(32);
 		
 		if(lastAccBuffer.size()==0)
 		{
@@ -580,7 +580,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		//read only once. sometimes the buffer comes up empty. 
 		//made a choice not to pound it with a loop until it
 		//responds. 
-		vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+		vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
 		if(acdc_buffer.size() !=  7795 && acdc_buffer.size()!=7827){
 			string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
 			err_msg += to_string(acdc_buffer.size());
@@ -764,7 +764,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 			command = 0x00200000;
 			usb->sendData(command);
 
-			lastAccBuffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+			lastAccBuffer = usb->safeReadData(32);
 			
 			if(lastAccBuffer.size()==0)
 			{
@@ -798,13 +798,23 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 			//read only once. sometimes the buffer comes up empty. 
 			//made a choice not to pound it with a loop until it
 			//responds. 
-			vector<unsigned short> acdc_buffer = usb->safeReadData(ACDC_BUFFERSIZE + 2);
+			vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
 
-			if(acdc_buffer.size()!=7795)
+			if(acdc_buffer.size()!=7795 && acdc_buffer.size()!=7827)
 			{
 				string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
 				err_msg += to_string(acdc_buffer.size());
 				writeErrorLog(err_msg);
+			}
+			
+			if(acdc_buffer.size() == 7827)
+			{
+				auto first = acdc_buffer.cbegin() + 32;
+				auto last = acdc_buffer.cbegin() + 7827;
+
+				vector<unsigned short> tempVec(first, last);
+				acdc_buffer.clear();
+				acdc_buffer = tempVec;
 			}
 			//----corrupt buffer checks begin
 			//sometimes the ACDCs dont send back good
