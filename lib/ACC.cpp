@@ -1263,6 +1263,7 @@ void ACC::writeErrorLog(string errorMsg)
 void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 {
 	vector<string> keys;
+	vector<string> lines;
 	map<string, unsigned short> extra_key;
 	for(int bi: boardsReadyForRead)
 	{
@@ -1278,6 +1279,33 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	}
 
 	string delim = " ";
+	string line;
+	for(int enm=0; enm<NUM_SAMP; enm++)
+	{
+		line += to_string(enm);
+		line += delim;
+		for(int bi: boardsReadyForRead)
+		{
+			for(int ch=0; ch<NUM_CH; ch++)
+			{
+				line += to_string(map_data[bi][ch+1][enm]);
+				line += delim;
+			}
+			if(enm<(int)keys.size())
+			{
+				line += to_string(map_meta[bi][keys[enm]]);
+				line += delim;
+			}else
+			{
+				line += to_string(0);
+				line += delim;
+			}
+		}
+		lines.push_back(line);
+	}
+	d.write((char*)&lines[0], lines.size() * sizeof(lines));
+	d.close();
+	/*
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
 		d << dec << enm << delim;
@@ -1308,7 +1336,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		d << endl;
 	}
 	d.close();
-
+	*/
     string kl = "keylist.txt";
     ofstream ofs(kl);
     for(string k: keys)
