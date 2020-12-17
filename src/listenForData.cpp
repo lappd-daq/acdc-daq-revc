@@ -28,7 +28,7 @@ int main()
 	unsigned int boardmask;
 	int calibMode;
 	int rawMode;
-	bool rawBool=false;
+	bool rawBool;
 	int invertMode;
 	int detectionMode;
 	int ChCoin;
@@ -205,6 +205,24 @@ int main()
 
 		if(calibMode==0 || calibMode==1)
 		{
+			break;
+		}
+	}
+
+	while(true)
+	{
+		std::cout << "Do you want to use raw mode(0/1)? Yes means you get a file with 7795 words in hex, No will give the usual data format." << std::endl;
+
+		cin >> rawMode;
+		cin.ignore(numeric_limits<streamsize>::max(),'\n');
+
+		if(rawMode==0)
+		{
+			rawBool = false;
+			break;
+		}else if(rawMode==1)
+		{
+			rawBool = true;
 			break;
 		}
 	}

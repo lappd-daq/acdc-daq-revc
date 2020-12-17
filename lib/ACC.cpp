@@ -620,64 +620,63 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
 				int retval;
-				/*
-				string rawfn = outfilename + "Raw_b" + to_string(bi) + ".txt";
-				ofstream rawofs(rawfn.c_str(), ios::app | ios::binary); //trunc overwrites
-				a->writeRawDataToFile(acdc_buffer, rawofs);
-				*/
-				retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
-				corruptBuffer = meta.parseBuffer(acdc_buffer);
-				if(corruptBuffer)
+				if(raw==true)
 				{
-					writeErrorLog("Metadata error not parsed correctly");
-					return 1;
-				}
-				map_meta[bi] = meta.getMetadata();
-				if(retval !=0)
+					string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
+					ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
+					a->writeRawDataToFile(acdc_buffer, rawofs);
+					return 0;
+				}else if(raw==false)
 				{
-					string err_msg = "Corrupt buffer caught at PSEC data level (2)";
-					if(retval == 3)
+					retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
+					corruptBuffer = meta.parseBuffer(acdc_buffer);
+					if(corruptBuffer)
 					{
-						err_msg += "Because of the Metadata buffer";
+						writeErrorLog("Metadata error not parsed correctly");
+						return 1;
 					}
-					writeErrorLog(err_msg);
-					corruptBuffer = true;
+					map_meta[bi] = meta.getMetadata();
+					if(retval !=0)
+					{
+						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
+						if(retval == 3)
+						{
+							err_msg += "Because of the Metadata buffer";
+						}
+						writeErrorLog(err_msg);
+						corruptBuffer = true;
 
-					a->writeRawBufferToFile(acdc_buffer);	
-				}
+						a->writeRawBufferToFile(acdc_buffer);	
+					}
 
-				if(corruptBuffer)
-				{
-					string err_msg = "got a corrupt buffer with retval ";
-					err_msg += to_string(retval);
-					writeErrorLog(err_msg);
-					return 1;
+					if(corruptBuffer)
+					{
+						string err_msg = "got a corrupt buffer with retval ";
+						err_msg += to_string(retval);
+						writeErrorLog(err_msg);
+						return 1;
+					}
+					
+					//filename logistics
+					if(oscopeOnOff==0)
+					{
+						datafn = outfilename + "Data_" + timestamp + ".txt";
+					}else if(oscopeOnOff==1)
+					{
+						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+						dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
+						a->writeDataForOscope(dataofs);
+					}
+					map_data[bi] = a->returnData();
 				}
-				
-				//filename logistics
-				if(oscopeOnOff==0)
-				{
-					datafn = outfilename + "Data_" + timestamp + ".dat";
-				}else if(oscopeOnOff==1)
-				{
-					datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
-					dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
-					a->writeDataForOscope(dataofs);
-				}
-				map_data[bi] = a->returnData();
-				
 			}
 		}
 	}
-	auto t0 = std::chrono::high_resolution_clock::now();
-	if(oscopeOnOff==0)
+	if(oscopeOnOff==0 && raw==false)
 	{
-		dataofs.open(datafn.c_str(), ios::app | ios::binary); //trunc overwrites
+		dataofs.open(datafn.c_str(), ios::app); //trunc overwrites
 		writePsecData(dataofs, boardsReadyForRead);
 	}
-	auto t1 = std::chrono::high_resolution_clock::now();
-	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
-	cout << "It took "<< dt <<" second(s)."<< endl;
 	return 0;
 }
 
@@ -847,57 +846,61 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					//tells it explicitly to load the data
 					//component of the buffer into private memory. 
 					int retval;
-
-					string rawfn = outfilename + "Raw_b" + to_string(bi) + ".txt";
-					//ofstream rawofs(rawfn.c_str(), ios_base::trunc); //trunc overwrites
-					//a->writeRawDataToFile(acdc_buffer, rawofs);
-					retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
-					corruptBuffer = meta.parseBuffer(acdc_buffer);
-					if(corruptBuffer)
+					if(raw==true)
 					{
-						writeErrorLog("Metadata error not parsed correctly");
-						return 1;
-					}
-					map_meta[bi] = meta.getMetadata();
-
-					if(retval !=0)
+						string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
+						ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
+						a->writeRawDataToFile(acdc_buffer, rawofs);
+					}else if(raw==false)
 					{
-						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
-						if(retval == 3)
+						retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
+						corruptBuffer = meta.parseBuffer(acdc_buffer);
+						if(corruptBuffer)
 						{
-							err_msg += "Because of the Metadata buffer";
+							writeErrorLog("Metadata error not parsed correctly");
+							return 1;
 						}
-						writeErrorLog(err_msg);
-						corruptBuffer = true;
+						map_meta[bi] = meta.getMetadata();
 
-						a->writeRawBufferToFile(acdc_buffer);	
-					}
+						if(retval !=0)
+						{
+							string err_msg = "Corrupt buffer caught at PSEC data level (2)";
+							if(retval == 3)
+							{
+								err_msg += "Because of the Metadata buffer";
+							}
+							writeErrorLog(err_msg);
+							corruptBuffer = true;
 
-					if(corruptBuffer)
-					{
-						string err_msg = "got a corrupt buffer with retval ";
-						err_msg += to_string(retval);
-						writeErrorLog(err_msg);
-						return 1;
-					}
+							a->writeRawBufferToFile(acdc_buffer);	
+						}
 
-					//filename logistics
-					if(oscopeOnOff==0)
-					{
-						datafn = outfilename + "Data_" + timestamp + ".dat";
-					}else if(oscopeOnOff==1)
-					{
-						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
-						dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
-						a->writeDataForOscope(dataofs);
+						if(corruptBuffer)
+						{
+							string err_msg = "got a corrupt buffer with retval ";
+							err_msg += to_string(retval);
+							writeErrorLog(err_msg);
+							return 1;
+						}
+
+						//filename logistics
+						if(oscopeOnOff==0)
+						{
+							datafn = outfilename + "Data_" + timestamp + ".txt";
+						}else if(oscopeOnOff==1)
+						{
+							datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+							dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
+							a->writeDataForOscope(dataofs);
+						}
+						map_data[bi] = a->returnData();
 					}
-					map_data[bi] = a->returnData();
 				}
 			}
 		}
-		if(oscopeOnOff==0)
+		if(oscopeOnOff==0 && raw==false)
 		{
-			dataofs.open(datafn.c_str(), ios::app | ios::binary); 
+			dataofs.open(datafn.c_str(), ios::app); 
 			writePsecData(dataofs, boardsReadyForRead);
 		}	
 	}
@@ -1265,7 +1268,7 @@ void ACC::writeErrorLog(string errorMsg)
 void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 {
 	vector<string> keys;
-	vector<string> lines;
+	//vector<string> lines;
 	map<string, unsigned short> extra_key;
 	for(int bi: boardsReadyForRead)
 	{
@@ -1281,6 +1284,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	}
 
 	string delim = " ";
+	/*
 	string line;
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
@@ -1307,7 +1311,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	}
 	d.write((char*)&lines[0], lines.size() * sizeof(lines));
 	d.close();
-	/*
+	*/
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
 		d << dec << enm << delim;
@@ -1338,7 +1342,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		d << endl;
 	}
 	d.close();
-	
+	/*
     string kl = "keylist.txt";
     ofstream ofs(kl);
     for(string k: keys)
