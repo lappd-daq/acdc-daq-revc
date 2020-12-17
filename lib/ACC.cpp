@@ -620,11 +620,11 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				//tells it explicitly to load the data
 				//component of the buffer into private memory. 
 				int retval;
-
+				/*
 				string rawfn = outfilename + "Raw_b" + to_string(bi) + ".txt";
 				ofstream rawofs(rawfn.c_str(), ios::app | ios::binary); //trunc overwrites
 				a->writeRawDataToFile(acdc_buffer, rawofs);
-				/*
+				*/
 				retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
 				corruptBuffer = meta.parseBuffer(acdc_buffer);
 				if(corruptBuffer)
@@ -665,17 +665,15 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 					a->writeDataForOscope(dataofs);
 				}
 				map_data[bi] = a->returnData();
-				*/
+				
 			}
 		}
 	}
-	/*
 	if(oscopeOnOff==0)
 	{
-		dataofs.open(datafn.c_str(), ios_base::app); //trunc overwrites
+		dataofs.open(datafn.c_str(), ios::app | ios::binary); //trunc overwrites
 		writePsecData(dataofs, boardsReadyForRead);
 	}
-	*/
 	return 0;
 }
 
