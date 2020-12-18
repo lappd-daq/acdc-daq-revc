@@ -53,7 +53,7 @@ int main()
 	unsigned int boardMask = 0xFF;
 	int calibMode = 1;
 	int oscope = 0;
-	bool raw = true;
+	bool raw = false;
 	int retval;
 	string datafn;//file to ultimately save avg
 
