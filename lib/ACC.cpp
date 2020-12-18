@@ -532,6 +532,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
     int maxCounter=0;
 	while(true)
 	{
+		boardsReadyForRead.clear();
 		command = 0x00200000;
 		usb->sendData(command);
 
@@ -550,7 +551,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 				boardsReadyForRead.push_back(k);
 			}
 		}
-		if(boardsReadyForRead.size()>0)
+		if(boardsReadyForRead==alignedAcdcIndices)
 		{
 			break;
 		}
