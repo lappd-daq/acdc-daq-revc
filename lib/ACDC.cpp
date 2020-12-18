@@ -340,9 +340,9 @@ void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 	//d.write((char*)&buffer[0], buffer.size() * sizeof(buffer));
 	for(unsigned short k: buffer)
 	{
-		d << hex <<  k << endl;
+		d << hex <<  k << " ";
 	}
-
+	d << endl;
 	d.close();
 	return;
 }
