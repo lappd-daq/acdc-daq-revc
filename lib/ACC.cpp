@@ -748,6 +748,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 	{
 		while(true)
 		{
+			boardsReadyForRead.clear();
 			now = chrono::steady_clock::now();
 			if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
 			{
@@ -784,7 +785,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 					boardsReadyForRead.push_back(k);
 				}
 			}
-			if(boardsReadyForRead.size()>0)
+			if(boardsReadyForRead==alignedAcdcIndices)
 			{
 				break;
 			}
