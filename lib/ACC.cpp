@@ -535,7 +535,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		command = 0x00200000;
 		usb->sendData(command);
 
-		lastAccBuffer = usb->safeReadData(32);
+		lastAccBuffer = usb->safeReadData(96);
 		
 		if(lastAccBuffer.size()==0)
 		{
@@ -716,31 +716,33 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		return retval;
 	}
 
+
+
+	//setup a sigint capturer to safely
+	//reset the boards if a ctrl-c signal is found
+	struct sigaction sa;
+	memset( &sa, 0, sizeof(sa) );
+	sa.sa_handler = got_signal;
+	sigfillset(&sa.sa_mask);
+	sigaction(SIGINT,&sa,NULL);
+
+    	enableTransfer(0);
+    	for(int bi: alignedAcdcIndices)
+    	{
+		command = 0x00210000;
+		command = command | bi;
+		usb->sendData(command);
+	}
+    	enableTransfer(1);
+  	usleep(6000);
+	
+	
 	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
 	auto printDuration = chrono::seconds(1); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
 	auto timeoutDuration = chrono::seconds(8); // will exit and reinitialize
-
-
-	//setup a sigint capturer to safely
-	//reset the boards if a ctrl-c signal is found
-	struct sigaction sa;
-    memset( &sa, 0, sizeof(sa) );
-    sa.sa_handler = got_signal;
-    sigfillset(&sa.sa_mask);
-    sigaction(SIGINT,&sa,NULL);
-
-    enableTransfer(0);
-    for(int bi: alignedAcdcIndices)
-    {
-		command = 0x00210000;
-		command = command | bi;
-		usb->sendData(command);
-	}
-    enableTransfer(1);
-    usleep(6000);
 
 	try
 	{
@@ -768,7 +770,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 			command = 0x00200000;
 			usb->sendData(command);
 
-			lastAccBuffer = usb->safeReadData(32);
+			lastAccBuffer = usb->safeReadData(96);
 			
 			if(lastAccBuffer.size()==0)
 			{
