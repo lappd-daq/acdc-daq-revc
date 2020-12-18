@@ -581,16 +581,19 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 		//made a choice not to pound it with a loop until it
 		//responds. 
 		vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
-		if(acdc_buffer.size() !=  7795 && acdc_buffer.size()!=7827){
-			string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
-			err_msg += to_string(acdc_buffer.size());
-			writeErrorLog(err_msg);
+		if(acdc_buffer.size() != 7795){
+			if((acdc_buffer.size()-7795)%32 != 0)
+			{
+				string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
+				err_msg += to_string(acdc_buffer.size());
+				writeErrorLog(err_msg);
+			}
 		}
 
-		if(acdc_buffer.size() == 7827)
+		if((acdc_buffer.size()-7795)%32==0)
 		{
-			auto first = acdc_buffer.cbegin() + 32;
-			auto last = acdc_buffer.cbegin() + 7827;
+			auto first = acdc_buffer.cbegin() + (acdc_buffer.size()-7795);
+			auto last = acdc_buffer.cbegin() + acdc_buffer.size();
 
 			vector<unsigned short> tempVec(first, last);
 			acdc_buffer.clear();
@@ -801,17 +804,19 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 			//responds. 
 			vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
 
-			if(acdc_buffer.size()!=7795 && acdc_buffer.size()!=7827)
-			{
-				string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
-				err_msg += to_string(acdc_buffer.size());
-				writeErrorLog(err_msg);
+			if(acdc_buffer.size() != 7795){
+				if((acdc_buffer.size()-7795)%32 != 0)
+				{
+					string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
+					err_msg += to_string(acdc_buffer.size());
+					writeErrorLog(err_msg);
+				}
 			}
-			
-			if(acdc_buffer.size() == 7827)
+
+			if((acdc_buffer.size()-7795)%32==0)
 			{
-				auto first = acdc_buffer.cbegin() + 32;
-				auto last = acdc_buffer.cbegin() + 7827;
+				auto first = acdc_buffer.cbegin() + (acdc_buffer.size()-7795);
+				auto last = acdc_buffer.cbegin() + acdc_buffer.size();
 
 				vector<unsigned short> tempVec(first, last);
 				acdc_buffer.clear();
@@ -851,6 +856,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 						string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
 						ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
 						a->writeRawDataToFile(acdc_buffer, rawofs);
+						return 0;
 					}else if(raw==false)
 					{
 						retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
