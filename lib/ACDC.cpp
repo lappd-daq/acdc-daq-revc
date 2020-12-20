@@ -12,7 +12,6 @@ using namespace std;
 ACDC::ACDC()
 {
 	trigMask = 0xFFFFFF;
-	convertMaskToChannels();
 }
 
 
@@ -20,18 +19,6 @@ ACDC::ACDC()
 ACDC::~ACDC()
 {
 	cout << "Calling acdc destructor" << endl;
-}
-
-void ACDC::printMetadata(bool verbose)
-{
-	meta.standardPrint();
-	if(verbose) meta.printAllMetadata();
-}
-
-void ACDC::setTriggerMask(unsigned int mask)
-{
-	trigMask = mask;
-	convertMaskToChannels();
 }
 
 int ACDC::getBoardIndex()
@@ -44,35 +31,6 @@ void ACDC::setBoardIndex(int bi)
 	boardIndex = bi;
 }
 
-unsigned int ACDC::getTriggerMask()
-{
-	return trigMask;
-}
-
-vector<int> ACDC::getMaskedChannels()
-{
-	return maskedChannels;
-}
-
-//reads the value of unsigned int trigMask
-//and converts it to a vector of ints 
-//corresponding to channels that are masked, 
-//i.e. inactive in the trigger logic. 
-void ACDC::convertMaskToChannels()
-{ 
-
-	//clear the vector
-	maskedChannels.clear();
-	for(int i = 0; i < NUM_CH; i++)
-	{
-		if((trigMask & (1 << i)))
-		{
-			//channel numbering starts at 1
-			maskedChannels.push_back(i + 1); 
-		}
-	}
-}
-
 
 //utility for debugging
 void ACDC::writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer)
@@ -82,68 +40,9 @@ void ACDC::writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer)
     ofstream cb(fnnn);
     for(unsigned short k: lastAcdcBuffer)
     {
-        printByte(cb, k);
-        cb << endl;
+        cb << hex << k << endl;
     }
     cb.close();
-}
-
-void ACDC::printByte(ofstream& ofs, unsigned short val)
-{
-    ofs << val << ", "; //decimal
-    stringstream ss;
-    ss << std::hex << val;
-    string hexstr(ss.str());
-    ofs << hexstr << ", "; //hex
-    unsigned n;
-    ss >> n;
-    bitset<16> b(n);
-    ofs << b.to_string(); //binary
-}
-
-vector<double> ACDC::reorder_internal(vector<double> temp_vec, int clockcycle)
-{
-	vector<double> re_vec;
-
-    for(int i=0; i<NUM_SAMP; i++)
-    {
-        if(i<(NUM_SAMP-clockcycle))
-        {
-            re_vec.push_back(temp_vec[i+clockcycle]);
-        }
-        else
-        {
-            re_vec.push_back(temp_vec[i-(NUM_SAMP-clockcycle)]);
-        }
-    }
-    return re_vec;
-}
-
-map<int, vector<double>> ACDC::reorder(int offset)
-{
-	vector<double> temp_vec;
-	unsigned short cycle;
-	vector<double> re_vec;
-	int shift;
-	map<int, vector<double>> re_data;
-
-	unsigned short cyclebit = map_meta["clockcycle_bits"];
-	shift = cyclebit*32;
-	for(int ch=0; ch<NUM_CH; ch++){
-		if(offset==0)
-		{
-			temp_vec = data[ch+1];			
-			re_vec = reorder_internal(temp_vec,shift);
-			re_data[ch+1] = re_vec;
-		}else
-		{
-			temp_vec = data[ch+1];			
-			re_vec = reorder_internal(temp_vec,shift);
-			re_vec = reorder_internal(temp_vec,offset);
-			re_data[ch+1] = re_vec;
-		}
-	}
-	return re_data;
 }
 
 //looks at the last ACDC buffer and organizes
@@ -155,31 +54,15 @@ map<int, vector<double>> ACDC::reorder(int offset)
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, int oscopeOnOFF, int bi)
+int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
 {
 	lastAcdcBuffer = acdc_buffer;
-	bool raw;
-
-	if(oscopeOnOFF==0)
-	{
-		raw = true;
-	}else if(oscopeOnOFF==1)
-	{
-		raw = false;
-	}
 
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
 	if(lastAcdcBuffer.size() == 0)
 	{
 		string err_msg = "You tried to parse ACDC data without pulling/setting an ACDC buffer";
-		writeErrorLog(err_msg);
-		return 2;
-	}
-
-	if((peds.size() == 0 || conv.size() == 0) && !raw)
-	{
-		string err_msg = "Found no pedestal or LUT conversion data but was told to parse data. Please check the ACC class for an initialization of this calibration data";
 		writeErrorLog(err_msg);
 		return 2;
 	}
@@ -268,13 +151,10 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, int oscopeOnOF
 			//---that will be inserted into the data map
 			sampleValue = (double)byte; //adc counts
 
-			if(!raw)
-			{	
-				//apply a pedestal subtraction
-				sampleValue = sampleValue - peds[bi][channelCount-1][sampleCount]; //adc counts
-				//apply a linearity corrected mV conversion
-				//sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
-			}
+			//apply a pedestal subtraction
+			//sampleValue = sampleValue - peds[bi][channelCount-1][sampleCount]; //adc counts
+			//apply a linearity corrected mV conversion
+			//sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
 			
 			//save in the vector. vector is saved in the data map when
 			//the channel count is iterated. 
@@ -309,35 +189,10 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer, int oscopeOnOF
 
 }
 
-
-//writes data from the presently stored event
-// to file assuming file has header already
-void ACDC::writeDataForOscope(ofstream& d)
-{
-
-	//map_meta = meta.getMetadata();
-	string delim = " ";
-
-	map<int, vector<double>> print_data;
-	print_data = reorder(0);
-
-	for(int row = 1; row<=NUM_SAMP; row++)
-	{
-		d << row << delim;
-		for(int column=1; column<=NUM_CH; column++)
-		{
-			d << print_data[column][row-1] << delim; 
-		}
-		d << endl;
-	}
-}
-
-
 //writes data from the presently stored event
 // to file assuming file has header already
 void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 {
-	//d.write((char*)&buffer[0], buffer.size() * sizeof(buffer));
 	for(unsigned short k: buffer)
 	{
 		d << hex <<  k << " ";
@@ -346,7 +201,6 @@ void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 	d.close();
 	return;
 }
-
 
 //reads pedestals to file in a new
 //file format relative to the old software. 

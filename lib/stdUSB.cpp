@@ -202,7 +202,7 @@ bool stdUSB::sendData(unsigned int data) { // throw(...)
     else{
     	cout << "USB write retval is " << retval << " and bytes transferred is " << transferred << " for command ";
         printf("0x%08x\n", data);
-        //libusb_clear_halt(stdHandle,EP_WRITE);
+        libusb_clear_halt(stdHandle,EP_WRITE);
         retval = libusb_bulk_transfer(stdHandle, EP_WRITE, (unsigned char*)buff, sizeof(buff), &transferred, USB_TOUT_MS_WRITE*10);
         if(retval == 0){
             cout << "Retry successfull" << endl;

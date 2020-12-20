@@ -38,13 +38,9 @@ class stdUSB {
 
         int readData(unsigned char *pData, int *lread);
 
-        void writeAndReadNothing();
-
         bool isOpen();
 
         bool reset();
-
-        void printByte(unsigned int val);
 
         vector<unsigned short> safeReadData(int maxSamples); //allocates memory properly for reading
 

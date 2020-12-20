@@ -52,7 +52,6 @@ int main()
 	int trigMode = 1; //software trigger for calibration
 	unsigned int boardMask = 0xFF;
 	int calibMode = 1;
-	int oscope = 0;
 	bool raw = false;
 	int retval;
 	string datafn;//file to ultimately save avg
@@ -67,7 +66,7 @@ int main()
 	for(int i=0; i<N_EVENTS; i++){
 		acc.softwareTrigger();
 
-		acc.listenForAcdcData(trigMode, raw, "Config", oscope);
+		acc.listenForAcdcData(trigMode, raw, "Config");
 		if (retval!=0)
 		{
 			cout << "retval " << retval << endl;

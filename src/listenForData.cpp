@@ -1,5 +1,4 @@
 #include "ACC.h"
-#include "Scope.h"
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -227,35 +226,20 @@ int main()
 		}
 	}
 
-	flag = true;
-	while(flag)
+
+	while(true)
 	{
-		std::cout << "Do you want to use SAVE mode(0) or OSCOPE(1) mode?" << std::endl;
-		cin >> oscopeMode;
+		std::cout << "How many events do you want to record?" << std::endl;
+
+		cin >> eventNumber;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-		if(oscopeMode==0)
-		{
-			while(true)
-			{
-				std::cout << "How many events do you want to record?" << std::endl;
-
-				cin >> eventNumber;
-				cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				if(eventNumber>0)
-				{
-					flag = false;
-					break;
-				}
-			}		
-		}else if(oscopeMode ==1)
+		if(eventNumber>0)
 		{
 			flag = false;
-			eventNumber = 1;
 			break;
 		}
-	}
+	}		
 
 
 	retval = acc.initializeForDataReadout(triggermode, boardmask, calibMode);
@@ -271,102 +255,53 @@ int main()
 	int reTime = 500;
 	int mult = 1;
 	auto t0 = std::chrono::high_resolution_clock::now();
-	if(oscopeMode==0)
-	{	
-		
-		while(eventCounter<eventNumber)
-		{
-			if(triggermode == 1)
-			{
-				acc.softwareTrigger();
-			}
-			if(eventCounter>=reTime*mult)
-			{
-				timestamp = getTime();
-				mult++;
-			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, timestamp, oscopeMode);
-			switch(retval)
-			{
-				case 0:
-					//std::cout << "Successfully found data and parsed" << std::endl;
-					eventCounter++;
-					failCounter=0;
-					break;
-				case 1:
-					std::cout << "Successfully found data and but buffer corrupted" << std::endl;
-					failCounter++;
-					break;
-				case 2:
-					std::cout << "No data found" << std::endl;
-					failCounter++;
-					break;
-				case 3:
-					std::cout << "Sigint failure" << std::endl;
-					failCounter++;
-					break;
-				default:
-					std::cout << "Unknown error" << std::endl;
-					failCounter++;
-					break;
-			}
-			if(failCounter >= 10)
-			{
-				std::cout << "Too many failed attempts to read data. Please check everything and try again" << std::endl;
-				break;
-			}
-		}
-	}else if(oscopeMode==1)
+
+	while(eventCounter<eventNumber)
 	{
-		int bNum;
-		while(true)
+		if(triggermode == 1)
 		{
-			std::cout << "Do you want to use 2 boards for evaluation? If yes (1) only use port 0 and 2. Else choose (0)." << std::endl;
-			cin >> bNum;
-			cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-			if(bNum == 0 || bNum == 1)
-			{
-				break;
-			}
+			acc.softwareTrigger();
 		}
-		
-		Scope scp;
-		int first = 0;
-
-		flag = true;
-		while(flag){
-			if(triggermode == 1)
-			{
-				acc.softwareTrigger();
-			}
-			retval = acc.listenForAcdcData(triggermode, rawBool, timestamp, oscopeMode);
-			switch(retval)
-			{
-				case 0:
-					if(first == 0)
-					{
-						scp.plot(rawBool,bNum);
-						first++;
-					}
-					break;
-				case 1:
-					std::cout << "Successfully found data and but buffer corrupted" << std::endl;
-					break;
-				case 2:
-					std::cout << "No data found" << std::endl;
-					break;
-				case 3:
-					std::cout << "Sigint failure" << std::endl;
-					flag =  false;
-					break;
-				default:
-					std::cout << "Unknown error" << std::endl;
-					flag =  false;
-					break;
-			}
+		if(eventCounter>=reTime*mult)
+		{
+			timestamp = getTime();
+			mult++;
+		}
+		retval = acc.listenForAcdcData(triggermode, rawBool, timestamp);
+		switch(retval)
+		{
+			case 0:
+				//std::cout << "Successfully found data and parsed" << std::endl;
+				eventCounter++;
+				failCounter=0;
+				break;
+			case 1:
+				std::cout << "Successfully found data and but buffer corrupted" << std::endl;
+				acc.dumpData();
+				failCounter++;
+				break;
+			case 2:
+				std::cout << "No data found" << std::endl;
+				acc.dumpData();
+				failCounter++;
+				break;
+			case 3:
+				std::cout << "Sigint failure" << std::endl;
+				acc.dumpData();
+				failCounter++;
+				break;
+			default:
+				std::cout << "Unknown error" << std::endl;
+				failCounter++;
+				break;
+		}
+		if(failCounter >= 50)
+		{
+			std::cout << "Too many failed attempts to read data. Please check everything and try again" << std::endl;
+			break;
 		}
 	}
+	
 	auto t1 = std::chrono::high_resolution_clock::now();
 	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
 	cout << "It took "<< dt <<" second(s)."<< endl;

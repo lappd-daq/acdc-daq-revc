@@ -335,28 +335,6 @@ void ACC::clearAcdcs()
 }
 
 
-
-void ACC::printByte(unsigned short val, int format)
-{	
-	stringstream ss;
-	ss << std::hex << val;   
-	unsigned n;
-
-	if(format == 1)//decimal	
-	{
-		cout << val; 
-	}else if(format == 2)//hex
-	{       
-		string hexstr(ss.str());
-		cout << hexstr; 
-	}else if(format == 3)//binary
-	{	
-		ss >> n;
-		bitset<16> b(n);
-		cout << b.to_string(); 
-	}
-}
-
 vector<int> ACC::whichAcdcsConnected()
 {
 	//New sequence to ask the ACC to reply with the number of boards connected 
@@ -412,56 +390,12 @@ vector<int> ACC::whichAcdcsConnected()
 	return connectedBoards;
 }
 
-
-//turns {0, 3, 6} into 0x00000049 (b1001001)
-unsigned int ACC::vectorToUnsignedInt(vector<int> a)
-{
-	unsigned int result = 0x00000000;
-	for(int val: a)
-	{
-		if(val < 32)
-		{
-			result = result | (1 << val);
-		}
-	}
-	return result;
-}
-
-//turns {0, 3, 6} into 0x0049 (b1001001)
-unsigned short ACC::vectorToUnsignedShort(vector<int> a)
-{
-	unsigned short result = 0x0000;
-	for(int val: a)
-	{
-		if(val < 16)
-		{
-			result = result | (1 << val);
-		}
-	}
-	return result;
-}
-
-vector<int> ACC::unsignedShortToVector(unsigned short a)
-{
-	vector<int> result;
-	int lenOfShort = 16;
-	for(int i = 0; i < lenOfShort; i++)
-	{
-		if(a & (1 << i))
-		{
-			result.push_back(i);
-		}
-	}
-	return result;
-}
-
 //sends software trigger to all connected boards. 
 //bin option allows one to force a particular 160MHz
 //clock cycle to trigger on. anything greater than 3
 //is defaulted to 0. 
 void ACC::setSoftwareTrigger(vector<int> boards)
-{
-	
+{	
 	//default value for "boards" is empty. If so, then
 	//software trigger all active boards from last
 	//buffer query. 
@@ -506,7 +440,7 @@ void ACC::softwareTrigger()
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
+int ACC::readAcdcBuffers(bool raw, string timestamp)
 {
 	//First, loop and look for 
 	//a fullRam flag on ACC indicating
@@ -632,7 +566,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 					return 0;
 				}else if(raw==false)
 				{
-					retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
+					retval = a->parseDataFromBuffer(acdc_buffer); 
 					corruptBuffer = meta.parseBuffer(acdc_buffer);
 					if(corruptBuffer)
 					{
@@ -661,22 +595,15 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 						return 1;
 					}
 					
-					//filename logistics
-					if(oscopeOnOff==0)
-					{
-						datafn = outfilename + "Data_" + timestamp + ".txt";
-					}else if(oscopeOnOff==1)
-					{
-						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
-						dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
-						a->writeDataForOscope(dataofs);
-					}
+
+					datafn = outfilename + "Data_" + timestamp + ".txt";
+
 					map_data[bi] = a->returnData();
 				}
 			}
 		}
 	}
-	if(oscopeOnOff==0 && raw==false)
+	if(raw==false)
 	{
 		dataofs.open(datafn.c_str(), ios::app); //trunc overwrites
 		writePsecData(dataofs, boardsReadyForRead);
@@ -696,11 +623,11 @@ int ACC::readAcdcBuffers(bool raw, string timestamp, int oscopeOnOff)
 //0 = data found and parsed successfully
 //1 = data found but had a corrupt buffer
 //2 = no data found
-int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeOnOff)
+int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 {
-	bool waitForAll = false;
 	vector<int> boardsReadyForRead; //list of board indices that are ready to be read-out
-	unsigned int command;
+	unsigned int command; //basic command init
+
 	//filename logistics
 	string outfilename = "./Results/";
 	string datafn;
@@ -713,11 +640,9 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 		int retval;
 		//The ACC already sent a trigger, so
 		//tell it not to send another during readout. 
-		retval = readAcdcBuffers(raw, timestamp, oscopeOnOff);
+		retval = readAcdcBuffers(raw, timestamp);
 		return retval;
 	}
-
-
 
 	//setup a sigint capturer to safely
 	//reset the boards if a ctrl-c signal is found
@@ -727,17 +652,16 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 	sigfillset(&sa.sa_mask);
 	sigaction(SIGINT,&sa,NULL);
 
-    	enableTransfer(0);
-    	for(int bi: alignedAcdcIndices)
-    	{
+	enableTransfer(0); //disables the transfer of data from acdc to acc
+	for(int bi: alignedAcdcIndices)
+	{
 		command = 0x00210000;
-		command = command | bi;
+		command = command | bi; //ask specific acdc coards for a transfer 
 		usb->sendData(command);
+		usb->safeReadData(32);
 	}
-    	enableTransfer(1);
-  	usleep(6000);
-	
-	
+    enableTransfer(1); //enables the transfer of data from acdc to acc
+  	
 	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
@@ -745,180 +669,169 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp, int oscopeO
 	auto lastPrint = chrono::steady_clock::now();
 	auto timeoutDuration = chrono::seconds(8); // will exit and reinitialize
 
-	try
-	{
-		while(true)
+	while(true)
+	{ 
+		boardsReadyForRead.clear(); //clear the boards read vector
+
+		//time the listen fuction
+		now = chrono::steady_clock::now();
+		if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
 		{
-			boardsReadyForRead.clear();
-			now = chrono::steady_clock::now();
-			if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
-			{
-				cout << "Have been waiting for a trigger for " << chrono::duration_cast<chrono::seconds>(now - start).count() << " seconds" << endl;
-				lastPrint = chrono::steady_clock::now();
-			}
-			if(chrono::duration_cast<chrono::seconds>(now - start) > timeoutDuration)
-			{
-				return 2;
-			}
-
-			//if sigint happens, 
-			//return value of 3 tells
-			//logger what to do. 
-			if(quitacc.load())
-			{
-				return 3;
-			}
-
-			command = 0x00200000;
-			usb->sendData(command);
-
-			lastAccBuffer = usb->safeReadData(96);
-			
-			if(lastAccBuffer.size()==0)
-			{
-				continue;
-			}
-
-			for(int k=0; k<MAX_NUM_BOARDS; k++)
-			{
-				if(lastAccBuffer.at(16+k)==7795)
-				{
-					boardsReadyForRead.push_back(k);
-				}
-			}
-			if(boardsReadyForRead==alignedAcdcIndices)
-			{
-				break;
-			}
+			cout << "Have been waiting for a trigger for " << chrono::duration_cast<chrono::seconds>(now - start).count() << " seconds" << endl;
+			lastPrint = chrono::steady_clock::now();
 		}
-	
-		//each ACDC needs to be queried individually
-		//by the ACC for its buffer. 
+		if(chrono::duration_cast<chrono::seconds>(now - start) > timeoutDuration)
+		{
+			return 2;
+		}
+
+		//if sigint happens, 
+		//return value of 3 tells
+		//logger what to do. 
+		if(quitacc.load())
+		{
+			return 3;
+		}
+
+		command = 0x00200000;
+		bool usbcheck = usb->sendData(command);
+		if(usbcheck==false)
+		{
+			cout << "Emptying the usb lines" << endl;
+			emptyUsbLine();
+		}
+
+		lastAccBuffer = usb->safeReadData(96);
 		
-
-		for(int bi: boardsReadyForRead)
+		//catch empty buffers
+		if(lastAccBuffer.size()==0)
 		{
-			//cout << "Read for board " << bi << endl;
-			unsigned int command = 0x00210000; //base command for set readmode
-			command = command | (unsigned int)(bi); //which board to read
-			usb->sendData(command);
-			usleep(6000);
-			//read only once. sometimes the buffer comes up empty. 
-			//made a choice not to pound it with a loop until it
-			//responds. 
-			vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
+			continue;
+		}
 
-			if(acdc_buffer.size() != 7795){
-				if((acdc_buffer.size()-7795)%32 != 0)
-				{
-					string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
-					err_msg += to_string(acdc_buffer.size());
-					writeErrorLog(err_msg);
-				}
-			}
-
-			if((acdc_buffer.size()-7795)%32==0)
+		//go through all boards on the acc info frame and if 7795 words were transfered note that board
+		for(int k=0; k<MAX_NUM_BOARDS; k++)
+		{
+			if(lastAccBuffer.at(16+k)==7795)
 			{
-				auto first = acdc_buffer.cbegin() + (acdc_buffer.size()-7795);
-				auto last = acdc_buffer.cbegin() + acdc_buffer.size();
-
-				vector<unsigned short> tempVec(first, last);
-				acdc_buffer.clear();
-				acdc_buffer = tempVec;
-			}
-			//----corrupt buffer checks begin
-			//sometimes the ACDCs dont send back good
-			//data. It is unclear why, but we would
-			//just rather throw this event away. 
-			bool corruptBuffer = false;
-			if(acdc_buffer.size() == 0)
-			{
-				writeErrorLog("Empty Psec buffer read!");
-				corruptBuffer = true;
-			}
-
-			if(corruptBuffer)
-			{
-				writeErrorLog("Early corrupt buffer");
-				return 1;
-			}
-
-			//save this buffer a private member of ACDC
-			//by looping through our acdc vector
-			//and checking each index 
-			for(ACDC* a: acdcs)
-			{
-				if(a->getBoardIndex() == bi)
-				{
-					meta.checkAndInsert("Board", bi); 
-
-					//tells it explicitly to load the data
-					//component of the buffer into private memory. 
-					int retval;
-					if(raw==true)
-					{
-						string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
-						ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
-						a->writeRawDataToFile(acdc_buffer, rawofs);
-						return 0;
-					}else if(raw==false)
-					{
-						retval = a->parseDataFromBuffer(acdc_buffer, oscopeOnOff, bi); 
-						corruptBuffer = meta.parseBuffer(acdc_buffer);
-						if(corruptBuffer)
-						{
-							writeErrorLog("Metadata error not parsed correctly");
-							return 1;
-						}
-						map_meta[bi] = meta.getMetadata();
-
-						if(retval !=0)
-						{
-							string err_msg = "Corrupt buffer caught at PSEC data level (2)";
-							if(retval == 3)
-							{
-								err_msg += "Because of the Metadata buffer";
-							}
-							writeErrorLog(err_msg);
-							corruptBuffer = true;
-
-							a->writeRawBufferToFile(acdc_buffer);	
-						}
-
-						if(corruptBuffer)
-						{
-							string err_msg = "got a corrupt buffer with retval ";
-							err_msg += to_string(retval);
-							writeErrorLog(err_msg);
-							return 1;
-						}
-
-						//filename logistics
-						if(oscopeOnOff==0)
-						{
-							datafn = outfilename + "Data_" + timestamp + ".txt";
-						}else if(oscopeOnOff==1)
-						{
-							datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
-							dataofs.open(datafn.c_str(), ios_base::trunc); //trunc overwrites
-							a->writeDataForOscope(dataofs);
-						}
-						map_data[bi] = a->returnData();
-					}
-				}
+				boardsReadyForRead.push_back(k);
 			}
 		}
-		if(oscopeOnOff==0 && raw==false)
+
+		//if the read boards are equal to the aligned acdc boards the trigger is accepted
+		if(boardsReadyForRead==alignedAcdcIndices)
 		{
-			dataofs.open(datafn.c_str(), ios::app); 
-			writePsecData(dataofs, boardsReadyForRead);
-		}	
+			break;
+		}
 	}
-	catch(string mechanism)
+
+	//each ACDC needs to be queried individually
+	//by the ACC for its buffer. 
+	for(int bi: boardsReadyForRead)
 	{
-		cout << mechanism << endl;
-		return 2;
-	}	
+		unsigned int command = 0x00210000; //base command for set readmode
+		command = command | (unsigned int)(bi); //which board to read
+		usb->sendData(command);
+		usleep(6000);
+
+		//read only once. sometimes the buffer comes up empty. 
+		//made a choice not to pound it with a loop until it
+		//responds. 
+		vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
+
+		//Handles buffers larger than 7795 words, if the just have acc/acdc info frames added for example it will still work
+		if(acdc_buffer.size() != 7795){
+			if((acdc_buffer.size()-7795)%32 != 0)
+			{
+				string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
+				err_msg += to_string(acdc_buffer.size());
+				writeErrorLog(err_msg);
+			}
+		}
+		if((acdc_buffer.size()-7795)%32==0)
+		{
+			auto first = acdc_buffer.cbegin() + (acdc_buffer.size()-7795);
+			auto last = acdc_buffer.cbegin() + acdc_buffer.size();
+			vector<unsigned short> tempVec(first, last);
+			acdc_buffer.clear();
+			acdc_buffer = tempVec;
+		}
+
+		//----corrupt buffer checks begin
+		//sometimes the ACDCs dont send back good
+		//data. It is unclear why, but we would
+		//just rather throw this event away. 
+		bool corruptBuffer = false;
+		if(acdc_buffer.size() == 0)
+		{
+			writeErrorLog("Empty Psec buffer read!");
+			corruptBuffer = true;
+		}
+		if(corruptBuffer)
+		{
+			writeErrorLog("Early corrupt buffer");
+			return 1;
+		}
+
+		//If raw data is requested save and return 0
+		if(raw==true)
+		{
+			string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
+			ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
+			writeRawDataToFile(acdc_buffer, rawofs);
+			return 0;
+		}
+
+		//save this buffer a private member of ACDC
+		//by looping through our acdc vector
+		//and checking each index 
+		for(ACDC* a: acdcs)
+		{
+			if(a->getBoardIndex() == bi)
+			{
+				int retval;
+
+				//parśe raw data to channel data and metadata
+				retval = a->parseDataFromBuffer(acdc_buffer); 
+				meta.checkAndInsert("Board", bi);
+				corruptBuffer = meta.parseBuffer(acdc_buffer);
+				
+				//check metadata for corrupt buffer
+				if(corruptBuffer)
+				{
+					writeErrorLog("Metadata error not parsed correctly");
+					return 1;
+				}
+				map_meta[bi] = meta.getMetadata();
+
+				//check channel data for corrupt buffer
+				if(retval !=0)
+				{
+					string err_msg = "Corrupt buffer caught at PSEC data level (2)";
+					if(retval == 3)
+					{
+						err_msg += "Because of the Metadata buffer";
+					}
+					writeErrorLog(err_msg);
+					corruptBuffer = true;
+					a->writeRawBufferToFile(acdc_buffer);	
+				}
+				if(corruptBuffer)
+				{
+					string err_msg = "got a corrupt buffer with retval ";
+					err_msg += to_string(retval);
+					writeErrorLog(err_msg);
+					return 1;
+				}				
+				map_data[bi] = a->returnData();
+			}
+		}
+	}
+
+	datafn = outfilename + "Data_" + timestamp + ".txt";
+	dataofs.open(datafn.c_str(), ios::app); 
+	writePsecData(dataofs, boardsReadyForRead);
+	
 	return 0;
 }
 
@@ -1119,39 +1032,12 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 //necessary when closing the program, for example.
 void ACC::dumpData()
 {
-		unsigned int command = 0xFFB51000; //base command for set readmode
-		command = command;
+	unsigned int command = 0x000200FF; //base command for set readmode
 
-		//send and read. 
-		usb->sendData(command);
-		usb->safeReadData(ACDC_BUFFERSIZE + 2);
+	//send and read. 
+	usb->sendData(command);
+	usb->safeReadData(ACDC_BUFFERSIZE + 2);
 }
-
-
-//just tells each ACDC that has a fullRam flag
-// to write its data and metadata maps to the filestreams. 
-//Event number is passed to the ACDC objects to help. 
-void ACC::writeEDataToFile(vector<unsigned short> acdc_buffer)
-{
-    string fnnn = "empty-acdc-buffer.txt";
-    cout << "Printing empty ACDC buffer to file : " << fnnn << endl;
-    ofstream ofs(fnnn);
-    for(unsigned short k: acdc_buffer)
-    {
-        ofs << k << ", "; //decimal
-	    stringstream ss;
-	    ss << std::hex << k;
-	    string hexstr(ss.str());
-	    ofs << hexstr << ", "; //hex
-	    unsigned n;
-	    ss >> n;
-	    bitset<16> b(n);
-	    ofs << b.to_string(); //binary
-        ofs << endl;
-    }
-    ofs.close();
-}
-
 
 //short circuits the Config - class based
 //pedestal setting procedure. This is primarily
@@ -1275,6 +1161,19 @@ void ACC::writeErrorLog(string errorMsg)
     os_err.close();
 }
 
+//writes data from the presently stored event
+// to file assuming file has header already
+void ACC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
+{
+	for(unsigned short k: buffer)
+	{
+		d << hex <<  k << " ";
+	}
+	d << endl;
+	d.close();
+	return;
+}
+
 void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 {
 	vector<string> keys;
@@ -1294,34 +1193,6 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 	}
 
 	string delim = " ";
-	/*
-	string line;
-	for(int enm=0; enm<NUM_SAMP; enm++)
-	{
-		line += to_string(enm);
-		line += delim;
-		for(int bi: boardsReadyForRead)
-		{
-			for(int ch=0; ch<NUM_CH; ch++)
-			{
-				line += to_string(map_data[bi][ch+1][enm]);
-				line += delim;
-			}
-			if(enm<(int)keys.size())
-			{
-				line += to_string(map_meta[bi][keys[enm]]);
-				line += delim;
-			}else
-			{
-				line += to_string(0);
-				line += delim;
-			}
-		}
-		lines.push_back(line);
-	}
-	d.write((char*)&lines[0], lines.size() * sizeof(lines));
-	d.close();
-	*/
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
 		d << dec << enm << delim;
@@ -1352,15 +1223,6 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		d << endl;
 	}
 	d.close();
-	/*
-    string kl = "keylist.txt";
-    ofstream ofs(kl);
-    for(string k: keys)
-    {
-        ofs << k << endl; //decimal
-    }
-    ofs.close();
-    */
 }
 
 //------------seperate functions
