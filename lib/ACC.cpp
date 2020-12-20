@@ -111,6 +111,7 @@ void ACC::emptyUsbLine()
 	vector<unsigned short> tempbuff;
 	while(!loop_breaker)
 	{
+		usb->safeReadData(SAFE_BUFFERSIZE);
 		usb->sendData(command);
 		send_counter++;
 		tempbuff = usb->safeReadData(SAFE_BUFFERSIZE);
