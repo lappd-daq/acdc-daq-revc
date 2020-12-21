@@ -248,7 +248,8 @@ int main()
 		cout << "Initialization failed!" << endl;
 		return 0;
 	}
-
+	acc.emptyUsbLine();
+	acc.dumpData();
 	timestamp = getTime();
 	eventCounter = 0;
 	failCounter = 0;
