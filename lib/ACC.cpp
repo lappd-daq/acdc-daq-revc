@@ -454,23 +454,29 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 	string datafn;
 	ofstream dataofs;
 
-    enableTransfer(0);
-    for(int bi: alignedAcdcIndices)
-    {
+	enableTransfer(0); //disables the transfer of data from acdc to acc
+	for(int bi: alignedAcdcIndices)
+	{
 		command = 0x00210000;
-		command = command | bi;
+		command = command | bi; //ask specific acdc coards for a transfer 
 		usb->sendData(command);
+		usb->safeReadData(32);
 	}
-    enableTransfer(1);
-    usleep(6000);
-
-    int maxCounter=0;
+   	enableTransfer(1); //enables the transfer of data from acdc to acc
+	
+    	int maxCounter=0;
 	while(true)
 	{
 		boardsReadyForRead.clear();
 		command = 0x00200000;
-		usb->sendData(command);
 
+		bool usbcheck = usb->sendData(command);
+		if(usbcheck==false)
+		{
+			cout << "Emptying the usb lines" << endl;
+			emptyUsbLine();
+		}
+		
 		lastAccBuffer = usb->safeReadData(96);
 		
 		if(lastAccBuffer.size()==0)
@@ -548,6 +554,16 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			return 1;
 		}
 
+		
+		//If raw data is requested save and return 0
+		if(raw==true)
+		{
+			string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
+			ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
+			writeRawDataToFile(acdc_buffer, rawofs);
+			return 0;
+		}
+		
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
 		//and checking each index 
@@ -555,60 +571,45 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		{
 			if(a->getBoardIndex() == bi)
 			{
-				meta.checkAndInsert("Board", bi);
-				//tells it explicitly to load the data
-				//component of the buffer into private memory. 
 				int retval;
-				if(raw==true)
+
+				retval = a->parseDataFromBuffer(acdc_buffer); 
+				corruptBuffer = meta.parseBuffer(acdc_buffer);
+				if(corruptBuffer)
 				{
-					string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
-					ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
-					a->writeRawDataToFile(acdc_buffer, rawofs);
-					return 0;
-				}else if(raw==false)
-				{
-					retval = a->parseDataFromBuffer(acdc_buffer); 
-					corruptBuffer = meta.parseBuffer(acdc_buffer);
-					if(corruptBuffer)
-					{
-						writeErrorLog("Metadata error not parsed correctly");
-						return 1;
-					}
-					map_meta[bi] = meta.getMetadata();
-					if(retval !=0)
-					{
-						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
-						if(retval == 3)
-						{
-							err_msg += "Because of the Metadata buffer";
-						}
-						writeErrorLog(err_msg);
-						corruptBuffer = true;
-
-						a->writeRawBufferToFile(acdc_buffer);	
-					}
-
-					if(corruptBuffer)
-					{
-						string err_msg = "got a corrupt buffer with retval ";
-						err_msg += to_string(retval);
-						writeErrorLog(err_msg);
-						return 1;
-					}
-					
-
-					datafn = outfilename + "Data_" + timestamp + ".txt";
-
-					map_data[bi] = a->returnData();
+					writeErrorLog("Metadata error not parsed correctly");
+					return 1;
 				}
+				meta.checkAndInsert("Board", bi);
+				map_meta[bi] = meta.getMetadata();
+				if(retval !=0)
+				{
+					string err_msg = "Corrupt buffer caught at PSEC data level (2)";
+					if(retval == 3)
+					{
+						err_msg += "Because of the Metadata buffer";
+					}
+					writeErrorLog(err_msg);
+					corruptBuffer = true;
+
+					a->writeRawBufferToFile(acdc_buffer);	
+				}
+
+				if(corruptBuffer)
+				{
+					string err_msg = "got a corrupt buffer with retval ";
+					err_msg += to_string(retval);
+					writeErrorLog(err_msg);
+					return 1;
+				}
+				map_data[bi] = a->returnData();
 			}
 		}
 	}
-	if(raw==false)
-	{
-		dataofs.open(datafn.c_str(), ios::app); //trunc overwrites
-		writePsecData(dataofs, boardsReadyForRead);
-	}
+	datafn = outfilename + "Data_" + timestamp + ".txt";
+	dataofs.open(datafn.c_str(), ios::app); //trunc overwrites
+	writePsecData(dataofs, boardsReadyForRead);
+
 	return 0;
 }
 
@@ -661,7 +662,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		usb->sendData(command);
 		usb->safeReadData(32);
 	}
-    enableTransfer(1); //enables the transfer of data from acdc to acc
+   	enableTransfer(1); //enables the transfer of data from acdc to acc
   	
 	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
