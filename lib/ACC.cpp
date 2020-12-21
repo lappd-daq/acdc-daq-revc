@@ -454,14 +454,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 	string datafn;
 	ofstream dataofs;
 
-	enableTransfer(0); //disables the transfer of data from acdc to acc
-	for(int bi: alignedAcdcIndices)
-	{
-		command = 0x00210000;
-		command = command | bi; //ask specific acdc coards for a transfer 
-		usb->sendData(command);
-		usb->safeReadData(32);
-	}
    	enableTransfer(1); //enables the transfer of data from acdc to acc
 	
     	int maxCounter=0;
@@ -654,14 +646,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 	sigfillset(&sa.sa_mask);
 	sigaction(SIGINT,&sa,NULL);
 
-	enableTransfer(0); //disables the transfer of data from acdc to acc
-	for(int bi: alignedAcdcIndices)
-	{
-		command = 0x00210000;
-		command = command | bi; //ask specific acdc coards for a transfer 
-		usb->sendData(command);
-		usb->safeReadData(32);
-	}
    	enableTransfer(1); //enables the transfer of data from acdc to acc
   	
 	//duration variables
