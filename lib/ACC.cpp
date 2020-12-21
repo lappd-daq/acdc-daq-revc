@@ -469,7 +469,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			emptyUsbLine();
 		}
 		
-		lastAccBuffer = usb->safeReadData(96);
+		lastAccBuffer = usb->safeReadData(32);
 		
 		if(lastAccBuffer.size()==0)
 		{
@@ -489,7 +489,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			break;
 		}
 		maxCounter++;
-		if(maxCounter>15)
+		if(maxCounter>100)
 		{
 			return 2;
 		}
@@ -687,7 +687,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 			emptyUsbLine();
 		}
 
-		lastAccBuffer = usb->safeReadData(96);
+		lastAccBuffer = usb->safeReadData(32);
 		
 		//catch empty buffers
 		if(lastAccBuffer.size()==0)
