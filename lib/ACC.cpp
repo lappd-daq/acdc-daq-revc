@@ -1338,7 +1338,7 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 				{
 					//cout << "Writing board " << bi << " and ch " << ch << ": " << map_data[bi][ch+1][enm] << endl;
 				}
-				d << (unsigned short)map_data[bi][ch+1][enm] << delim;
+				d << dec << (unsigned short)map_data[bi][ch+1][enm] << delim;
 			}
 			if(enm<(int)keys.size())
 			{
