@@ -551,8 +551,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		if(raw==true)
 		{
 			string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
-			ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
-			writeRawDataToFile(acdc_buffer, rawofs);
+			writeRawDataToFile(acdc_buffer, rawfn);
 			return 0;
 		}
 		
@@ -662,8 +661,20 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		//time the listen fuction
 		now = chrono::steady_clock::now();
 		if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
-		{
-			cout << "Have been waiting for a trigger for " << chrono::duration_cast<chrono::seconds>(now - start).count() << " seconds" << endl;
+		{	
+			string err_msg = "Have been waiting for a trigger for ";
+			err_msg += to_string(chrono::duration_cast<chrono::seconds>(now - start).count());
+			err_msg += " seconds";
+			writeErrorLog(err_msg);
+			for(int i=0; i<MAX_NUM_BOARDS; i++)
+			{
+				string err_msg = "Buffer for board ";
+				err_msg += to_string(i);
+				err_msg += " has ";
+				err_msg += to_string(lastAccBuffer.at(16+i));
+				err_msg += " words";
+				writeErrorLog(err_msg);
+			}
 			lastPrint = chrono::steady_clock::now();
 		}
 		if(chrono::duration_cast<chrono::seconds>(now - start) > timeoutDuration)
@@ -683,7 +694,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		bool usbcheck = usb->sendData(command);
 		if(usbcheck==false)
 		{
-			cout << "Emptying the usb lines" << endl;
+			writeErrorLog("Emptying the usb lines");
 			emptyUsbLine();
 		}
 
@@ -763,8 +774,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		if(raw==true)
 		{
 			string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
-			ofstream rawofs(rawfn.c_str(), ios::app); //trunc overwrites
-			writeRawDataToFile(acdc_buffer, rawofs);
+			writeRawDataToFile(acdc_buffer, rawfn);
 			return 0;
 		}
 
@@ -861,63 +871,43 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			setHardwareTrigSrc(trigMode,boardMask);
 
 			command = 0xFFB30000;
-			command = (command & (command | (boardMask << 24))) | invertMode;
+			command = (command & (command | (boardMask << 24))) | ACC_sign;
 			usb->sendData(command);
 			command = 0xFFB31000;
-			command = (command & (command | (boardMask << 24))) | detectionMode;
+			command = (command & (command | (boardMask << 24))) | ACC_detection_mode;
 			usb->sendData(command);
 			break;
 		case 3: //SMA trigger ACDC 
 			setHardwareTrigSrc(trigMode,boardMask);
 
 			command = 0xFFB20000;
-			command = (command & (command | (boardMask << 24))) | invertMode;
+			command = (command & (command | (boardMask << 24))) | ACDC_sign;
 			usb->sendData(command);
 
 			command = 0xFFB21000;
-			command = (command & (command | (boardMask << 24))) | detectionMode;
+			command = (command & (command | (boardMask << 24))) | ACDC_detection_mode;
 			usb->sendData(command);
 			break;
 		case 4: //Self trigger
 			setHardwareTrigSrc(trigMode,boardMask);
 
-			command = 0xFFB10000;
-			for(int masknum=0; masknum<5; masknum++)
-			{
-				command = (command & (command | (boardMask << 24))) | (masknum << 12) | 0xFF;
-				usb->sendData(command); 
-			}
-
-			command = 0xFFB15000;
-			command = command | ChCoin;
-			usb->sendData(command);
-
-			command = 0xFFB16000;
-			command = command | invertMode;
-			usb->sendData(command);		
-
-			command = 0xFFB17000;
-			command = command | detectionMode;
-			usb->sendData(command);		
-
-			command = 0xFFB18000;
-			command = command | enableCoin;
-			usb->sendData(command);
-
-			command = 0xFFA60000;
-			command = command | (0x1F << 12) | threshold;
-			usb->sendData(command);
-
+			goto selfsetup;
 			break;				
 		case 5: //Self trigger with SMA validation on ACC
  			setHardwareTrigSrc(trigMode,boardMask);
 
-			command = 0xFFB31001;
+			command = 0xFFB30000;
+			command = command | ACC_sign;
+			usb->sendData(command);
+
+			command = 0xFFB31000;
+			command = command | ACC_detection_mode;
 			usb->sendData(command);
 
 			command = 0xFFB40000;
 			usb->sendData(command);
-			command = 0xFFB41280;
+			command = 0xFFB41000;
+			command = command | validation_window;
 			usb->sendData(command);
 
 			goto selfsetup;
@@ -925,12 +915,18 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 		case 6: //Self trigger with SMA validation on ACDC
 			setHardwareTrigSrc(trigMode,boardMask);
 
-			command = 0xFFB31001;
+			command = 0xFFB20000;
+			command = command | ACDC_sign;
+			usb->sendData(command);
+
+			command = 0xFFB21000;
+			command = command | ACDC_detection_mode;
 			usb->sendData(command);
 
 			command = 0xFFB40000;
 			usb->sendData(command);
-			command = 0xFFB41280;
+			command = 0xFFB41000;
+			command = command | validation_window;
 			usb->sendData(command);
 
 			goto selfsetup;
@@ -940,74 +936,82 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 
 			command = 0xFFB40000;
 			usb->sendData(command);
-			command = 0xFFB41280;
+			command = 0xFFB41000;
+			command = command | validation_window;
 			usb->sendData(command);
 
 			command = 0xFFB20000;
-			command = (command & (command | (boardMask << 24))) | invertMode;
+			command = (command & (command | (boardMask << 24))) | ACDC_sign;
 			usb->sendData(command);
 			command = 0xFFB21000;
-			command = (command & (command | (boardMask << 24))) | detectionMode;
+			command = (command & (command | (boardMask << 24))) | ACDC_detection_mode;
 			usb->sendData(command);
 
 			command = 0xFFB30000;
-			command = (command & (command | (boardMask << 24))) | invertMode;
+			command = (command & (command | (boardMask << 24))) | ACC_sign;
 			usb->sendData(command);
 			command = 0xFFB31000;
-			command = (command & (command | (boardMask << 24))) | detectionMode;
+			command = (command & (command | (boardMask << 24))) | ACC_detection_mode;
 			usb->sendData(command);
+
 			break;
 		case 8:
 			setHardwareTrigSrc(trigMode,boardMask);
 
 			command = 0xFFB40000;
 			usb->sendData(command);
-			command = 0xFFB41280;
+			command = 0xFFB41000;
+			command = command | validation_window;
 			usb->sendData(command);
 
 			command = 0xFFB20000;
-			command = (command & (command | (boardMask << 24))) | invertMode;
+			command = (command & (command | (boardMask << 24))) | ACDC_sign;
 			usb->sendData(command);
 			command = 0xFFB21000;
-			command = (command & (command | (boardMask << 24))) | detectionMode;
+			command = (command & (command | (boardMask << 24))) | ACDC_detection_mode;
 			usb->sendData(command);
 
 			command = 0xFFB30000;
-			command = (command & (command | (boardMask << 24))) | invertMode;
+			command = (command & (command | (boardMask << 24))) | ACC_sign;
 			usb->sendData(command);
 			command = 0xFFB31000;
-			command = (command & (command | (boardMask << 24))) | detectionMode;
+			command = (command & (command | (boardMask << 24))) | ACC_detection_mode;
 			usb->sendData(command);
+
 			break;
 		default: // ERROR case
 			writeErrorLog("Specified trigger is not known!");
 			break;
 		selfsetup:
  			command = 0xFFB10000;
-			for(int masknum=0; masknum<5; masknum++)
+			if(SELF_psec_chip_mask.size()!=SELF_psec_channel_mask.size())
 			{
-				command = (command & (command | (boardMask << 24))) | (masknum << 12) | 0xFF;
+				writeErrorLog("Selftrigger mask are not set correct!");
+			}
+			for(int i=0; i<(int)SELF_psec_chip_mask.size(); i++)
+			{	
+				command = (command & (command | (boardMask << 24))) | (SELF_psec_chip_mask[i] << 12) | SELF_psec_channel_mask[i];
 				usb->sendData(command); 
 			}
 
-			command = 0xFFB15000;
-			command = command | ChCoin;
-			usb->sendData(command);
-
 			command = 0xFFB16000;
-			command = command | invertMode;
+			command = command | SELF_sign;
 			usb->sendData(command);		
 
 			command = 0xFFB17000;
-			command = command | detectionMode;
+			command = command | SELF_detection_mode;
 			usb->sendData(command);		
 
+			command = 0xFFB15000;
+			command = command | SELF_number_channel_coincidence;
+			usb->sendData(command);
+
 			command = 0xFFB18000;
-			command = command | enableCoin;
+			command = command | SELF_coincidence_onoff;
 			usb->sendData(command);
 
 			command = 0xFFA60000;
-			command = command | (0x1F << 12) | threshold;
+			command = command | (0x1F << 12) | SELF_threshold;
 			usb->sendData(command);
 	}
 
@@ -1149,8 +1153,9 @@ void ACC::writeErrorLog(string errorMsg)
 
 //writes data from the presently stored event
 // to file assuming file has header already
-void ACC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
+void ACC::writeRawDataToFile(vector<unsigned short> buffer, string rawfn)
 {
+	ofstream d(rawfn.c_str(), ios::app); 
 	for(unsigned short k: buffer)
 	{
 		d << hex <<  k << " ";

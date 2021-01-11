@@ -50,7 +50,7 @@ public:
   	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup.
 	void writeErrorLog(string errorMsg);
 	void writePsecData(ofstream& d, vector<int> boardsReadyForRead); 
-	void writeRawDataToFile(vector<unsigned short> buffer, ofstream& d);
+	void writeRawDataToFile(vector<unsigned short> buffer, string rawfn);
 	//-----short usb send functions. found
 	//-----at the end of the cpp file. 
 	void setHardwareTrigSrc(int src, unsigned int boardMask = 0xFF); 
@@ -60,11 +60,45 @@ public:
 	stdUSB* getUsbStream(); //returns the private usb object
 
 	//Set functions for trigger
-	void setDetectionMode(int in){detectionMode = in;}
-	void setInvertMode(int in){invertMode = in;}
-	void setChCoin(unsigned int in){ChCoin = in;}	
-	void setEnableCoin(int in){enableCoin = in;}
-	void setThreshold(int in){threshold = in;}
+	void setDetectionMode(int in, int source)
+	{
+		if(source==2)
+		{
+			ACC_detection_mode = in;
+		}else if(source==3)
+		{
+			ACDC_detection_mode = in;
+		}else if(source==4)
+		{
+			SELF_detection_mode = in;
+		}
+	}
+	
+	void setSign(int in, int source)
+	{
+		if(source==0)
+		{
+			ACC_sign = in;
+		}else if(source==1)
+		{
+			ACDC_sign = in;
+		}else if(source==2)
+		{
+			SELF_sign = in;
+		}
+	}
+	
+	void setNumChCoin(unsigned int in){SELF_number_channel_coincidence = in;}	
+	
+	void setEnableCoin(int in){SELF_coincidence_onoff = in;}
+	
+	void setThreshold(unsigned int in){SELF_threshold = in;}
+	
+	void setPsecChipMask(vector<unsigned int> in){SELF_psec_channel_mask = in;}
+	void setPsecChannelMask(vector<unsigned int> in){SELF_psec_chip_mask = in;}
+
+	void setValidationWindow(unsigned int in){validation_window=in;}
+	
 	void setTriggermode(int in){trigMode = in;}
 	int getTriggermode(){return trigMode;}
 	
@@ -78,12 +112,19 @@ private:
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port)
 	vector<ACDC*> acdcs; //a vector of active acdc boards. 
-	int detectionMode;
-	int invertMode;
-	int enableCoin;
+	int ACC_detection_mode;
+	int ACC_sign;
+	int ACDC_detection_mode;
+	int ACDC_sign;
+	int SELF_detection_mode;
+	int SELF_sign;
+	int SELF_coincidence_onoff;
 	int trigMode;
-	unsigned int ChCoin;
-	unsigned int threshold;
+	vector<unsigned int> SELF_psec_channel_mask;
+	vector<unsigned int> SELF_psec_chip_mask;
+	unsigned int SELF_number_channel_coincidence;
+	unsigned int SELF_threshold;
+	unsigned int validation_window;
 	map<int, map<int, vector<double>>> map_data;
 	map<int, map<string, unsigned short>> map_meta;
 
