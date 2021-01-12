@@ -89,7 +89,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         if(*bit == startword)
         {
         	dist= std::distance(acdcBuffer.begin(), bit);
-        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()])<6*256)
+        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()-1])<6*256)
         	{
           		continue;  
         	}
