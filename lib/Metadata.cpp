@@ -28,8 +28,6 @@ Metadata::~Metadata()
 
 
 //----------Massive parsing functions are below. 
-
-
 //two metadatas that are known externally need to be set by ACDC class.
 void Metadata::setBoardAndEvent(unsigned short board, int event)
 {
@@ -47,11 +45,8 @@ int Metadata::getEventNumber()
     return (int)metadata["Event"];
 }
 
-
-
-
 //takes the full acdcBuffer as input. 
-//splits it into a map[psec4][vector<unsigned shorts>]
+//splits it into a map[key][vector<unsigned short>]
 //which is then parsed and organized in this class. 
 //Returns:
 //false if a corrupt buffer happened
@@ -61,7 +56,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 	//if the buffer is 0 length (i.e. bad usb comms)
 	//return doing nothing
 	if(acdcBuffer.size() == 0) return true;
-	
+	int dist;
 
 	//byte that indicates the metadata of
 	//each psec chip is about to follow. 
@@ -93,7 +88,12 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 		//push the index (integer, from std::distance) to a vector. 
         if(*bit == startword)
         {
-             start_indices.push_back(std::distance(acdcBuffer.begin(), bit));
+        	dist= std::distance(acdcBuffer.begin(), bit);
+        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()])<6*256)
+        	{
+          		continue;  
+        	}
+        	start_indices.push_back(dist);
         }
 	}
 
@@ -116,7 +116,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         ofstream cb(fnnn);
         for(unsigned short k: acdcBuffer)
         {
-            cb << k << endl;
+            cb << hex << k << endl;
         }
         corruptBuffer = true;
 	}
@@ -151,7 +151,6 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         trigger_info[ch] = *bit;
     }
     //trigger_info.insert(pair<int, unsigned short>(ch, bit));
-
     unsigned short combined_trigger = acdcBuffer[7792];
 
     //Here is where bad access errors could occur. 

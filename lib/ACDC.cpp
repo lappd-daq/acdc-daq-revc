@@ -56,11 +56,11 @@ void ACDC::writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer)
 //0: all good
 int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
 {
-	lastAcdcBuffer = acdc_buffer;
+	vector<unsigned short> acdcBuffer = acdc_buffer;
 
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
-	if(lastAcdcBuffer.size() == 0)
+	if(acdcBuffer.size() == 0)
 	{
 		string err_msg = "You tried to parse ACDC data without pulling/setting an ACDC buffer";
 		writeErrorLog(err_msg);
@@ -70,123 +70,110 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
 	//clear the data map prior.
 	data.clear();
 
-	//word that indicates the data is
-	//about to start for each psec chip.
-	unsigned short startword = 0xF005; 
-	unsigned short endword = 0xBA11; //just for safety, uses the 256 sample rule. 
-	int channelCount = 0; //iterates every 256 samples and when a startword is found 
-	int sampleCount = 0; //for checking if we hit 256 samples. 
-	double sampleValue = 0.0; //temporary holder for the sample in ADC-counts/mV
-	bool dataFlag = false; //if we are currently on psec-data bytes. 
-	vector<double> waveform; //the current channel's data as a vector of doubles. 
-	//a for loop through the whole buffer and save states
-	for(unsigned short byte: lastAcdcBuffer)
+	//if the buffer is 0 length (i.e. bad usb comms)
+	//return doing nothing
+	if(acdcBuffer.size() == 0)
 	{
-		if(byte == startword && !dataFlag)
-		{
-			//re-initialize for a new PSEC chip
-			dataFlag = true;
-			sampleCount = 0;
-			channelCount++;
-			continue;
-		}
-		
-		if(byte == endword && dataFlag)
-		{
-			dataFlag = false;
-			//push the last waveform to data.
-			if(waveform.size() != NUM_SAMP)
-			{
-				//got a corrupt data buffer, throw event away
-				string err_msg = "Got a corrupt buffer with ";
-				err_msg += to_string(waveform.size());
-				err_msg += " number of samples on a chip after saving ";
-				err_msg += to_string(channelCount);
-				err_msg += " channels (1)";
-				writeErrorLog(err_msg);
-				data.clear();
+		return true;
+	}
+	int dist;
+	int channel_count=1;
 
-				return 1;
-			} 
-			//cout << "Channel " << channelCount << " gets " << waveform.size() << " samples " << endl;
-			data[channelCount] = waveform;
-			waveform.clear();
-			//dont iterate channel, itl happen at
-			//the startword if statement. 
-			continue;
-		}
+	//byte that indicates the metadata of
+	//each psec chip is about to follow. 
+	const unsigned short startword = 0xF005; 
+	unsigned short endword = 0xBA11;
+	unsigned short endoffile = 0x4321;
 
-		if(dataFlag)
+	//indices of elements in the acdcBuffer
+	//that correspond to the byte ba11
+	vector<int> start_indices; 
+	vector<unsigned short>::iterator bit;
+
+	//loop through the data and find locations of startwords. 
+    //this can be made more efficient if you are having efficiency problems.
+	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
+	{
+		//the iterator is at an element with startword value. 
+		//push the index (integer, from std::distance) to a vector. 
+        if(*bit == startword)
+        {
+        	dist= std::distance(acdcBuffer.begin(), bit);
+        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()])<(6*256+15))
+        	{
+            	continue;        
+        	}
+        	start_indices.push_back(dist);
+        }
+	}
+
+    bool corruptBuffer = false;
+	if(start_indices.size() != NUM_PSEC)
+	{
+        string err_msg = "In parsing ACDC buffer, found ";
+        err_msg += to_string(start_indices.size());
+        err_msg += " psec data flag bytes.";
+        writeErrorLog(err_msg);
+        string fnnn = "acdc-corrupt-psec-buffer.txt";
+        cout << "Printing to file : " << fnnn << endl;
+        ofstream cb(fnnn);
+        for(unsigned short k: acdcBuffer)
+        {
+            cb << hex << k << endl;
+        }
+        corruptBuffer = true;
+	}
+
+	for(int i: start_indices)
+	{
+		//re-use buffer iterator from above
+		//to set starting point. 
+		bit = acdcBuffer.begin() + i + 1; //the 1 is to start one element after the startword
+		//while we are not at endword, 
+		//append elements to ac_info
+		vector<double> infobytes;
+		while(*bit != endword && *bit != endoffile)
 		{
-			//here is where we assume every
-			//channel to have NUM_SAMP samples. 
-			if(sampleCount == NUM_SAMP)
+			infobytes.push_back(*bit);
+			if(infobytes.size()==NUM_SAMP)
 			{
-				sampleCount = 0;
-				if(waveform.size() != NUM_SAMP)
-				{
-					//got a corrupt data buffer, throw event away
-					string err_msg = "Got a corrupt buffer with ";
-					err_msg += to_string(waveform.size());
-					err_msg += " number of samples on a chip after saving ";
-					err_msg += to_string(channelCount);
-					err_msg += " channels (2)";
-					writeErrorLog(err_msg);
-					data.clear();
-					return 1;
-				} 
-				//cout << "Channel " << channelCount << " gets " << waveform.size() << " samples " << endl;
-				data[channelCount] = waveform;
-				waveform.clear();
-				channelCount++;
+				data[channel_count] = infobytes;
+				infobytes.clear();
+				channel_count++;
 			}
-			if(channelCount > NUM_CH)
-			{
-				//we are done here.
-				channelCount--; //reset to = NUM_CH 
-				break; //could also be continue.
-			}
+			++bit;
+		}	
+	}
 
-			//---these lines fill a waveform vector
-			//---that will be inserted into the data map
-			sampleValue = (double)byte; //adc counts
+	if(data.size()!=NUM_CH)
+	{
+		cout << "error 1" << endl;
+		corruptBuffer = true; 
+	}
 
-			//apply a pedestal subtraction
-			//sampleValue = sampleValue - peds[bi][channelCount-1][sampleCount]; //adc counts
-			//apply a linearity corrected mV conversion
-			//sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
-			
-			//save in the vector. vector is saved in the data map when
-			//the channel count is iterated. 
-			waveform.push_back(sampleValue); 
-			sampleCount++;
-			continue;
+	for(int i=0; i<NUM_CH; i++)
+	{
+		if(data[i+1].size()!=NUM_SAMP)
+		{
+			cout << "error 2" << endl;
 		}
 	}
 
-	//depending on the type of corrupt buffer, the above loop
-	//will happily record fewer than NUM_CH. 
-	if(channelCount != NUM_CH)
-	{
-		string err_msg = "Got a corrupt buffer with ";
-		err_msg += to_string(channelCount);
-		err_msg += " number of channels";
-		writeErrorLog(err_msg);
-		data.clear();
-		return 1;
-	}
-
-	bool corruptBuffer;
-	corruptBuffer = meta.parseBuffer(acdc_buffer);
+	bool corruptMetaBuffer;
+	corruptMetaBuffer = meta.parseBuffer(acdcBuffer);
 
 	map_meta = meta.getMetadata();
 
-	if(corruptBuffer)
+	if(corruptMetaBuffer)
 	{
 		return 3;
 	}	
-	return 0;
+	if(corruptBuffer)
+	{
+		return 2;
+	}
 
+	return 0;
 }
 
 //writes data from the presently stored event

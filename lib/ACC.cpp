@@ -1026,7 +1026,7 @@ void ACC::dumpData()
 
 	//send and read. 
 	usb->sendData(command);
-	usb->safeReadData(ACDC_BUFFERSIZE + 2);
+	usb->safeReadData(SAFE_BUFFERSIZE + 2);
 }
 
 //short circuits the Config - class based

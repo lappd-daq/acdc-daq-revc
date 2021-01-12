@@ -29,7 +29,7 @@ include_directories(${source_dir}/include)
 include_directories(${source_dir}/local/include)
 
 
-add_compile_options(-g -Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector -Wno-unused-variable) 
+add_compile_options(-o -Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector -Wno-unused-variable) 
 
 add_library(ACC
         ${LIBRARY_SOURCE_DIR}/ACC.cpp)

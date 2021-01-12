@@ -60,7 +60,7 @@ stdUSB::~stdUSB() {
   }
 }
 
-/**
+/*
  * Finds USBFX2 device, opens it, sets configuration, and claims interface.
  *  Using of goto is mad bad. Check out linux kernel sources.
  * @param  
