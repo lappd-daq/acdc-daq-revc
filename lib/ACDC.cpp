@@ -99,7 +99,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
         if(*bit == startword)
         {
         	dist= std::distance(acdcBuffer.begin(), bit);
-        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()-1])<(6*256+15))
+        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()])<(6*256+15))
         	{
             	continue;        
         	}

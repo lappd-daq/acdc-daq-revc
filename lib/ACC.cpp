@@ -547,14 +547,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		}
 
 		
-		//If raw data is requested save and return 0
-		if(raw==true)
-		{
-			string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
-			writeRawDataToFile(acdc_buffer, rawfn);
-			return 0;
-		}
-		
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
 		//and checking each index 
@@ -564,43 +556,54 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			{
 				int retval;
 
-				retval = a->parseDataFromBuffer(acdc_buffer); 
-				corruptBuffer = meta.parseBuffer(acdc_buffer);
-				if(corruptBuffer)
+				//If raw data is requested save and return 0
+				if(raw==true)
 				{
-					writeErrorLog("Metadata error not parsed correctly");
-					return 1;
-				}
-				meta.checkAndInsert("Board", bi);
-				map_meta[bi] = meta.getMetadata();
-				if(retval !=0)
+					string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
+					writeRawDataToFile(acdc_buffer, rawfn);
+					return 0;
+				}else
 				{
-					string err_msg = "Corrupt buffer caught at PSEC data level (2)";
-					if(retval == 3)
+					retval = a->parseDataFromBuffer(acdc_buffer); 
+					corruptBuffer = meta.parseBuffer(acdc_buffer);
+					if(corruptBuffer)
 					{
-						err_msg += "Because of the Metadata buffer";
+						writeErrorLog("Metadata error not parsed correctly");
+						return 1;
 					}
-					writeErrorLog(err_msg);
-					corruptBuffer = true;
+					meta.checkAndInsert("Board", bi);
+					map_meta[bi] = meta.getMetadata();
+					if(retval !=0)
+					{
+						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
+						if(retval == 3)
+						{
+							err_msg += "Because of the Metadata buffer";
+						}
+						writeErrorLog(err_msg);
+						corruptBuffer = true;
 
-					a->writeRawBufferToFile(acdc_buffer);	
-				}
+						a->writeRawBufferToFile(acdc_buffer);	
+					}
 
-				if(corruptBuffer)
-				{
-					string err_msg = "got a corrupt buffer with retval ";
-					err_msg += to_string(retval);
-					writeErrorLog(err_msg);
-					return 1;
+					if(corruptBuffer)
+					{
+						string err_msg = "got a corrupt buffer with retval ";
+						err_msg += to_string(retval);
+						writeErrorLog(err_msg);
+						return 1;
+					}
+					map_data[bi] = a->returnData();
 				}
-				map_data[bi] = a->returnData();
 			}
 		}
 	}
-	datafn = outfilename + "Data_" + timestamp + ".txt";
-	dataofs.open(datafn.c_str(), ios::app); //trunc overwrites
-	writePsecData(dataofs, boardsReadyForRead);
-
+	if(raw==false)
+	{
+		datafn = outfilename + "Data_" + timestamp + ".txt";
+		dataofs.open(datafn.c_str(), ios::app); //trunc overwrites
+		writePsecData(dataofs, boardsReadyForRead);
+	}
 	return 0;
 }
 
@@ -770,14 +773,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 			return 1;
 		}
 
-		//If raw data is requested save and return 0
-		if(raw==true)
-		{
-			string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
-			writeRawDataToFile(acdc_buffer, rawfn);
-			return 0;
-		}
-
 		//save this buffer a private member of ACDC
 		//by looping through our acdc vector
 		//and checking each index 
@@ -787,47 +782,56 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 			{
 				int retval;
 
-				//parśe raw data to channel data and metadata
-				retval = a->parseDataFromBuffer(acdc_buffer); 
-				meta.checkAndInsert("Board", bi);
-				corruptBuffer = meta.parseBuffer(acdc_buffer);
-				
-				//check metadata for corrupt buffer
-				if(corruptBuffer)
+				//If raw data is requested save and return 0
+				if(raw==true)
 				{
-					writeErrorLog("Metadata error not parsed correctly");
-					return 1;
-				}
-				map_meta[bi] = meta.getMetadata();
-
-				//check channel data for corrupt buffer
-				if(retval !=0)
+					string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
+					writeRawDataToFile(acdc_buffer, rawfn);
+				}else
 				{
-					string err_msg = "Corrupt buffer caught at PSEC data level (2)";
-					if(retval == 3)
+					//parśe raw data to channel data and metadata
+					retval = a->parseDataFromBuffer(acdc_buffer); 
+					meta.checkAndInsert("Board", bi);
+					corruptBuffer = meta.parseBuffer(acdc_buffer);
+					
+					//check metadata for corrupt buffer
+					if(corruptBuffer)
 					{
-						err_msg += "Because of the Metadata buffer";
+						writeErrorLog("Metadata error not parsed correctly");
+						return 1;
 					}
-					writeErrorLog(err_msg);
-					corruptBuffer = true;
-					a->writeRawBufferToFile(acdc_buffer);	
+					map_meta[bi] = meta.getMetadata();
+
+					//check channel data for corrupt buffer
+					if(retval !=0)
+					{
+						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
+						if(retval == 3)
+						{
+							err_msg += "Because of the Metadata buffer";
+						}
+						writeErrorLog(err_msg);
+						corruptBuffer = true;
+						a->writeRawBufferToFile(acdc_buffer);	
+					}
+					if(corruptBuffer)
+					{
+						string err_msg = "got a corrupt buffer with retval ";
+						err_msg += to_string(retval);
+						writeErrorLog(err_msg);
+						return 1;
+					}				
+					map_data[bi] = a->returnData();
 				}
-				if(corruptBuffer)
-				{
-					string err_msg = "got a corrupt buffer with retval ";
-					err_msg += to_string(retval);
-					writeErrorLog(err_msg);
-					return 1;
-				}				
-				map_data[bi] = a->returnData();
 			}
 		}
 	}
-
-	datafn = outfilename + "Data_" + timestamp + ".txt";
-	dataofs.open(datafn.c_str(), ios::app); 
-	writePsecData(dataofs, boardsReadyForRead);
-	
+	if(raw==false)
+	{
+		datafn = outfilename + "Data_" + timestamp + ".txt";
+		dataofs.open(datafn.c_str(), ios::app); 
+		writePsecData(dataofs, boardsReadyForRead);
+	}
 	return 0;
 }
 
