@@ -404,7 +404,7 @@ int main()
 	
 	auto t1 = std::chrono::high_resolution_clock::now();
 	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
-	cout << "It took "<< dt <<" second(s)."<< endl;
+	cout << "It took "<< dt <<" second(s). Equal to a rate of " << eventNumber/dt << " Hz" << endl;
 	return 1;
 }
 
