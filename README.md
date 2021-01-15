@@ -20,7 +20,7 @@ To install the software use
 $ cmake . -Bbuild
 $ cmake --build build -- -jN
 ```
-with N the number of available CPU cores
+with N the number of available CPU cores you want to work with. Never chose all your available cores.
 
 ## Errorlog is available
 As soon as the software throws an error of any kind an errorlog.txt is generated with a timestamp. This way unexpected failures can be taken care of.
