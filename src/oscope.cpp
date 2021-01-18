@@ -308,7 +308,7 @@ int main()
 		{
 			acc.softwareTrigger();
 		}
-		retval = acc.listenForAcdcData(triggermode, true, "Oscope_b");
+		retval = acc.listenForAcdcData(triggermode, false, "Oscope_b");
 		switch(retval)
 		{
 			case 0:
