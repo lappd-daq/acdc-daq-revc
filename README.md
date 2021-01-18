@@ -22,6 +22,22 @@ $ cmake --build build -- -jN
 ```
 with N the as the number of cores you want to dedicate to cmake. Never use all available cores!
 
+## Info frames
+Both the ACC as well as the ACDC offer an info frame to give the user information about the current firmware versions as well as creation dates.
+```bash
+$ For the ACC use: ./bin/debug 0x00200000 r
+$ For the ACDC use: ./bin/debug 0xFFB54000 0xFFD00000 0x0021000N r
+```
+with N the corresponding port on the ACC that the ACDC is plugged into as a number from 0 to 7. This will print a 32 word response in the console with following structure:
+| Word | ACC response | ACDC response | Value |
+|------|--------------|---------------|-------|
+| 0 | 1234 | 1234 | Startword |
+| 1 | AAAA | BBBB | Identification | 
+| 2 |  ->  |  ->  | Firmware version number |
+| 3 |  ->  |  ->  | Firmware date year |
+| 4 |  ->  |  ->  | Firmware date month/year |
+| .. | .. | .. | .. |
+
 ## IMPORTANT NOTICE
 It is best to run all commands from the main folder via `./bin/command` to be sure all paths are used correctly.
 
