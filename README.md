@@ -14,14 +14,6 @@ $ sudo apt install libusb-1.0-0-dev cmake gnuplot
 gcc/g++ version optimally is >7.1 
 cmake version is >3.1
 
-## Installation
-To install the software use
-```bash
-$ cmake . -Bbuild
-$ cmake --build build -- -jN
-```
-with N the number of available CPU cores you want to work with. Never chose all your available cores.
-
 ## Errorlog is available
 As soon as the software throws an error of any kind an errorlog.txt is generated with a timestamp. This way unexpected failures can be taken care of.
 
@@ -80,24 +72,32 @@ To use full extend of the software use `./bin/listenForData` (important is that 
 4. Set the calibration mode on/off (The calibration mode clones the signal input via on the SMA on ACC/ACDC to all available PSEC channels). Only use this if there is nothing connected to the Samtec connector.
 
 5. Choose between raw output or calibrated output.
-```bash
-raw mode on - creates a txt file with the data NOT parsed from the raw data stream. It will be one event per line with 7795 words
-raw mode off - creates a txt file with the data parsed from the raw data stream. See below for teh structure
-```
+This has been removed due to offline calibration. The current version of the software only does an online calibration for oscope mode. In save mode the output will always be raw.
 
-6. Choose between Oscope mode or save mode:(will be back)
+6. Choose between Oscope mode or save mode:
 ```bash
 oscope mode - only one file is saved and overwritten constantly. This file is then plotted by gnuplot into five windows, each being one psec chip.
 save mode   - a specified number of waveforms will be saved on the computer as txt files. In addition Metadata will be saved in the same file.
 ```
 Please note that there is an option to use oscope mode with 60 channels (2 ACDC boards) but it is so far untested.
 
-### onlySetup (Don't use)
+### onlySetup
 Executes only the setup portion of the `./bin/listenForData` command.
 
-### onlyListen (Don't use)
+### onlyListen (experimental)
 Executes only the data-readout portion of the `./bin/listenForData` command. This way data can be read without complete setup of the trigger every time.
 If a different trigger is desired `./onlySetup` needs to be executed again.
+
+### reorder (Currently in progress)
+This command `./bin/reorder <file> boardID value boardID value ...`can be used to reorder recorded data in between recording data and analysis. If the command is executed with additional arguments an additional offset will be included in the reordering. There are two timing based reorder reasons:
+1. Because the trigger is always in one of 8 clock cycles the correct clock cycle has to be set as the first one. This will always be done by the command by reading the metadata and extracting the cycle as a number from 0 to 7. Each clock cycle being 32 samples the allows for a reorder of the samples by a multiples of 32.
+2. Because of the pcb layout, track delays and also the fpga delays, as well as the number of processing clocks used in the fpga the data will have an additional offset. This will be a fixed number for every board between 0 and 255 representing the samples of a waveform. This value has to be determined experimentally and will not change unless the hardware or firmware is adapted.
+The command will read the input of the additional arguments and reorder the data according to the value that is set for the corresponding boards. Boards not included in the command won't be reordered. 
+
+| Board ID| value | Board ID| value | Board ID| value | Board ID| value |
+|---------|-------|---------|-------|---------|-------|---------|-------|    
+| 0 | 0-255 | 2 | 0-255 | 4 | 0-255 | 6 | 0-255 |
+| 1 | 0-255 | 3 | 0-255 | 5 | 0-255 | 7 | 0-255 |
 
 ## Settings for the Oscilloscope
 All settings and plot commands for the oscilloscope are handled in seperate gnu files. 

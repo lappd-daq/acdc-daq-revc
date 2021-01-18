@@ -42,6 +42,7 @@ public:
 	void writeRawBufferToFile(vector<unsigned short> lastAcdcBuffer); //write raw buffer to file for debugging 
 	void writeRawDataToFile(vector<unsigned short> buffer, ofstream& d); //write raw buffer to file to save as regular data 
 	void writeErrorLog(string errorMsg); //write errorlog with timestamps
+	void writeDataForOscope(string datafn);
 
 	//----------read data from file
 	void readPedsFromFile(ifstream& ifs, int bi); //read the pedestal values from file 

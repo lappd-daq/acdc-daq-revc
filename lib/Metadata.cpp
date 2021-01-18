@@ -97,6 +97,21 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         }
 	}
 
+    if(start_indices.size()>NUM_PSEC)
+    {
+        for(int k=0; k<start_indices.size()-1; k++)
+        {
+            if(start_indices[k+1]-start_indices[k]>6*256+14)
+            {
+                //nothing
+            }else
+            {
+                start_indices.erase(start_indices.begin()+(k+1));
+                k--;
+            }
+        }
+    }
+
 	//I have found experimentally that sometimes
     //the ACC sends an ACDC buffer that has 8001 elements
     //(correct) but has BAD data, i.e. with extra ADC samples

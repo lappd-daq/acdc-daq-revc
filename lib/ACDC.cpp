@@ -107,6 +107,21 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
         }
 	}
 
+	if(start_indices.size()>NUM_PSEC)
+	{
+		for(int k=0; k<start_indices.size()-1; k++)
+		{
+			if(start_indices[k+1]-start_indices[k]>6*256+14)
+			{
+				//nothing
+			}else
+			{
+				start_indices.erase(start_indices.begin()+(k+1));
+				k--;
+			}
+		}
+	}
+
     bool corruptBuffer = false;
 	if(start_indices.size() != NUM_PSEC)
 	{
@@ -187,6 +202,28 @@ void ACDC::writeRawDataToFile(vector<unsigned short> buffer, ofstream& d)
 	d << endl;
 	d.close();
 	return;
+}
+
+//writes data from the presently stored event
+// to file assuming file has header already
+void ACDC::writeDataForOscope(string datafn)
+{
+	ofstream d;
+	d.open(datafn.c_str(), ios_base::trunc); //trunc overwrites	
+	//map_meta = meta.getMetadata();
+	string delim = " ";
+
+	map<int, vector<double>> print_data;
+
+	for(int row = 1; row<=NUM_SAMP; row++)
+	{
+		d << row << delim;
+		for(int column=1; column<=NUM_CH; column++)
+		{
+			d << print_data[column][row-1] << delim; 
+		}
+		d << endl;
+	}
 }
 
 //reads pedestals to file in a new

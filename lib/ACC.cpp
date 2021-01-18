@@ -593,12 +593,17 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 						writeErrorLog(err_msg);
 						return 1;
 					}
+					if(strcmp(timestamp,"Oscope_b")==0)
+					{
+						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+						a->writeDataForOscope(datafn);
+					}	
 					map_data[bi] = a->returnData();
 				}
 			}
 		}
 	}
-	if(raw==false)
+	if(raw==false && strcmp(timestamp,"Oscope_b")!=0)
 	{
 		datafn = outfilename + "Data_" + timestamp + ".txt";
 		dataofs.open(datafn.c_str(), ios::app); //trunc overwrites
@@ -820,13 +825,18 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 						err_msg += to_string(retval);
 						writeErrorLog(err_msg);
 						return 1;
+					}
+					if(strcmp(timestamp,"Oscope_b")==0)
+					{
+						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+						a->writeDataForOscope(datafn);
 					}				
 					map_data[bi] = a->returnData();
 				}
 			}
 		}
 	}
-	if(raw==false)
+	if(raw==false && strcmp(timestamp,"Oscope_b")!=0)
 	{
 		datafn = outfilename + "Data_" + timestamp + ".txt";
 		dataofs.open(datafn.c_str(), ios::app); 

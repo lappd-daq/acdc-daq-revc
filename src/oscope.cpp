@@ -1,4 +1,5 @@
 #include "ACC.h"
+#include "Scope.h"
 #include <sstream>
 #include <string>
 #include <iostream>
@@ -11,15 +12,6 @@
 #include <numeric>
 #include <ctime>
 #include <vector>
-
-string getTime()
-{
-    auto now = std::chrono::system_clock::now();
-    auto in_time_t = std::chrono::system_clock::to_time_t(now);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%Y%d%m_%H%M%S");
-    return ss.str();
-}
 
 void writeErrorLog(string errorMsg)
 {
@@ -281,18 +273,7 @@ int main()
 		}
 	}
 
-	while(true)
-	{
-		std::cout << "Please select which boards to use from 0x00 to 0xFF (default)" << std::endl;
-		
-		std::cin >> boardmask;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(sizeof(boardmask) == 4)
-		{
-			break;
-		}
-	}
+	boardmask=0xFF;
 
 	while(true)
 	{
@@ -306,73 +287,36 @@ int main()
 			break;
 		}
 	}
-
-	while(true)
-	{
-		std::cout << "Do you want to use raw mode(0/1)? Yes means you get a file with 7795 words in hex, No will give the usual data format." << std::endl;
-
-		cin >> rawMode;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(rawMode==0)
-		{
-			rawBool = false;
-			break;
-		}else if(rawMode==1)
-		{
-			rawBool = true;
-			break;
-		}
-	}
-
-
-	while(true)
-	{
-		std::cout << "How many events do you want to record?" << std::endl;
-
-		cin >> eventNumber;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(eventNumber>0)
-		{
-			flag = false;
-			break;
-		}
-	}		
-
-
+	
 	retval = acc.initializeForDataReadout(triggermode, boardmask, calibMode);
 	if(retval != 0)
 	{
 		cout << "Initialization failed!" << endl;
 		return 0;
 	}
+
 	acc.emptyUsbLine();
 	acc.dumpData();
-	timestamp = getTime();
-	eventCounter = 0;
-	failCounter = 0;
-	int reTime = 500;
-	int mult = 1;
-	auto t0 = std::chrono::high_resolution_clock::now();
 
-	while(eventCounter<eventNumber)
+	Scope scp;
+	int first=0;
+	failCounter = 0;
+
+	while(true)
 	{
 		if(triggermode == 1)
 		{
 			acc.softwareTrigger();
 		}
-		if(eventCounter>=reTime*mult)
-		{
-			timestamp = getTime();
-			mult++;
-		}
-		retval = acc.listenForAcdcData(triggermode, rawBool, timestamp);
+		retval = acc.listenForAcdcData(triggermode, true, "Oscope_b");
 		switch(retval)
 		{
 			case 0:
-				//std::cout << "Successfully found data and parsed" << std::endl;
-				eventCounter++;
+				if(first==0)
+				{
+					//scp.plot(true,1);
+					first++;
+				}
 				failCounter=0;
 				break;
 			case 1:
@@ -402,9 +346,6 @@ int main()
 		}
 	}
 	
-	auto t1 = std::chrono::high_resolution_clock::now();
-	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
-	cout << "It took "<< dt <<" second(s)."<< endl;
 	return 1;
 }
 
