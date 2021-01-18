@@ -43,8 +43,8 @@ add_library(myusb
 add_library(Metadata
         ${LIBRARY_SOURCE_DIR}/Metadata.cpp)
 
-add_library(Config
-        ${LIBRARY_SOURCE_DIR}/Config.cpp)
+#add_library(Config
+#        ${LIBRARY_SOURCE_DIR}/Config.cpp)
 add_library(Scope
 		${LIBRARY_SOURCE_DIR}/Scope.cpp)
 
