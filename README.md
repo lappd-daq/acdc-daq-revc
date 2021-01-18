@@ -14,6 +14,17 @@ $ sudo apt install libusb-1.0-0-dev cmake gnuplot
 gcc/g++ version optimally is >7.1 
 cmake version is >3.1
 
+## Installation
+To install the software use
+```bash
+$ cmake . -Bbuild
+$ cmake --build build -- -jN 
+```
+with N the as the number of cores you want to dedicate to cmake. Never use all available cores!
+
+## IMPORTANT NOTICE
+It is best to run all commands from the main folder via `./bin/command` to be sure all paths are used correctly.
+
 ## Errorlog is available
 As soon as the software throws an error of any kind an errorlog.txt is generated with a timestamp. This way unexpected failures can be taken care of.
 
@@ -38,7 +49,7 @@ This function is used to generate a config file for the connected ACDC boards. T
 It is advides to execute  `./bin/calibratePed` after `./bin/setPed <...>` but not the other way around. This way the set pedestal value is more precisely determined via averaging. 
 
 ### debug
-The `./bin/debug` command allows the user to send seperate usb commands to the acc/acdc board. There is no limit to commands on can append to `./bin/debug`, they just need to be seperated by ' '. To get a response after a command use `command r`.
+The `./bin/debug` command allows the user to send seperate usb commands to the acc/acdc board. There is no limit to commands on can append to `./bin/debug`, they just need to be seperated by ' '. To get a response after a command use `command r`. The list of commands can be found in the docx int the repository.
 **THIS IS A COMMAND FOR DEBUGGING ONLY. BE CAREFUL USING IT FOR NORMAL OPERATION**
 
 ### connectedBoards
@@ -67,24 +78,21 @@ To use full extend of the software use `./bin/listenForData` (important is that 
 - self trigger threshold, coincidence minimum number of channels, sign, detection mode, etc...
 - the validation window start and length  
 ```
-3. Choose the acdc boards you want to set the settings for. Bits `31-24` each represent one of the 8 acdc board slots on the acc card. By entering an 8bit hex number from `0x00` to `0xFF` individual boards can be selected. If all boards shlould be set the same use `0xFF`, which is also the default. To set individual settings it is best to use `./bin/onlySetup` since its can be run repedetly without reading data.
+
+3. Choose the acdc boards you want to set the settings for. Bits `31-24` each represent one of the 8 acdc board slots on the acc card. By entering an 8bit hex number from `0x00` to `0xFF` individual boards can be selected. If all boards shlould be set the same use `0xFF`, which is also the default. It is advised to use `0xFF` if special requirements are not needed.
 
 4. Set the calibration mode on/off (The calibration mode clones the signal input via on the SMA on ACC/ACDC to all available PSEC channels). Only use this if there is nothing connected to the Samtec connector.
 
 5. Choose between raw output or calibrated output.
-This has been removed due to offline calibration. The current version of the software only does an online calibration for oscope mode. In save mode the output will always be raw.
-
-6. Choose between Oscope mode or save mode:
 ```bash
-oscope mode - only one file is saved and overwritten constantly. This file is then plotted by gnuplot into five windows, each being one psec chip.
-save mode   - a specified number of waveforms will be saved on the computer as txt files. In addition Metadata will be saved in the same file.
+raw mode on - outputs the psec data as it raw data stream, i.e. a vector of 7795 hex words.
+raw mode off - outputs the raw data stream of the psec chips in a parsed form, seperating data and metadata and ordering them for channels. See later for the data format.
 ```
-Please note that there is an option to use oscope mode with 60 channels (2 ACDC boards) but it is so far untested.
 
-### onlySetup
+### onlySetup (DON'T USE)
 Executes only the setup portion of the `./bin/listenForData` command.
 
-### onlyListen (experimental)
+### onlyListen (DON'T USE)
 Executes only the data-readout portion of the `./bin/listenForData` command. This way data can be read without complete setup of the trigger every time.
 If a different trigger is desired `./onlySetup` needs to be executed again.
 
@@ -98,6 +106,9 @@ The command will read the input of the additional arguments and reorder the data
 |---------|-------|---------|-------|---------|-------|---------|-------|    
 | 0 | 0-255 | 2 | 0-255 | 4 | 0-255 | 6 | 0-255 |
 | 1 | 0-255 | 3 | 0-255 | 5 | 0-255 | 7 | 0-255 |
+
+### oscope
+Oscope works similar to the `listenForData` command, but requires less input. Other than the previous command this one doesn't reqord data but simply overwrites one existing data file to continuesly plot data. Use `Crtl+C` to exit the oscope mode.
 
 ## Settings for the Oscilloscope
 All settings and plot commands for the oscilloscope are handled in seperate gnu files. 
