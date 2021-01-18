@@ -314,7 +314,7 @@ int main()
 			case 0:
 				if(first==0)
 				{
-					scp.plot(true,1);
+					scp.plot(true);
 					first++;
 				}
 				failCounter=0;
