@@ -99,7 +99,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 
     if(start_indices.size()>NUM_PSEC)
     {
-        for(int k=0; k<start_indices.size()-1; k++)
+        for(int k=0; k<(int)start_indices.size()-1; k++)
         {
             if(start_indices[k+1]-start_indices[k]>6*256+14)
             {
