@@ -595,7 +595,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 					}
 					if(strcmp(timestamp.c_str(),"Oscope_b")==0)
 					{
-						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+						datafn = outfilename + "Data_Oscope.txt";
 						a->writeDataForOscope(datafn);
 					}	
 					map_data[bi] = a->returnData();
@@ -828,7 +828,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 					}
 					if(strcmp(timestamp.c_str(),"Oscope_b")==0)
 					{
-						datafn = outfilename + "Data_Oscope_b" + to_string(bi) + ".txt";
+						datafn = outfilename + "Data_Oscope.txt";
 						a->writeDataForOscope(datafn);
 					}				
 					map_data[bi] = a->returnData();
