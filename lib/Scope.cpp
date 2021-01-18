@@ -35,20 +35,14 @@ int Scope::init()
 	return (0);
 }
 
-int Scope::plot(bool rawMode, int bNum)
+int Scope::plot(bool rawMode)
 {	
 	if(rawMode)
 	{
 		send_cmd("load \"./oscilloscope/settings_raw.gnu\"");
 	}
+	send_cmd("load \"./oscilloscope/liveplot.gnu\"");
 
-	if(bNum == 0)
-	{
-		send_cmd("load \"./oscilloscope/liveplot.gnu\"");
-	}else
-	{
-		send_cmd("load \"./oscilloscope/liveplot_b2.gnu\"");
-	}
 	return (0);
 }
 
