@@ -213,17 +213,16 @@ void ACDC::writeDataForOscope(string datafn)
 	//map_meta = meta.getMetadata();
 	string delim = " ";
 
-	map<int, vector<double>> print_data;
-
 	for(int row = 1; row<=NUM_SAMP; row++)
 	{
 		d << row << delim;
 		for(int column=1; column<=NUM_CH; column++)
 		{
-			d << print_data[column][row-1] << delim; 
+			d << data[column][row-1] << delim; 
 		}
 		d << endl;
 	}
+	d.close();
 }
 
 //reads pedestals to file in a new
