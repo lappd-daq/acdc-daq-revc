@@ -86,11 +86,12 @@ int main()
 		std::cout << "(6) Self-trigger with validation ACDC" << std::endl;
 		std::cout << "(7) SMA ACC with validation SMA ACDC" << std::endl;
 		std::cout << "(8) SMA ACDC with validation SMA ACC" << std::endl;
+		std::cout << "(9) Pulse-per-second trigger mode" << std::endl;
 
 		std::cin >> triggermode;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-		if(triggermode==1)
+		if(triggermode==1 || triggermode==9)
 		{
 			break;
 		}
