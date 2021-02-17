@@ -993,6 +993,8 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			usb->sendData(command);
 
 			break;
+		case 9:
+			setHardwareTrigSrc(trigMode,boardMask);
 		default: // ERROR case
 			writeErrorLog("Specified trigger is not known!");
 			break;
