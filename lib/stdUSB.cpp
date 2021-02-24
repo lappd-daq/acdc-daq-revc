@@ -89,12 +89,20 @@ bool stdUSB::createHandles(int device_count) { //default device_count=1
     }
 
     // create a global handle for the usb device
+    /*
     stdHandle = libusb_open_device_with_vid_pid(usb_context,USBFX2_VENDOR_ID,USBFX2_PRODUCT_ID);
     if (stdHandle == INVALID_HANDLE_VALUE) {
         cout << "Failed to open device. handle=" << stdHandle << endl;
         return false;
-    } 
+    }*/ 
 
+    retval = libusb_open(dev,&stdHandle);
+    if(retval!=0)
+    {
+	cout << "Failed to open device. retval=" << retval << endl;
+        return false;    
+    }
+	
     retval = libusb_set_configuration(stdHandle, CNFNO);
     if (retval != 0) {
         cout << "Failed to set USB Configuration " << CNFNO << ". Return value: " << retval << endl;
