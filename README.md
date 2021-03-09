@@ -155,37 +155,37 @@ The entries are the following:
 
 | Line | Metakey | Line | Metakey | Line | Metakey |
 |-----------|-----------|-----------|-----------|-----------|-----------|
-| 0 | Boardnumber | 34 | feedback_count_4 | 68 | self_trigger_rate_count_psec_ch8 |
-| 1 | DLLVDD_setting_0 | 35 | feedback_target_count_0 | 69 | self_trigger_rate_count_psec_ch9 |
+| 0 | Boardnumber | 34 | feedback_count_4 | 68 | self_trigger_rate_count_psec_ch28 |
+| 1 | DLLVDD_setting_0 | 35 | feedback_target_count_0 | 69 | self_trigger_rate_count_psec_ch29 |
 | 2 | DLLVDD_setting_1 | 36 | feedback_target_count_1 | 70 | selftrigger_threshold_setting_0 |
 | 3 | DLLVDD_setting_2 | 37 | feedback_target_count_2 | 71 | selftrigger_threshold_setting_1 |
 | 4 | DLLVDD_setting_3 | 38 | feedback_target_count_3 | 72 | selftrigger_threshold_setting_2 |
 | 5 | DLLVDD_setting_4 | 39 | feedback_target_count_4 | 73 | selftrigger_threshold_setting_3 |
 | 6 | PROVDD_setting_0 | 40 | self_trigger_rate_count_psec_ch0 | 74 | selftrigger_threshold_setting_4 |
 | 7 | PROVDD_setting_1 | 41 | self_trigger_rate_count_psec_ch1 | 75 | timestamp_0 |
-| 8 | PROVDD_setting_2 | 42 | self_trigger_rate_count_psec_ch10 | 76 | timestamp_1 |
-| 9 | PROVDD_setting_3 | 43 | self_trigger_rate_count_psec_ch11 | 77 | timestamp_2 |
-| 10 | PROVDD_setting_4 | 44 | self_trigger_rate_count_psec_ch12 | 78 | timestamp_3 |
-| 11 | VCDL_count_hi_0 | 45 | self_trigger_rate_count_psec_ch13 | 79 | trigger_acc_detection_mode |
-| 12 | VCDL_count_hi_1 | 46 | self_trigger_rate_count_psec_ch14 | 80 | trigger_acc_invert |
-| 13 | VCDL_count_hi_2 | 47 | self_trigger_rate_count_psec_ch15 | 81 | trigger_mode |
-| 14 | VCDL_count_hi_3 | 48 | self_trigger_rate_count_psec_ch16 | 82 | trigger_self_coin |
-| 15 | VCDL_count_hi_4 | 49 | self_trigger_rate_count_psec_ch17 | 83 | trigger_self_detection_mode |
-| 16 | VCDL_count_lo_0 | 50 | self_trigger_rate_count_psec_ch18 | 84 | trigger_self_sign |
-| 17 | VCDL_count_lo_1 | 51 | self_trigger_rate_count_psec_ch19 | 85 | trigger_self_threshold_0 |
-| 18 | VCDL_count_lo_2 | 52 | self_trigger_rate_count_psec_ch2 | 86 | trigger_self_threshold_1 |
-| 19 | VCDL_count_lo_3 | 53 | self_trigger_rate_count_psec_ch20 | 87 | trigger_self_threshold_2 |
-| 20 | VCDL_count_lo_4 | 54 | self_trigger_rate_count_psec_ch21 | 88 | trigger_self_threshold_3 |
-| 21 | Vbias_setting_0 | 55 | self_trigger_rate_count_psec_ch22 | 89 | trigger_self_threshold_4 |
-| 22 | Vbias_setting_1 | 56 | self_trigger_rate_count_psec_ch23 | 90 | trigger_selfmask_0 |
-| 23 | Vbias_setting_2 | 57 | self_trigger_rate_count_psec_ch24 | 91 | trigger_selfmask_1 |
-| 24 | Vbias_setting_3 | 58 | self_trigger_rate_count_psec_ch25 | 92 | trigger_selfmask_2 |
-| 25 | Vbias_setting_4 | 59 | self_trigger_rate_count_psec_ch26 | 93 | trigger_selfmask_3 |
-| 26 | clockcycle_bits | 60 | self_trigger_rate_count_psec_ch27 | 94 | trigger_selfmask_4 |
-| 27 | combined_trigger_rate_count | 61 | self_trigger_rate_count_psec_ch28 | 95 | trigger_sma_detection_mode |
-| 28 | event_count_hi | 62 | self_trigger_rate_count_psec_ch29 | 96 | trigger_sma_invert |
-| 29 | event_count_lo | 63 | self_trigger_rate_count_psec_ch3 | 97 | trigger_validation_window_length |
-| 30 | feedback_count_0 | 64 | self_trigger_rate_count_psec_ch4 | 98 | trigger_validation_window_start |
-| 31 | feedback_count_1 | 65 | self_trigger_rate_count_psec_ch5 | 100-255 | 0 |
-| 32 | feedback_count_2 | 66 | self_trigger_rate_count_psec_ch6 | | |    
-| 33 | feedback_count_3 | 67 | self_trigger_rate_count_psec_ch7 | | |   
+| 8 | PROVDD_setting_2 | 42 | self_trigger_rate_count_psec_ch2 | 76 | timestamp_1 |
+| 9 | PROVDD_setting_3 | 43 | self_trigger_rate_count_psec_ch3 | 77 | timestamp_2 |
+| 10 | PROVDD_setting_4 | 44 | self_trigger_rate_count_psec_ch4 | 78 | timestamp_3 |
+| 11 | VCDL_count_hi_0 | 45 | self_trigger_rate_count_psec_ch5 | 79 | trigger_acc_detection_mode |
+| 12 | VCDL_count_hi_1 | 46 | self_trigger_rate_count_psec_ch6 | 80 | trigger_acc_invert |
+| 13 | VCDL_count_hi_2 | 47 | self_trigger_rate_count_psec_ch7 | 81 | trigger_mode |
+| 14 | VCDL_count_hi_3 | 48 | self_trigger_rate_count_psec_ch8 | 82 | trigger_self_coin |
+| 15 | VCDL_count_hi_4 | 49 | self_trigger_rate_count_psec_ch9 | 83 | trigger_self_detection_mode |
+| 16 | VCDL_count_lo_0 | 50 | self_trigger_rate_count_psec_ch10 | 84 | trigger_self_sign |
+| 17 | VCDL_count_lo_1 | 51 | self_trigger_rate_count_psec_ch11 | 85 | trigger_self_threshold_0 |
+| 18 | VCDL_count_lo_2 | 52 | self_trigger_rate_count_psec_ch12 | 86 | trigger_self_threshold_1 |
+| 19 | VCDL_count_lo_3 | 53 | self_trigger_rate_count_psec_ch13 | 87 | trigger_self_threshold_2 |
+| 20 | VCDL_count_lo_4 | 54 | self_trigger_rate_count_psec_ch14 | 88 | trigger_self_threshold_3 |
+| 21 | Vbias_setting_0 | 55 | self_trigger_rate_count_psec_ch15 | 89 | trigger_self_threshold_4 |
+| 22 | Vbias_setting_1 | 56 | self_trigger_rate_count_psec_ch16 | 90 | trigger_selfmask_0 |
+| 23 | Vbias_setting_2 | 57 | self_trigger_rate_count_psec_ch17 | 91 | trigger_selfmask_1 |
+| 24 | Vbias_setting_3 | 58 | self_trigger_rate_count_psec_ch18 | 92 | trigger_selfmask_2 |
+| 25 | Vbias_setting_4 | 59 | self_trigger_rate_count_psec_ch19 | 93 | trigger_selfmask_3 |
+| 26 | clockcycle_bits | 60 | self_trigger_rate_count_psec_ch20 | 94 | trigger_selfmask_4 |
+| 27 | combined_trigger_rate_count | 61 | self_trigger_rate_count_psec_ch21 | 95 | trigger_sma_detection_mode |
+| 28 | event_count_hi | 62 | self_trigger_rate_count_psec_ch22 | 96 | trigger_sma_invert |
+| 29 | event_count_lo | 63 | self_trigger_rate_count_psec_ch23 | 97 | trigger_validation_window_start |
+| 30 | feedback_count_0 | 64 | self_trigger_rate_count_psec_ch24 | 98 | trigger_validation_window_length |
+| 31 | feedback_count_1 | 65 | self_trigger_rate_count_psec_ch25 | 100-255 | 0 |
+| 32 | feedback_count_2 | 66 | self_trigger_rate_count_psec_ch26 | | |    
+| 33 | feedback_count_3 | 67 | self_trigger_rate_count_psec_ch27 | | |   
