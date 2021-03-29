@@ -86,8 +86,6 @@ bool stdUSB::createHandles(int device_count) { //default device_count=1
 
     //Initilize the devices as ubs device
     libusb_device *dev = init(device_count);
-    //Context is not neccessary in this case, thusset to NULL
-    libusb_context *usb_context = NULL;
 
     if(dev == nullptr)
     {
@@ -126,7 +124,6 @@ bool stdUSB::createHandles(int device_count) { //default device_count=1
 
 //New trial version of stdUSB::init()
 struct libusb_device* stdUSB::init(int device_count){
-    libusb_context *usb_context = NULL;
     libusb_device **list = NULL;
     ssize_t count = 0;
     int retval;
@@ -175,7 +172,12 @@ bool stdUSB::freeHandle(void) { //throw(...)
     	cout << "Couldn't release interface" << endl;
     	return false; 
     }
-    libusb_reset_device(stdHandle);	
+    retval = reset();
+    if(!retval)
+    {
+    	cout << "Couldn't reset device" << endl;
+    	return false; 
+    }
     libusb_close(stdHandle);
 
     return true;
