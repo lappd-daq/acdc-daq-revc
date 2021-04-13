@@ -30,6 +30,7 @@ int main()
 	int eventCounter;
 	int eventNumber;
   vector<int> boards = {};
+	string timestamp;
 
 	ACC acc;
 
@@ -61,7 +62,7 @@ int main()
   }
   
   //--------------------------------------------------------------------
-	acc.setHardwareTrigSrc(int src, unsigned int boardMask)
+  acc.setHardwareTrigSrc(9, boardmask)
   eventCounter=0;
 	timestamp = getTime();
   while(eventCounter<eventNumber)
