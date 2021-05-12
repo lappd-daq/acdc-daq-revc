@@ -85,7 +85,7 @@ public:
 
 	//----------general functions
 	void usbWakeup(); //wakes the usb line up by asking for an info frame of the acc
-	void resetACDCs(); //resets the acdc boards 
+	void resetACDC(); //resets the acdc boards 
 	stdUSB* getUsbStream(); //returns the private usb object
 	void emptyUsbLine(); //attempting to remove the crashes due to non-empty USB lines at startup
 	void dumpData(); //tells ACDCs to clear their ram
