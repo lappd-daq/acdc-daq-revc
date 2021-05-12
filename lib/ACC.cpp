@@ -222,7 +222,7 @@ int ACC::createAcdcs()
 		std::cout << "Trying to reset ACDC boards" << std::endl;
 		unsigned int command = 0xFFFF0000;
 		usb->sendData(command);
-		usleep(10000);
+		usleep(1000000);
 		int retval = whichAcdcsConnected();
 		if(retval==-1)
 		{
