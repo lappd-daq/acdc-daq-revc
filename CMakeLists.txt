@@ -69,7 +69,7 @@ add_executable(PPS ${EXECUTABLE_SOURCE_DIR}/PPS.cpp)
 #add_executable(onlySetup ${EXECUTABLE_SOURCE_DIR}/onlySetup.cpp)
 #add_executable(DataCalibToConfig ${EXECUTABLE_SOURCE_DIR}/DataCalibToConfig.cpp)
 
-target_link_libraries(connectedBoards PUBLIC myusb)
+target_link_libraries(connectedBoards PUBLIC ACC myusb)
 target_link_libraries(calibratePed PUBLIC ACC)
 target_link_libraries(setPed PUBLIC ACC myusb)
 target_link_libraries(debug PUBLIC myusb)
