@@ -216,8 +216,18 @@ int ACC::createAcdcs()
 
 	//parses the last acc buffer to 
 	//see which ACDCs are aligned. 
-	whichAcdcsConnected(); 
-
+	int retval = whichAcdcsConnected(); 
+	if(retval==-1)
+	{
+		unsigned int command = 0xFFFF0000;
+		usb->sendData(command);
+		usleep(10000);
+		int retval = whichAcdcsConnected();
+		if(retval==-1)
+		{
+			std::cout << "After ACDC reset no changes, still no boards found" << std::endl;
+		}
+	}
 	//if there are no ACDCs, return 0
 	if(alignedAcdcIndices.size() == 0)
 	{
@@ -336,7 +346,7 @@ void ACC::clearAcdcs()
 }
 
 
-vector<int> ACC::whichAcdcsConnected()
+int ACC::whichAcdcsConnected()
 {
 	//New sequence to ask the ACC to reply with the number of boards connected 
 	enableTransfer(0); //Disables the PSEC4 frame data transfer for this sequence. Has to be set to HIGH later again
@@ -360,7 +370,7 @@ vector<int> ACC::whichAcdcsConnected()
 		string err_msg = "Something wrong with ACC buffer, size: ";  
 		err_msg += to_string(lastAccBuffer.size());
 		writeErrorLog(err_msg);
-		return connectedBoards;
+		return 0;
 	}
 
 	//for explanation of the "2", see INFO1 of CC_STATE in packetUSB.vhd
@@ -384,11 +394,15 @@ vector<int> ACC::whichAcdcsConnected()
 			connectedBoards.push_back(i);
 		}
 	}
+	if(connectedBoards.size()==0)
+	{
+		return -1;
+	}
 
 	//this allows no vector clearing to be needed
 	alignedAcdcIndices = connectedBoards;
 	cout << "Connected Boards: " << connectedBoards.size() << endl;
-	return connectedBoards;
+	return 1;
 }
 
 //sends software trigger to all connected boards. 
