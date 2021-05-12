@@ -62,7 +62,7 @@ int main()
   }
   
   //--------------------------------------------------------------------
-  acc.setHardwareTrigSrc(9, boardmask)
+  acc.setHardwareTrigSrc(9, boardmask);
   eventCounter=0;
 	timestamp = getTime();
   while(eventCounter<eventNumber)
