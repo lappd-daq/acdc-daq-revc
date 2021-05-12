@@ -1273,8 +1273,9 @@ void ACC::usbWakeup()
 //timestamps, dll, self-trigger, etc. 
 void ACC::resetACDCs()
 {
-	unsigned int command = 0xFFFF0000;
-	usb->sendData(command);
+		unsigned int command = 0xFFFF0000;
+		usb->sendData(command);
+		usleep(1000000);
 }
 
 
