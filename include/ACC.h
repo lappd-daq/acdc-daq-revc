@@ -77,7 +77,7 @@ public:
 	void enableTransfer(int onoff=0); //enables or disables the transfer from acdc to acc 
 	int readAcdcBuffers(bool raw = false, string timestamp ="invalidTime"); //special version of listenForAcdcData made for the software trigger. Does not listen for a trigger flag but expects a software trigger
 	int listenForAcdcData(int trigMode, bool raw = false, string timestamp="invalidTime"); //fucnction to listen for trigger flags and reading data
-
+	int whichAcdcsConnected(); //checks which ACDC boards are connected
   	//----------write functions
 	void writeErrorLog(string errorMsg); //writes an errorlog with timestamps for debugging
 	void writePsecData(ofstream& d, vector<int> boardsReadyForRead); //main write for the data map
@@ -117,7 +117,7 @@ private:
 
 	//-----------private functions for the setup and initilization
 	vector<unsigned short> readAccBuffer(); //reads the ACC once for setup 
-	int whichAcdcsConnected(); //checks which ACDC boards are connected
+	
 	vector<unsigned short> sendAndRead(unsigned int command, int buffsize); //wakes the usb line, only called in constructor. 
 	bool checkUSB(); //checking usb line and returning or couting appropriately.  
 	void clearAcdcs(); //memory deallocation for acdc vector. 
