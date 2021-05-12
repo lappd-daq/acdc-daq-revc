@@ -11,15 +11,12 @@ using namespace std;
 int main()
 {
 	ACC acc;
-	stdUSB* usb;
 
 	int retval = acc.whichAcdcsConnected(); 
 	if(retval==-1)
 	{
 		std::cout << "Trying to reset ACDC boards" << std::endl;
-		unsigned int command = 0xFFFF0000;
-		usb->sendData(command);
-		usleep(1000000);
+		acc.resetACDC();
 		int retval = acc.whichAcdcsConnected();
 		if(retval==-1)
 		{
