@@ -381,8 +381,12 @@ int ACC::whichAcdcsConnected()
 	//and last two bytes. 
 	
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
-	{
-		if(lastAccBuffer.at(16+i) != 32 && lastAccBuffer.at(16+i) != 0)
+	{	
+		if(lastAccBuffer.at(16+i) == 32)
+		{
+			cout << "Board "<< i << " with 32 words after ACC buffer read, ";
+			cout << "Board "<< i << " connected" << endl;
+		}else if(lastAccBuffer.at(16+i) != 32 && lastAccBuffer.at(16+i) != 0)
 		{
 			return -1;
 		}else if(lastAccBuffer.at(16+i) != 32)
