@@ -382,7 +382,11 @@ int ACC::whichAcdcsConnected()
 	
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
 	{
-		if(lastAccBuffer.at(16+i) != 32){
+		if(lastAccBuffer.at(16+i) != 32 && lastAccBuffer.at(16+i) != 0)
+		{
+			return -1;
+		}else if(lastAccBuffer.at(16+i) != 32)
+		{
 			cout << "Board "<< i << " not with 32 words after ACC buffer read ";
 			cout << "Size " << lastAccBuffer.at(16+i)  << endl;
 			continue;
