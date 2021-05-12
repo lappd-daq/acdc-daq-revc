@@ -117,7 +117,7 @@ private:
 
 	//-----------private functions for the setup and initilization
 	vector<unsigned short> readAccBuffer(); //reads the ACC once for setup 
-	vector<int> whichAcdcsConnected(); //checks which ACDC boards are connected
+	int whichAcdcsConnected(); //checks which ACDC boards are connected
 	vector<unsigned short> sendAndRead(unsigned int command, int buffsize); //wakes the usb line, only called in constructor. 
 	bool checkUSB(); //checking usb line and returning or couting appropriately.  
 	void clearAcdcs(); //memory deallocation for acdc vector. 
