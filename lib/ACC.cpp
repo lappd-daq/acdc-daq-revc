@@ -1271,7 +1271,7 @@ void ACC::usbWakeup()
 //This is sent down to the ACDCs
 //and has them individually reset their
 //timestamps, dll, self-trigger, etc. 
-void ACC::resetACDCs()
+void ACC::resetACDC()
 {
 		unsigned int command = 0xFFFF0000;
 		usb->sendData(command);
