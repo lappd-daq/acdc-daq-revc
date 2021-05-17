@@ -1,33 +1,17 @@
 #include "ACDC.h"
 #include <bitset>
 #include <sstream>
+#include <fstream>
+#include <chrono> 
+#include <iomanip>
+#include <numeric>
+#include <ctime>
 
 using namespace std;
 
-ACDC::ACDC()
-{
-	trigMask = 0xFFFFFF;
-	convertMaskToChannels();
-}
+ACDC::ACDC(){}
 
-
-
-ACDC::~ACDC()
-{
-	cout << "Calling acdc detructor" << endl;
-}
-
-void ACDC::printMetadata(bool verbose)
-{
-	meta.standardPrint();
-	if(verbose) meta.printAllMetadata();
-}
-
-void ACDC::setTriggerMask(unsigned int mask)
-{
-	trigMask = mask;
-	convertMaskToChannels();
-}
+ACDC::~ACDC(){}
 
 int ACDC::getBoardIndex()
 {
@@ -39,203 +23,170 @@ void ACDC::setBoardIndex(int bi)
 	boardIndex = bi;
 }
 
-unsigned int ACDC::getTriggerMask()
-{
-	return trigMask;
-}
-
-vector<int> ACDC::getMaskedChannels()
-{
-	return maskedChannels;
-}
-
-//reads the value of unsigned int trigMask
-//and converts it to a vector of ints 
-//corresponding to channels that are masked, 
-//i.e. inactive in the trigger logic. 
-void ACDC::convertMaskToChannels()
-{ 
-
-	//clear the vector
-	maskedChannels.clear();
-	for(int i = 0; i < NUM_CH; i++)
-	{
-		if((trigMask & (1 << i)))
-		{
-			//channel numbering starts at 1
-			maskedChannels.push_back(i + 1); 
-		}
-	}
-}
-
-
-
-bool ACDC::setLastBuffer(vector<unsigned short> b, int eventNumber)
-{
-	lastAcdcBuffer = b;
-	bool goodBuffer = true;
-	goodBuffer = meta.parseBuffer(b); //the BIG buffer parsing function that fills data/metadata maps
-	meta.setBoardAndEvent((unsigned short)boardIndex, eventNumber);
-	return goodBuffer;
-
-}
-
-//utility for debugging
-void ACDC::writeRawBufferToFile()
-{
-    string fnnn = "raw-acdc-buffer.txt";
-    cout << "Printing ACDC buffer to file : " << fnnn << endl;
-    ofstream cb(fnnn);
-    for(unsigned short k: lastAcdcBuffer)
-    {
-        printByte(cb, k);
-        cb << endl;
-    }
-    cb.close();
-}
-
-void ACDC::printByte(ofstream& ofs, unsigned short val)
-{
-    ofs << val << ", "; //decimal
-    stringstream ss;
-    ss << std::hex << val;
-    string hexstr(ss.str());
-    ofs << hexstr << ", "; //hex
-    unsigned n;
-    ss >> n;
-    bitset<16> b(n);
-    ofs << b.to_string(); //binary
-}
-
-
 //looks at the last ACDC buffer and organizes
-//all of the data into a data map. 
+//all of the data into a data map. The boolean
+//argument toggles whether you want to subtract
+//pedestals and convert ADC-counts to mV live
+//or keep the data in units of raw ADC counts. 
 //retval: 
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer()
+int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
 {
+	vector<unsigned short> acdcBuffer = acdc_buffer;
+
 	//make sure an acdc buffer has been
 	//filled. if not, there is nothing to be done.
-	if(lastAcdcBuffer.size() == 0)
+	if(acdcBuffer.size() == 0)
 	{
-		cout << "You tried to parse ACDC data without pulling/setting an ACDC buffer" << endl;
-		return 2;
-	}
-
-	if(peds.size() == 0 || conv.size() == 0)
-	{
-		cout << "Found no pedestal or LUT conversion data but was told to parse data." << endl;
-		cout << "Please check the ACC class for an initialization of this calibration data" << endl;
+		string err_msg = "You tried to parse ACDC data without pulling/setting an ACDC buffer";
+		writeErrorLog(err_msg);
 		return 2;
 	}
 
 	//clear the data map prior.
 	data.clear();
 
-	//word that indicates the data is
-	//about to start for each psec chip.
-	unsigned short startword = 0xF005; 
-	unsigned short endword = 0xBA11; //just for safety, uses the 256 sample rule. 
-	int channelCount = 0; //iterates every 256 samples and when a startword is found 
-	int sampleCount = 0; //for checking if we hit 256 samples. 
-	double sampleValue = 0.0; //temporary holder for the sample in ADC-counts/mV
-	bool dataFlag = false; //if we are currently on psec-data bytes. 
-	vector<double> waveform; //the current channel's data as a vector of doubles. 
-	//a for loop through the whole buffer and save states
-	for(unsigned short byte: lastAcdcBuffer)
+	//if the buffer is 0 length (i.e. bad usb comms)
+	//return doing nothing
+	if(acdcBuffer.size() == 0)
 	{
-		if(byte == startword && !dataFlag)
-		{
-			//re-initialize for a new PSEC chip
-			dataFlag = true;
-			sampleCount = 0;
-			channelCount++;
-			continue;
-		}
-		
-		if(byte == endword)
-		{
-			dataFlag = false;
-			//push the last waveform to data. 
-			data[channelCount] = waveform;
-			waveform.clear();
-			//dont iterate channel, itl happen at
-			//the startword if statement. 
-			continue;
-		}
+		return true;
+	}
+	int dist;
+	int channel_count=1;
 
-		if(dataFlag)
-		{
-			//here is where we assume every
-			//channel to have NUM_SAMP samples. 
-			if(sampleCount == NUM_SAMP)
-			{
-				sampleCount = 0;
-				data[channelCount] = waveform;
-				waveform.clear();
-				channelCount++;
-			}
-			if(channelCount > NUM_CH)
-			{
-				//we are done here. 
-				break; //could also be continue.
-			}
+	//byte that indicates the metadata of
+	//each psec chip is about to follow. 
+	const unsigned short startword = 0xF005; 
+	unsigned short endword = 0xBA11;
+	unsigned short endoffile = 0x4321;
 
-			//---these lines fill a waveform vector
-			//---that will be inserted into the data map
-			sampleValue = (double)byte; //adc counts
-			//apply a pedestal subtraction
-			sampleValue = sampleValue - peds[channelCount][sampleCount]; //adc counts
-			//apply a linearity corrected mV conversion
-			sampleValue = sampleValue*conv[channelCount][sampleCount]; //mV
-			//save in the vector. vector is saved in the data map when
-			//the channel count is iterated. 
-			waveform.push_back(sampleValue); 
-			sampleCount++;
-			continue;
+	//indices of elements in the acdcBuffer
+	//that correspond to the byte ba11
+	vector<int> start_indices; 
+	vector<unsigned short>::iterator bit;
+
+	//loop through the data and find locations of startwords. 
+    //this can be made more efficient if you are having efficiency problems.
+	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
+	{
+		//the iterator is at an element with startword value. 
+		//push the index (integer, from std::distance) to a vector. 
+        if(*bit == startword)
+        {
+        	dist= std::distance(acdcBuffer.begin(), bit);
+        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()])<(6*256+15))
+        	{
+            	continue;        
+        	}
+        	start_indices.push_back(dist);
+        }
+	}
+
+	if(start_indices.size()>NUM_PSEC)
+	{
+		for(int k=0; k<(int)start_indices.size()-1; k++)
+		{
+			if(start_indices[k+1]-start_indices[k]>6*256+14)
+			{
+				//nothing
+			}else
+			{
+				start_indices.erase(start_indices.begin()+(k+1));
+				k--;
+			}
 		}
-		
+	}
+
+    bool corruptBuffer = false;
+	if(start_indices.size() != NUM_PSEC)
+	{
+        string err_msg = "In parsing ACDC buffer, found ";
+        err_msg += to_string(start_indices.size());
+        err_msg += " psec data flag bytes.";
+        writeErrorLog(err_msg);
+        string fnnn = "acdc-corrupt-psec-buffer.txt";
+        cout << "Printing to file : " << fnnn << endl;
+        ofstream cb(fnnn);
+        for(unsigned short k: acdcBuffer)
+        {
+            cb << hex << k << endl;
+        }
+        corruptBuffer = true;
+	}
+
+	for(int i: start_indices)
+	{
+		//re-use buffer iterator from above
+		//to set starting point. 
+		bit = acdcBuffer.begin() + i + 1; //the 1 is to start one element after the startword
+		//while we are not at endword, 
+		//append elements to ac_info
+		vector<double> infobytes;
+		while(*bit != endword && *bit != endoffile)
+		{
+			infobytes.push_back(*bit);
+			if(infobytes.size()==NUM_SAMP)
+			{
+				data[channel_count] = infobytes;
+				infobytes.clear();
+				channel_count++;
+			}
+			++bit;
+		}	
+	}
+
+	if(data.size()!=NUM_CH)
+	{
+		cout << "error 1" << endl;
+		corruptBuffer = true; 
+	}
+
+	for(int i=0; i<NUM_CH; i++)
+	{
+		if(data[i+1].size()!=NUM_SAMP)
+		{
+			cout << "error 2" << endl;
+		}
+	}
+
+	bool corruptMetaBuffer;
+	corruptMetaBuffer = meta.parseBuffer(acdcBuffer);
+
+	map_meta = meta.getMetadata();
+
+	if(corruptMetaBuffer)
+	{
+		return 3;
+	}	
+	if(corruptBuffer)
+	{
+		return 2;
 	}
 
 	return 0;
-
 }
 
 
-//writes data from the presently stored event
-// to file assuming file has header already
-void ACDC::writeDataToFile(ofstream& d, ofstream& m)
+void ACDC::writeErrorLog(string errorMsg)
 {
-	string delim = " ";
-
-	//metadata part is simple and contained
-	//in that class. 
-	meta.writeMetadataToFile(m, delim);
-
-	int evno = meta.getEventNumber();
-
-	vector<double> waveform;//temporary storage of wave data
-	int channel; //temporary storage of channel
-	map<int, vector<double>>::iterator it;
-	for(it = data.begin(); it != data.end(); ++it)
-	{
-		waveform = it->second;
-		channel = it->first;
-		//first three columns are event, board, channel
-		d << evno << delim << boardIndex << delim << channel;
-		//loop the vector and print values
-		for(double s: waveform)
-		{
-			d << delim << s;
-		}
-		d << endl;
-	}
-	return;
+    string err = "errorlog.txt";
+    cout << "------------------------------------------------------------" << endl;
+    cout << errorMsg << endl;
+    cout << "------------------------------------------------------------" << endl;
+    ofstream os_err(err, ios_base::app);
+    auto now = std::chrono::system_clock::now();
+    auto in_time_t = std::chrono::system_clock::to_time_t(now);
+    std::stringstream ss;
+    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
+    os_err << "------------------------------------------------------------" << endl;
+    os_err << ss.str() << endl;
+    os_err << errorMsg << endl;
+    os_err << "------------------------------------------------------------" << endl;
+    os_err.close();
 }
-
-
 
 
 

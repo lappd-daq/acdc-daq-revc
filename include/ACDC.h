@@ -1,4 +1,4 @@
-#ifndef _ACDC_H_INCLUDED
+#ifndef _ACDC_H_INCLUDEDreadDataFromFile
 #define _ACDC_H_INCLUDED
 
 #include <iostream>
@@ -6,54 +6,47 @@
 #include <string>
 #include <vector>
 #include <map>
-#include "Metadata.h"
+#include "Metadata.h" //load metadata class
 
 using namespace std;
 
-#define NUM_CH 30
-#define NUM_PSEC 5
-#define NUM_SAMP 256
-#define NUM_CH_PER_CHIP 6
+#define NUM_CH 30 //maximum number of channels for one ACDC board
+#define NUM_PSEC 5 //maximum number of psec chips on an ACDC board
+#define NUM_SAMP 256 //maximum number of samples of one waveform
+#define NUM_CH_PER_CHIP 6 //maximum number of channels per psec chips
 
 class ACDC
 {
 public:
-	ACDC();
-	~ACDC();
+	ACDC(); //constructor
+	~ACDC(); //deconstructor
 
+	//----------local return functions
+	int getBoardIndex(); //get the current board index from the acdc
+	int getNumCh() {int a = NUM_CH; return a;} //returns the number of total channels per acdc
+	int getNumPsec() {int a = NUM_PSEC; return a;} //returns the number of psec chips on an acdc
+	int getNumSamp() {int a = NUM_SAMP; return a;} //returns the number of samples for on event
+	map<int, vector<double>> returnData(){return data;} //returns the entire data map | index: channel < samplevector
+	map<string, unsigned short> returnMeta(){return map_meta;} //returns the entire meta map | index: metakey < value 
 
-	void printMetadata(bool verbose = false);
+	//----------local set functions
+	void setBoardIndex(int bi); // set the board index for the current acdc
 
-	void setTriggerMask(unsigned int mask);
-	unsigned int getTriggerMask(); //get the trig mask (this syntax used)
-	int getBoardIndex();
-	void setBoardIndex(int bi);
-	int getNumCh() {int a = NUM_CH; return a;}
-	int getNumPsec() {int a = NUM_PSEC; return a;}
-	int getNumSamp() {int a = NUM_SAMP; return a;}
-	vector<int> getMaskedChannels(); //get this private var. 
-	bool setLastBuffer(vector<unsigned short> b, int eventNumber = 0); //sets metadata buffer, returns false if bad buffer
-	void setPeds(map<int, vector<double>>& p){peds = p;} //sets pedestal map
-	void setConv(map<int, vector<double>>& c){conv = c;} //sets adc-conversion map
-	int parseDataFromBuffer(); //parses only the psec data component of the ACDC buffer
-	void writeDataToFile(ofstream& d, ofstream& m); //writes data and metadata to filestream
-	void writeRawBufferToFile();
-	void printByte(ofstream& ofs, unsigned short val);
+	//----------parse function for data stream 
+	int parseDataFromBuffer(vector<unsigned short> acdc_buffer); //parses only the psec data component of the ACDC buffer
 
-
+	//----------write data to file
+	void writeErrorLog(string errorMsg); //write errorlog with timestamps
 
 private:
-	int boardIndex;
-	vector<unsigned short> lastAcdcBuffer;
-	unsigned int trigMask;
-	vector<int> maskedChannels;
-	Metadata meta;
-	map<int, vector<double>> data; //data[channel][waveform samples] channel starts at 1. 
-	map<int, vector<double>> peds; //peds[channel][waveform samples] from a calibration file.
-	map<int, vector<double>> conv; //conversion factor from adc counts to mv from calibration file. 
+	//----------all neccessary classes
+	Metadata meta; //calls the metadata class for file write
 
-	void convertMaskToChannels();
-	void fillData(); //parses the acdc buffer and fills the data map
+	//----------all neccessary global variables
+	int boardIndex; //var: represents the boardindex for the current board
+	vector<unsigned short> lastAcdcBuffer; //most recently received ACDC buffer
+	map<int, vector<double>> data; //entire data map | index: channel < samplevector
+	map<string, unsigned short> map_meta; //entire meta map | index: metakey < value
 };
 
 #endif
