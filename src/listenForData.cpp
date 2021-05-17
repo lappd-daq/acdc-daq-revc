@@ -66,9 +66,11 @@ int main()
 
 	stringstream ss3;
 	stringstream ss4;
+	stringstream ss5;
 
 	unsigned int valstr;
 	unsigned int valstr2;
+	unsigned int valstr3;
 
 	string timestamp;
 
@@ -82,6 +84,9 @@ int main()
 	
 	std::vector<unsigned int> vec_psec_chip;
 	std::vector<unsigned int> vec_psec_channel;
+
+	int BeamgateMultiplexer;
+	int PPS_divide_ratio;
 
 	ACC acc;
 
@@ -149,8 +154,13 @@ int main()
 				ss4 << std::hex << (int)(validationWindow*40);
 				valstr2 = std::stoul(ss4.str(),nullptr,16);
 
+				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
+				std::cout << "Enter : ";
+				cin >> BeamgateMultiplexer;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+		
 				acc.setValidationStart(valstr);
 				acc.setValidationWindow(valstr2);
+				acc.setPPSBeamMultiplexer(BeamgateMultiplexer);
 				acc.setSign(invertMode, 2);
 
 				goto selfsetup;
@@ -233,8 +243,13 @@ int main()
 				ss4 << std::hex << (int)(validationWindow*40);
 				valstr2 = std::stoul(ss4.str(),nullptr,16);
 
+				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
+				std::cout << "Enter : ";
+				cin >> BeamgateMultiplexer;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+
 				acc.setValidationStart(valstr);
 				acc.setValidationWindow(valstr2);
+				acc.setPPSBeamMultiplexer(BeamgateMultiplexer);
 
 				flag = false;
 
@@ -300,6 +315,13 @@ int main()
 				break;
 		}
 	}
+
+	std::cout << "What should be the PPS divide ratio in seconds?" << std::endl;
+	std::cout << "Enter in s: ";
+	cin >> PPS_divide_ratio;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+	ss5 << std::hex << (int)(PPS_divide_ratio);
+	valstr3 = std::stoul(ss5.str(),nullptr,16);
+	acc.setPPSRatio(valstr3);
 
 	while(true)
 	{
