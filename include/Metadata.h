@@ -6,36 +6,42 @@
 #include <vector>
 #include <fstream>
 
-#define NUM_PSEC 5
-#define NUM_CH 30
+#define NUM_PSEC 5 //maximum number of psec chips on an ACDC board
+#define NUM_CH 30 //maximum number of channels for one ACDC board
+#define NUM_CH_PER_PSEC 6 //maximum number of channels per psec chips
 
 using namespace std;
 
 class Metadata
 {
 public:
-	Metadata();
+	Metadata(); //empty constructor
 	Metadata(vector<unsigned short> acdcBuffer); //if a buffer exists already to parse
-	~Metadata();
+	~Metadata(); //deconstructor
 
-	bool parseBuffer(vector<unsigned short> acdcBuffer); //returns success or fail 1/0
-	vector<int> getMaskedChannels(); //returns a vector format of masked channels
-	void standardPrint(); //lite print
-	void printByte(ofstream& ofs, unsigned short val);
-	void printAllMetadata(); //full raw print. 
-	void printKeysToFile(ofstream& m, string delim); //prints a one line header of all metadata keys
-	void writeMetadataToFile(ofstream& m, string delim); //prints one long line with all metadata to the stream
-	//two metadatas that are known externally need to be set by ACDC class.
-	void setBoardAndEvent(unsigned short board, int event); 
-	int getEventNumber();
+	//----------local return functions
+	int getEventNumber(); //returns the event number
+	map<string, unsigned short> getMetadata(){return metadata;} //returns the metadata map | metakey < value
+	vector<string> getMetaKeys(){return metadata_keys;} //returns the metakeys seperatly
 
+	//----------local set functions
+	void setBoardAndEvent(unsigned short board, int event); //sets the eventnumber and boardindex as metadata
+
+	//----------parse function for metadata stream
+	void checkAndInsert(string key, unsigned short val); //inserts vals into metadata map.
+	bool parseBuffer(vector<unsigned short> acdcBuffer); //returns success or fail 1/0 and parses the buffer
+	
+	//----------write functions
+	void writeErrorLog(string errorMsg); //writes the errorlog with timestamps
 
 private:
-	map<string, unsigned short> metadata;
+	//----------all neccessary global variables
+	map<string, unsigned short> metadata; //var: metadata map | metakeys < value
+	vector<string> metadata_keys; //var: metadata keys
 
-	vector<string> metadata_keys;
-	void initializeMetadataKeys();
-	void checkAndInsert(string key, unsigned short val); //inserts vals into metadata map. 
+	//----------general functions
+	void initializeMetadataKeys(); //initilizes the metadata keys
+	
 };
 
 
