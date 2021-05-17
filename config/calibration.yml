@@ -1,8 +1,0 @@
-# A config file for doing software triggers for calibrating off of an input sin wave
-# Data intended to be input for Whitmer calibraiton code. 
-acdc_settings:
-  pedestal:
-    0:
-      all: 2050
-
-
