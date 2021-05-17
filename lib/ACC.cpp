@@ -562,6 +562,33 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		dataofs.open(datafn.c_str(), ios::app);
 		writePsecData(dataofs, boardsReadyForRead);
 	}
+
+	command = 0xFFB54000;
+	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+	command = 0xFFD00000;
+	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+
+	for(int i = 0; i < MAX_NUM_BOARDS; i++)
+	{
+		command = 0x00210000;
+		command = command | i;
+		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+		lastAccBuffer = usb->safeReadData(32);
+		if(lastAccBuffer.size()>0)
+		{
+			if(lastAccBuffer.at(1)=0xbbbb)
+			{
+				map_acdcIF[i] = lastAccBuffer;
+			}else
+			{
+				std::cout << "Board " << i << " got the wrong info frame" << std::endl;
+			}
+		}else
+		{
+			map_acdcIF[i] = {0};
+		}
+	}
+
 	return 0;
 }
 
@@ -785,6 +812,33 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		dataofs.open(datafn.c_str(), ios::app); 
 		writePsecData(dataofs, boardsReadyForRead);
 	}
+
+	command = 0xFFB54000;
+	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+	command = 0xFFD00000;
+	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+
+	for(int i = 0; i < MAX_NUM_BOARDS; i++)
+	{
+		command = 0x00210000;
+		command = command | i;
+		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+		lastAccBuffer = usb->safeReadData(32);
+		if(lastAccBuffer.size()>0)
+		{
+			if(lastAccBuffer.at(1)=0xbbbb)
+			{
+				map_acdcIF[i] = lastAccBuffer;
+			}else
+			{
+				std::cout << "Board " << i << " got the wrong info frame" << std::endl;
+			}
+		}else
+		{
+			map_acdcIF[i] = {0};
+		}
+	}
+
 	return 0;
 }
 
@@ -940,7 +994,7 @@ void ACC::dumpData(unsigned int boardMask)
 }
 
 /*ID 26: Read ACC buffer for Info frame*/
-vector<unsigned short> ACC::readAccBuffer()
+vector<unsigned short> ACC::getACCInfoFrame()
 {
 	unsigned int command = 0x00200000;	 
 	vector<unsigned short> buffer;
@@ -956,6 +1010,7 @@ vector<unsigned short> ACC::readAccBuffer()
 			writeErrorLog("Could not read ACC info frame");
 		}else
 		{
+			map_accIF = buffer;
 			return buffer;	
 		}
 	}
@@ -1001,7 +1056,7 @@ void ACC::writeErrorLog(string errorMsg)
     os_err.close();
 }
 
-/*ID 29: Write function for the raw data format*/
+/*ID 30: Write function for the raw data format*/
 void ACC::writeRawDataToFile(vector<unsigned short> buffer, string rawfn)
 {
 	ofstream d(rawfn.c_str(), ios::app); 
@@ -1014,7 +1069,7 @@ void ACC::writeRawDataToFile(vector<unsigned short> buffer, string rawfn)
 	return;
 }
 
-/*ID 29: Write function for the parsed data format*/
+/*ID 31: Write function for the parsed data format*/
 void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 {
 	vector<string> keys;
