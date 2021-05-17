@@ -187,7 +187,7 @@ int ACC::whichAcdcsConnected()
 
 	//this allows no vector clearing to be needed
 	alignedAcdcIndices = connectedBoards;
-	cout << "Connected Boards: " << connectedBoards.size() << endl;
+	cout << "Connected Boards: " << alignedAcdcIndices.size() << endl;
 	return 1;
 }
 
