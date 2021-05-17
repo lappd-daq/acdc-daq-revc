@@ -33,8 +33,12 @@ public:
 	map<int, map<int, vector<double>>> returnData(){return map_data;} 
 	/*ID Nan: Returns the meta map*/
 	map<int, map<string, unsigned short>> returnMeta(){return map_meta;} 
+	/*ID Nan: Returns the acdc info frame map*/
+	map<int, vector<unsigned short>> returnACDCIF(){return map_acdcIF;} 
+	/*ID Nan: Returns the acc info frame map*/
+	vector<unsigned short> returnACCIF(){return map_accIF;} 
 	/*ID Nan: Returns the ACC info frame*/
-	vector<unsigned short> readAccBuffer();
+	vector<unsigned short> getACCInfoFrame();
 
 	/*------------------------------------------------------------------------------------*/
 	/*-------------------------Local set functions for board setup------------------------*/
@@ -137,7 +141,9 @@ private:
 	vector<unsigned int> SELF_psec_chip_mask; //var: PSEC chips actove for self trigger
 	map<int, map<int, vector<double>>> map_data; //entire data map | index: board < channel < samplevector
 	map<int, map<string, unsigned short>> map_meta; //entire meta map | index: board < metakey < value
-	
+	map<int, vector<unsigned short>> map_acdcIF;
+	vector<unsigned short> map_accIF;
+
 	static void got_signal(int);
 };
 
