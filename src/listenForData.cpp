@@ -338,9 +338,7 @@ int main()
 			break;
 		}
 	}
-	
-printf("BID2 is 0x%08x\n", boardmask);
-	std::cout << boardmask << std::endl;
+
 	while(true)
 	{
 		std::cout << "Do you want to use the calibration input mode? (0/1)" << std::endl;
@@ -386,8 +384,7 @@ printf("BID2 is 0x%08x\n", boardmask);
 			break;
 		}
 	}		
-
-printf("BID3 is 0x%02x\n", boardmask);
+	
 	retval = acc.initializeForDataReadout(triggermode, boardmask, calibMode);
 	if(retval != 0)
 	{
@@ -408,7 +405,6 @@ printf("BID3 is 0x%02x\n", boardmask);
 		if(triggermode == 1)
 		{
 			acc.softwareTrigger();
-			std::cout << "SOFTWARE TRIGGER" << std::endl;
 		}
 		if(eventCounter>=reTime*mult)
 		{
