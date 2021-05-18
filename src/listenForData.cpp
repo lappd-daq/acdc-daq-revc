@@ -332,7 +332,7 @@ int main()
 		std::cin >> bbm;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-		if(sizeof(bbm) == 4)
+		if(bbm.size() == 4)
 		{
 			boardmask = std::stoul(bbm,nullptr,16);
 			break;
