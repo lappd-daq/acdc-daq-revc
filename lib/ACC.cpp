@@ -568,13 +568,13 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 	command = 0xFFD00000;
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 
-	for(int i = 0; i < MAX_NUM_BOARDS; i++)
+	for(int i: boardsReadyForRead)
 	{
 		command = 0x00210000;
 		command = command | i;
 		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 		lastAccBuffer = usb->safeReadData(32);
-		if(lastAccBuffer.size()>0)
+		if(lastAccBuffer.size()==32)
 		{
 			if(lastAccBuffer.at(1)=0xbbbb)
 			{
@@ -585,6 +585,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			}
 		}else
 		{
+			std::cout << "Board " << i << " got =/= 32 words!" << std::endl;
 			map_acdcIF[i] = {0};
 		}
 	}
@@ -819,7 +820,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 	command = 0xFFD00000;
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 
-	for(int i = 0; i < MAX_NUM_BOARDS; i++)
+	for(int i: boardsReadyForRead)
 	{
 		command = 0x00210000;
 		command = command | i;
@@ -836,6 +837,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 			}
 		}else
 		{
+			std::cout << "Board " << i << " got =/= 32 words!" << std::endl;
 			map_acdcIF[i] = {0};
 		}
 	}
