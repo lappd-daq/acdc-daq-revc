@@ -520,7 +520,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 				{
 					string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
 					writeRawDataToFile(acdc_buffer, rawfn);
-					return 0;
+					break;
 				}else
 				{
 					retval = a->parseDataFromBuffer(acdc_buffer); 
