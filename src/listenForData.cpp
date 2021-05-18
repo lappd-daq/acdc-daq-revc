@@ -336,7 +336,7 @@ int main()
 			break;
 		}
 	}
-printf("BID2 is 0x%02x\n", boardmask);
+printf("BID2 is 0x%08x\n", boardmask);
 	while(true)
 	{
 		std::cout << "Do you want to use the calibration input mode? (0/1)" << std::endl;
