@@ -442,7 +442,10 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 				boardsReadyForRead.push_back(k);
 			}else
 			{
-				std::cout << "Buffer instead: " << lastAccBuffer.at(16+k) << std::endl;
+				if(k==1)
+				{
+					std::cout << "Buffer " << k << " instead: " << lastAccBuffer.at(16+k) << std::endl;
+				}
 			}
 		}
 
