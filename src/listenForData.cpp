@@ -11,6 +11,7 @@
 #include <numeric>
 #include <ctime>
 #include <vector>
+#include <stdio.h>
 
 string getTime()
 {
@@ -335,7 +336,7 @@ int main()
 			break;
 		}
 	}
-printf("BID is 0x%02x\n", boardmask);
+printf("BID2 is 0x%02x\n", boardmask);
 	while(true)
 	{
 		std::cout << "Do you want to use the calibration input mode? (0/1)" << std::endl;
@@ -382,7 +383,7 @@ printf("BID is 0x%02x\n", boardmask);
 		}
 	}		
 
-printf("BID is 0x%02x\n", boardmask);
+printf("BID3 is 0x%02x\n", boardmask);
 	retval = acc.initializeForDataReadout(triggermode, boardmask, calibMode);
 	if(retval != 0)
 	{
