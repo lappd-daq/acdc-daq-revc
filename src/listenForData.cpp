@@ -335,7 +335,7 @@ int main()
 			break;
 		}
 	}
-
+printf("BID is 0x%02x\n", boardmask);
 	while(true)
 	{
 		std::cout << "Do you want to use the calibration input mode? (0/1)" << std::endl;
@@ -382,7 +382,7 @@ int main()
 		}
 	}		
 
-
+printf("BID is 0x%02x\n", boardmask);
 	retval = acc.initializeForDataReadout(triggermode, boardmask, calibMode);
 	if(retval != 0)
 	{
