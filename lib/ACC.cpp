@@ -440,12 +440,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			if(lastAccBuffer.at(16+k)==7795)
 			{
 				boardsReadyForRead.push_back(k);
-			}else
-			{
-				if(k==1)
-				{
-					std::cout << "Buffer " << k << " instead: " << lastAccBuffer.at(16+k) << std::endl;
-				}
 			}
 		}
 
