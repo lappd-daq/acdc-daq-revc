@@ -196,7 +196,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 {
 	unsigned int command;
 	int retval;
-	printf("BID is 0x%02x\n", boardMask);
+	
 	// Creates ACDCs for readout
 	retval = createAcdcs();
 	if(retval==0)
@@ -337,15 +337,14 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 /*ID 12: Set up the software trigger*/
 void ACC::setSoftwareTrigger(unsigned int boardMask)
 {	
-	printf("BID is 0x%02x\n", boardMask);
 	unsigned int command;
 
 	//Set the trigger
 	command = 0x00B00001; //Sets the trigger of all ACDC boards to 1 = Software trigger
-	command = (command | (boardMask << 24)); printf("CMD is 0x%08x\n", command);
+	command = (command | (boardMask << 24)); 
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 	command = 0x00300000; //Sets all ACDC boards to software trigger on the ACC 
-	command = (command | (boardMask << 4)) | 1; printf("CMD is 0x%08x\n", command);
+	command = (command | (boardMask << 4)) | 1; 
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 }
 
@@ -371,7 +370,7 @@ void ACC::setHardwareTrigSrc(int src, unsigned int boardMask)
 
 /*ID 20: Switch for the calibration input on the ACC*/
 void ACC::toggleCal(int onoff, unsigned int channelmask, unsigned int boardMask)
-{	printf("BID is 0x%02x\n", boardMask);
+{
 	unsigned int command = 0x00C00000;
 	//the firmware just uses the channel mask to toggle
 	//switch lines. So if the cal is off, all channel lines
@@ -384,7 +383,6 @@ void ACC::toggleCal(int onoff, unsigned int channelmask, unsigned int boardMask)
 	{
 		command = (command | (boardMask << 24));
 	}
-	printf("CMD is 0x%08x\n", command);
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 }
 
