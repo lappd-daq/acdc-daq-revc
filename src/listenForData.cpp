@@ -43,6 +43,7 @@ int main()
 {
 	int retval;
 	int triggermode;
+	string bbm;
 	unsigned int boardmask;
 	int calibMode;
 	int rawMode;
@@ -286,11 +287,12 @@ int main()
 	{
 		std::cout << "Please select which boards to use from 0x00 to 0xFF (default)" << std::endl;
 		
-		std::cin >> boardmask;
+		std::cin >> bbm;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-		if(sizeof(boardmask) == 4)
+		if(bbm.size()>0)
 		{
+			boardmask = std::stoul(bbm,nullptr,16);
 			break;
 		}
 	}
