@@ -403,7 +403,7 @@ int main()
 		if(triggermode == 1)
 		{
 			acc.softwareTrigger();
-			usleep(10);
+			std::cout << "SOFTWARE TRIGGER" << std::endl;
 		}
 		if(eventCounter>=reTime*mult)
 		{
