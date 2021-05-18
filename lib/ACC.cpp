@@ -768,6 +768,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 				{
 					string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
 					writeRawDataToFile(acdc_buffer, rawfn);
+					break;
 				}else
 				{
 					//parśe raw data to channel data and metadata
