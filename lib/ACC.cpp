@@ -349,7 +349,7 @@ void ACC::clearAcdcs()
 
 int ACC::whichAcdcsConnected()
 {
-	int retvaL;
+	int retval;
 	//New sequence to ask the ACC to reply with the number of boards connected 
 	enableTransfer(0); //Disables the PSEC4 frame data transfer for this sequence. Has to be set to HIGH later again
 
@@ -391,7 +391,7 @@ int ACC::whichAcdcsConnected()
 		{
 			cout << "Board "<< i << " not with 32 words after ACC buffer read, ";
 			cout << "Size " << lastAccBuffer.at(16+i)  << endl;
-			retvaL = -1;
+			retval = -1;
 			continue;
 		}else if(lastAccBuffer.at(16+i) != 32)
 		{
