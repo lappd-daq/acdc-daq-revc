@@ -339,13 +339,6 @@ void ACC::setSoftwareTrigger(unsigned int boardMask)
 {	
 	unsigned int command;
 
-	//Prepare Software trigger
-	command = 0x00300000; //Turn trigger to OFF on the ACC
-	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
-	command = 0x00B00000; //Turn the trigger OFF on all ACDCs
-	command = (command | (boardMask << 24));
-	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
-
 	//Set the trigger
 	command = 0x00B00001; //Sets the trigger of all ACDC boards to 1 = Software trigger
 	command = (command | (boardMask << 24));
@@ -386,6 +379,9 @@ void ACC::toggleCal(int onoff, unsigned int channelmask, unsigned int boardMask)
 	{
 		//channelmas is default 0x7FFF
 		command = (command | (boardMask << 24)) | channelmask;
+	}else if(onoff == 0)
+	{
+		command = (command | (boardMask << 24));
 	}
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 }
@@ -993,7 +989,7 @@ void ACC::dumpData(unsigned int boardMask)
 	command = command | boardMask;
 	//send and read. 
 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
-	usb->safeReadData(SAFE_BUFFERSIZE + 2);
+	//usb->safeReadData(SAFE_BUFFERSIZE + 2);
 }
 
 /*ID 26: Read ACC buffer for Info frame*/
