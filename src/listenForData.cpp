@@ -47,6 +47,7 @@ int main()
 
 	int triggermode;
 
+	string bbm;
 	unsigned int boardmask;
 
 	int calibMode;
@@ -328,14 +329,16 @@ int main()
 	{
 		std::cout << "Please select which boards to use from 0x00 to 0xFF (default)" << std::endl;
 		
-		std::cin >> boardmask;
+		std::cin >> bbm;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-		if(sizeof(boardmask) == 4)
+		if(sizeof(bbm) == 4)
 		{
+			boardmask = std::stoul(bbm,nullptr,16);
 			break;
 		}
 	}
+	
 printf("BID2 is 0x%08x\n", boardmask);
 	std::cout << boardmask << std::endl;
 	while(true)
