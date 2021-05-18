@@ -403,6 +403,7 @@ int main()
 		if(triggermode == 1)
 		{
 			acc.softwareTrigger();
+			usleep(10);
 		}
 		if(eventCounter>=reTime*mult)
 		{
