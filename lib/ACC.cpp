@@ -380,25 +380,32 @@ int ACC::whichAcdcsConnected()
 	//binary representation of this packet is 1 if the
 	//board is connected for both the first two bytes
 	//and last two bytes. 
-	
+	string state;
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
 	{	
+		if((alignment_packet & (1 << i)))
+		{
+			state = "ON";
+		}else
+		{
+			state = "OFF";
+		}
 		if(lastAccBuffer.at(16+i) == 32)
 		{
 			cout << "Board "<< i << " with 32 words after ACC buffer read, ";
-			cout << "Board "<< i << " connected and expected to be " << (alignment_packet & (1 << i)) << endl;
+			cout << "Board "<< i << " connected and expected to be " << state << endl;
 		}else if(lastAccBuffer.at(16+i) != 32 && lastAccBuffer.at(16+i) != 0)
 		{
 			cout << "Board "<< i << " not with 32 words after ACC buffer read, ";
 			cout << "Size " << lastAccBuffer.at(16+i);
-			cout << " Expected to be " << (alignment_packet & (1 << i)) << endl;
+			cout << " Expected to be " << state << endl;
 			retval = -1;
 			continue;
 		}else if(lastAccBuffer.at(16+i) != 32)
 		{
 			cout << "Board "<< i << " not with 32 words after ACC buffer read ";
 			cout << "Size " << lastAccBuffer.at(16+i);
-			cout << " Expected to be " << (alignment_packet & (1 << i)) << endl;
+			cout << " Expected to be " << state << endl;
 			continue;
 		}
 
