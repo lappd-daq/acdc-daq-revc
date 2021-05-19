@@ -24,7 +24,11 @@ int main()
 		int retval = acc.whichAcdcsConnected();
 		if(retval==-1)
 		{
+			acc.dumpData();
+			acc.emptyUsbLine();
+			usleep(1000000);
 			std::cout << "After ACDC reset no changes, still no boards found" << std::endl;
 		}
+
 	}
 }
