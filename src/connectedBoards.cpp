@@ -16,7 +16,11 @@ int main()
 	if(retval==-1)
 	{
 		std::cout << "Trying to reset ACDC boards" << std::endl;
+		acc.dumpData();
+		acc.emptyUsbLine();
+		usleep(1000000);
 		acc.resetACDC();
+		usleep(1000000);
 		int retval = acc.whichAcdcsConnected();
 		if(retval==-1)
 		{
