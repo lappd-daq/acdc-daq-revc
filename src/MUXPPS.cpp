@@ -28,7 +28,7 @@ void writeErrorLog(string errorMsg)
 {
     std::string err = "errorlog.txt";
     std::cout << "------------------------------------------------------------" << std::endl;
-   	std::cout << errorMsg << endl;
+    std::cout << errorMsg << endl;
     std::cout << "------------------------------------------------------------" << std::endl;
     ofstream os_err(err, ios_base::app);
     auto now = std::chrono::system_clock::now();
@@ -62,7 +62,7 @@ void printInfos(map<string, unsigned int> datamap)
     std::string dtf = "DataMapInfos.txt";
     std::string type;
     unsigned long long timestamp; 
-    stingstream ss;
+    stingstream ss_TS;
      
     if(datamap["fTYPE"] == 0xabcd)
     {
@@ -75,11 +75,11 @@ void printInfos(map<string, unsigned int> datamap)
         type = "INVALID";
     }
   
-    ss << std::hex << tmpMap["fTIMESTAMP3"] << std::hex << tmpMap["fTIMESTAMP2"] << std::hex << tmpMap["fTIMESTAMP1"] << std::hex << tmpMap["fTIMESTAMP0"];
-    timestamp = std::stoull(ss.str(),nullptr,16);
+    ss_TS << std::hex << tmpMap["fTIMESTAMP3"] << std::hex << tmpMap["fTIMESTAMP2"] << std::hex << tmpMap["fTIMESTAMP1"] << std::hex << tmpMap["fTIMESTAMP0"];
+    timestamp = std::stoull(ss_TS.str(),nullptr,16);
   
     std::cout << "------------------------------------------------------------" << std::endl;
-   	std::cout << "Event " << datamap["EVENTNBR"] << ": TYPE = " << type << " , LENGTH = " <<  datamap["fLENGTH"] << " with TIMESTAMP = " << timestamp << endl;
+    std::cout << "Event " << datamap["EVENTNBR"] << ": TYPE = " << type << " , LENGTH = " <<  datamap["fLENGTH"] << " with TIMESTAMP = " << timestamp << endl;
   
     ofstream os_dtf(dtf, ios_base::app);
     os_dtf << datamap["EVENTNBR"] << " " << type << " " <<  datamap["fLENGTH"] << " " << timestamp << endl;
@@ -90,8 +90,8 @@ int main()
 {
 	int retval;
 	bool flag = true;
-  vector<unsigned short> buffer;
-  map<string, unsigned int> datamap;
+ 	vector<unsigned short> buffer;
+ 	map<string, unsigned int> datamap;
 
 	int triggermode;
 
@@ -307,7 +307,7 @@ int main()
 			default:
 				std::cout << " Trigger input not found " << std::endl;
 				break;
-      selfsetup:
+     			selfsetup:
 				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) for selftrigger?" << std::endl;
 				std::cout << "Enter: ";
 				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
