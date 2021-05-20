@@ -74,8 +74,11 @@ void printInfos(map<string, unsigned int> datamap)
     {
         type = "INVALID";
     }
-  
-    ss_TS << std::hex << datamap["fTIMESTAMP3"] << std::hex << datamap["fTIMESTAMP2"] << std::hex << datamap["fTIMESTAMP1"] << std::hex << datamap["fTIMESTAMP0"];
+
+    ss_TS << std::setfill('0') << std::setw(4) << std::hex << datamap["fTIMESTAMP3"];
+    ss_TS << std::setfill('0') << std::setw(4) << std::hex << datamap["fTIMESTAMP2"];
+    ss_TS << std::setfill('0') << std::setw(4) << std::hex << datamap["fTIMESTAMP1"];
+    ss_TS << std::setfill('0') << std::setw(4) << std::hex << datamap["fTIMESTAMP0"];
     timestamp = std::stoull(ss_TS.str(),nullptr,16);
   
     std::cout << "------------------------------------------------------------" << std::endl;
