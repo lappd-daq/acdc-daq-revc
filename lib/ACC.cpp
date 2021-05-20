@@ -764,6 +764,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 				//If raw data is requested save and return 0
 				if(raw==true)
 				{
+					vbuffer = acdc_buffer;
 					string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
 					writeRawDataToFile(acdc_buffer, rawfn);
 					break;
