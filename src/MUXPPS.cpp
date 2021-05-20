@@ -82,8 +82,8 @@ void printInfos(map<string, unsigned int> datamap)
     timestamp = std::stoull(ss_TS.str(),nullptr,16);
   
     std::cout << "------------------------------------------------------------" << std::endl;
-    std::cout << "Event " << datamap["EVENTNBR"] << ": TYPE = " << type << " , LENGTH = " <<  datamap["fLENGTH"] << " with TIMESTAMP = " << (float)timestamp/320000000 << endl;
-    std::cout << std::hex << timestamp;
+    std::cout << "Event " << datamap["EVENTNBR"] << ": TYPE = " << type << " , LENGTH = " <<  datamap["fLENGTH"] << " with TIMESTAMP = " << timestamp << " = " << (float)timestamp/320000000 << " s" << endl;
+
 	
 	
     ofstream os_dtf(dtf, ios_base::app);
