@@ -53,7 +53,8 @@ map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn)
     tmpMap["fTIMESTAMP1"] = buffer.at(3100);
     tmpMap["fTIMESTAMP2"] = buffer.at(4652);
     tmpMap["fTIMESTAMP3"] = buffer.at(6204);    
-  
+    tmpMap["fCOUNTER0"] = buffer.at(1549);  
+    tmpMap["fCOUNTER1"] = buffer.at(3101);  
     return tmpMap;
 }
 
@@ -62,7 +63,9 @@ void printInfos(map<string, unsigned int> datamap)
     std::string dtf = "DataMapInfos.txt";
     std::string type;
     unsigned long long timestamp; 
+    unsigned int sn;
     stringstream ss_TS;
+    stringstream ss_EC;
      
     if(datamap["fTYPE"] == 0xabcd)
     {
@@ -81,9 +84,12 @@ void printInfos(map<string, unsigned int> datamap)
     ss_TS << std::setfill('0') << std::setw(4) << std::hex << datamap["fTIMESTAMP0"];
     timestamp = std::stoull(ss_TS.str(),nullptr,16);
   
+    ss_EC << std::setfill('0') << std::setw(4) << std::hex << datamap["fCOUNTER1"];
+    ss_EC << std::setfill('0') << std::setw(4) << std::hex << datamap["fCOUNTER0"];	
+    sn = std::stoull(ss_EC.str(),nullptr,16);
+	
     std::cout << "------------------------------------------------------------" << std::endl;
-    std::cout << "Event " << datamap["EVENTNBR"] << ": TYPE = " << type << " , LENGTH = " <<  datamap["fLENGTH"] << " with TIMESTAMP = " << timestamp << " = " << (float)timestamp/320000000 << " s" << endl;
-
+    std::cout << "Event " << datamap["EVENTNBR"] << ": TYPE = " << type << " , S/N " << sn << " , LENGTH = " <<  datamap["fLENGTH"] << " with TIMESTAMP = " << timestamp << " = " << (float)timestamp/320000000 << " s" << endl;
 	
 	
     ofstream os_dtf(dtf, ios_base::app);
