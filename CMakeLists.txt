@@ -68,6 +68,7 @@ add_executable(listenForData ${EXECUTABLE_SOURCE_DIR}/listenForData.cpp)
 #add_executable(onlyListen ${EXECUTABLE_SOURCE_DIR}/onlyListen.cpp)
 #add_executable(onlySetup ${EXECUTABLE_SOURCE_DIR}/onlySetup.cpp)
 #add_executable(DataCalibToConfig ${EXECUTABLE_SOURCE_DIR}/DataCalibToConfig.cpp)
+add_executable(MUXPPS ${EXECUTABLE_SOURCE_DIR}/MUXPPS.cpp)
 
 target_link_libraries(connectedBoards PUBLIC ACC myusb)
 target_link_libraries(calibratePed PUBLIC ACC)
@@ -80,5 +81,6 @@ target_link_libraries(listenForData PUBLIC ACC)
 #target_link_libraries(onlyListen PUBLIC ACC Scope)
 #target_link_libraries(onlySetup PUBLIC ACC)
 #target_link_libraries(DataCalibToConfig PUBLIC ACC)
+target_link_libraries(MUXPPS PUBLIC ACC)
 
 
