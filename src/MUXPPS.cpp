@@ -13,6 +13,8 @@
 #include <vector>
 #include <stdio.h>
 
+using namespace std;
+
 string getTime()
 {
     auto now = std::chrono::system_clock::now();
@@ -59,7 +61,6 @@ void printInfos(map<string, unsigned int> datamap)
 {
     std::string dtf = "DataMapInfos.txt";
     std::string type;
-    long timestamp;
     unsigned long long timestamp; 
     stingstream ss;
      
@@ -428,10 +429,10 @@ int main()
 		{
 			case 0:
 				
-        buffer = acc.returnRaw();
-        
-        datamap = parseInfos();
-        printInfos(datamap);
+				buffer = acc.returnRaw();
+
+				datamap = parseInfos(buffer,eventCounter);
+				printInfos(datamap);
         
 				eventCounter++;
 				failCounter=0;
