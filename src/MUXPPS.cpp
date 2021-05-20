@@ -42,7 +42,7 @@ void writeErrorLog(string errorMsg)
     os_err.close();
 }
 
-map<string, unsigned int> parseInfo(vector<unsigned short> buffer, int evn)
+map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn)
 {
     map<string, unsigned int> tmpMap;
   
@@ -62,7 +62,7 @@ void printInfos(map<string, unsigned int> datamap)
     std::string dtf = "DataMapInfos.txt";
     std::string type;
     unsigned long long timestamp; 
-    stingstream ss_TS;
+    stringstream ss_TS;
      
     if(datamap["fTYPE"] == 0xabcd)
     {
@@ -75,7 +75,7 @@ void printInfos(map<string, unsigned int> datamap)
         type = "INVALID";
     }
   
-    ss_TS << std::hex << tmpMap["fTIMESTAMP3"] << std::hex << tmpMap["fTIMESTAMP2"] << std::hex << tmpMap["fTIMESTAMP1"] << std::hex << tmpMap["fTIMESTAMP0"];
+    ss_TS << std::hex << datamap["fTIMESTAMP3"] << std::hex << datamap["fTIMESTAMP2"] << std::hex << datamap["fTIMESTAMP1"] << std::hex << datamap["fTIMESTAMP0"];
     timestamp = std::stoull(ss_TS.str(),nullptr,16);
   
     std::cout << "------------------------------------------------------------" << std::endl;
