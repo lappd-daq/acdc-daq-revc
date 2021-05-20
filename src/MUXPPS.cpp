@@ -441,7 +441,11 @@ int main()
 			case 0:
 				
 				buffer = acc.returnRaw();
-
+				if(buffer.size()==0)
+				{
+					std::cout << "Empty buffer?" << std::endl;
+					break;
+				}
 				datamap = parseInfos(buffer,eventCounter);
 				printInfos(datamap);
         
