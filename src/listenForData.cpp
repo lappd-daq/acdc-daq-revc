@@ -147,7 +147,7 @@ int main()
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
 				std::cout << "Enter in us: ";
 				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationWindow*40);
+				ss3 << std::hex << (int)(validationStart*40);
 				valstr = std::stoul(ss3.str(),nullptr,16);
 
 				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
@@ -174,7 +174,7 @@ int main()
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
 				std::cout << "Enter in us: ";
 				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationWindow*40);
+				ss3 << std::hex << (int)(validationStart*40);
 				valstr = std::stoul(ss3.str(),nullptr,16);
 
 				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
@@ -204,7 +204,7 @@ int main()
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
 				std::cout << "Enter in us: ";
 				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationWindow*40);
+				ss3 << std::hex << (int)(validationStart*40);
 				valstr = std::stoul(ss3.str(),nullptr,16);
 
 				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
@@ -236,7 +236,7 @@ int main()
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
 				std::cout << "Enter in us: ";
 				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationWindow*40);
+				ss3 << std::hex << (int)(validationStart*40);
 				valstr = std::stoul(ss3.str(),nullptr,16);
 
 				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
