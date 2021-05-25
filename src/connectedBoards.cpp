@@ -11,7 +11,7 @@ using namespace std;
 int main()
 {
 	ACC acc;
-
+	/*
 	int retval = acc.whichAcdcsConnected(); 
 	if(retval==-1)
 	{
@@ -22,5 +22,6 @@ int main()
 		{
 			std::cout << "After ACDC reset no changes, still no boards found" << std::endl;
 		}
-	}
+	}*/
+	acc.versionCheck();
 }
