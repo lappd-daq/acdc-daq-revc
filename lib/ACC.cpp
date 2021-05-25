@@ -505,7 +505,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		vector<unsigned short> acdc_buffer = usb->safeReadData(readoutSize[bi]);
 
 		//Handles buffers =/= 7795 words
-		if(acdc_buffer.size() != readoutSize[bi])
+		if((int)acdc_buffer.size() != readoutSize[bi])
 		{
 			string err_msg = "Couldn't read ";
 			err_msg += to_string(readoutSize[bi]);
@@ -766,7 +766,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		vector<unsigned short> acdc_buffer = usb->safeReadData(readoutSize[bi]);
 
 		//Handles buffers =/= 7795 words
-		if(acdc_buffer.size() != readoutSize[bi])
+		if((int)acdc_buffer.size() != readoutSize[bi])
 		{
 			string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
 			err_msg += to_string(acdc_buffer.size());
