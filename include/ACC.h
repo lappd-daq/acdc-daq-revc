@@ -12,6 +12,10 @@ using namespace std;
 #define SAFE_BUFFERSIZE 100000 //used in setup procedures to guarantee a proper readout 
 #define NUM_CH 30 //maximum number of channels for one ACDC board
 #define MAX_NUM_BOARDS 8 // maxiumum number of ACDC boards connectable to one ACC 
+#define ACCFRAME 32
+#define ACDCFRAME 32
+#define PPSFRAME 8
+#define PSECFRAME 7795
 
 class ACC
 {
