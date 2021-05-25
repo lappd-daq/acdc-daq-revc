@@ -308,6 +308,9 @@ int main()
 				std::cout << "Enter : ";
 				cin >> BeamgateMultiplexer;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
+				printf("st_cm: 0x%02x\n",valstr);
+				printf("win_cm: 0x%02x\n",valstr2);
+				
 				acc.setValidationStart(valstr);
 				acc.setValidationWindow(valstr2);
 				acc.setPPSBeamMultiplexer(BeamgateMultiplexer);
