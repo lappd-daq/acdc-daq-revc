@@ -42,7 +42,7 @@ void writeErrorLog(string errorMsg)
     os_err.close();
 }
 
-map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn, int mode)
+map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn)
 {
     map<string, unsigned int> tmpMap;
   
