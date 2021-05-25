@@ -414,7 +414,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 	while(true)
 	{
 		boardsReadyForRead.clear();
-
+		readoutSize.clear();
 		//Request the ACC info frame to check buffers
 		command = 0x00200000;
 		usbcheck=usb->sendData(command);
@@ -648,7 +648,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 	{ 
 		//Clear the boards read vector
 		boardsReadyForRead.clear(); 
-
+		readoutSize.clear();
 		//Time the listen fuction
 		now = chrono::steady_clock::now();
 		if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
