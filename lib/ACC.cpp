@@ -862,8 +862,30 @@ bool ACC::setPedestals(unsigned int boardmask, unsigned int chipmask, unsigned i
 /*ID 24: Special function to check connected ACDCs for their firmware version*/ 
 void ACC::versionCheck()
 {
+	unsigned int command;
+	
+	//Request ACC info frame
+	command = 0x00200000; 
+	usb->sendData(command);
+	
+	lastAccBuffer = usb->safeReadData(SAFE_BUFFERSIZE);
+	if(lastAccBuffer.size()>0)
+	{
+		if(lastAccBuffer.at(1)=0xaaaa)
+		{
+			std::cout << "ACC got the firmware version: " << std::hex << lastAccBuffer.at(2) << std::dec;
+			std::cout << " from " << std::hex << lastAccBuffer.at(4) << std::dec << "/" << std::hex << lastAccBuffer.at(3) << std::dec << std::endl;
+		}else
+		{
+			std::cout << "ACC got the wrong info frame" << std::endl;
+		}
+	}else
+	{
+		std::cout << "ACC got the no info frame" << std::endl;
+	}
+
 	//Disables Psec communication
-	unsigned int command = 0xFFB54000; 
+	command = 0xFFB54000; 
 	usb->sendData(command);
 
 	//Give the firmware time to disable
