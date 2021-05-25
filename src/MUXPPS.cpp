@@ -42,19 +42,36 @@ void writeErrorLog(string errorMsg)
     os_err.close();
 }
 
-map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn)
+map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn, int mode)
 {
     map<string, unsigned int> tmpMap;
   
-    tmpMap["EVENTNBR"] = evn;
-    tmpMap["fTYPE"] = buffer.at(1);
-    tmpMap["fLENGTH"] = buffer.size();
-    tmpMap["fTIMESTAMP0"] = buffer.at(1548);
-    tmpMap["fTIMESTAMP1"] = buffer.at(3100);
-    tmpMap["fTIMESTAMP2"] = buffer.at(4652);
-    tmpMap["fTIMESTAMP3"] = buffer.at(6204);    
-    tmpMap["fCOUNTER0"] = buffer.at(1549);  
-    tmpMap["fCOUNTER1"] = buffer.at(3101);  
+    if(buffer.size()==7795)
+    {
+	tmpMap["EVENTNBR"] = evn;
+	tmpMap["fTYPE"] = buffer.at(1);
+	tmpMap["fLENGTH"] = buffer.size();
+	tmpMap["fTIMESTAMP0"] = buffer.at(1548);
+	tmpMap["fTIMESTAMP1"] = buffer.at(3100);
+	tmpMap["fTIMESTAMP2"] = buffer.at(4652);
+	tmpMap["fTIMESTAMP3"] = buffer.at(6204);    
+	tmpMap["fCOUNTER0"] = buffer.at(1549);  
+	tmpMap["fCOUNTER1"] = buffer.at(3101);  
+    }else if(buffer.size()==8)
+    {
+	tmpMap["EVENTNBR"] = evn;
+	tmpMap["fTYPE"] = buffer.at(1);
+	tmpMap["fLENGTH"] = buffer.size();    
+	tmpMap["fTIMESTAMP0"] = buffer.at(5);
+	tmpMap["fTIMESTAMP1"] = buffer.at(4);
+	tmpMap["fTIMESTAMP2"] = buffer.at(3);
+	tmpMap["fTIMESTAMP3"] = buffer.at(2); 
+	tmpMap["fCOUNTER0"] = buffer.at(1);  
+	tmpMap["fCOUNTER1"] = buffer.at(6);  
+    }else{
+	    std::cout << "Incompatible size" << endl;
+    	    return {};
+    }
     return tmpMap;
 }
 
@@ -67,7 +84,7 @@ void printInfos(map<string, unsigned int> datamap)
     stringstream ss_TS;
     stringstream ss_EC;
      
-    if(datamap["fTYPE"] == 0xabcd)
+    if(datamap["fTYPE"] == 0xeeee)
     {
         type = "PPS"; 
     }else if(datamap["fTYPE"] == 0xa5ec)
