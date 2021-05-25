@@ -284,9 +284,11 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			command = 0x00320000;
 			command = command | validation_start;
 			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+			printf("st: 0x%08x\n",command);
 			command = 0x00330000;
 			command = command | validation_window;
 			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
+			printf("win: 0x%08x\n",command);
 			command = 0x00B20000;
 			command = (command | (boardMask << 24)) | ACDC_sign;
 			usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
