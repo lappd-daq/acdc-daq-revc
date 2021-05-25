@@ -156,7 +156,7 @@ int ACC::whichAcdcsConnected()
 	unsigned short alignment_packet = lastAccBuffer.at(7);	
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
 	{	
-		if(lastAccBuffer.at(16+i) == 32)
+		if(lastAccBuffer.at(16+i) == 32 && (lastAccBuffer.at(14) & (1 << i)))
 		{
 			cout << "Board "<< i << " with 32 words after ACC buffer read, ";
 			cout << "Board "<< i << " connected" << endl;
@@ -398,6 +398,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 {
 	bool corruptBuffer;
 	vector<int> boardsReadyForRead;
+	map<int,int> readoutSize;
 	unsigned int command;
 	int maxCounter=0;
 	bool clearCheck;
@@ -427,7 +428,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			}
 		}
 		
-		lastAccBuffer = usb->safeReadData(32);
+		lastAccBuffer = usb->safeReadData(ACCFRAME);
 		
 		if(lastAccBuffer.size()==0)
 		{
@@ -436,9 +437,17 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 
 		for(int k=0; k<MAX_NUM_BOARDS; k++)
 		{
-			if(lastAccBuffer.at(16+k)==7795)
+			if(lastAccBuffer.at(14) & (1 << k))
 			{
-				boardsReadyForRead.push_back(k);
+				if(lastAccBuffer.at(16+k)==PSECFRAME)
+				{
+					boardsReadyForRead.push_back(k);
+					readoutSize[k] = PSECFRAME;
+				}else if(lastAccBuffer.at(16+k)==PPSFRAME)
+				{
+					boardsReadyForRead.push_back(k);
+					readoutSize[k] = PPSFRAME;
+				}
 			}
 		}
 
@@ -493,12 +502,14 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 
 		//Tranfser the data to a receive vector
-		vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
+		vector<unsigned short> acdc_buffer = usb->safeReadData(readoutSize[bi]);
 
 		//Handles buffers =/= 7795 words
-		if(acdc_buffer.size() != 7795)
+		if(acdc_buffer.size() != readoutSize[bi])
 		{
-			string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
+			string err_msg = "Couldn't read ";
+			err_msg += to_string(readoutSize[bi]);
+			err_msg += " words as expected! Tryingto fix it! Size was: ";
 			err_msg += to_string(acdc_buffer.size());
 			writeErrorLog(err_msg);
 			return 1;
@@ -573,8 +584,8 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		command = 0x00210000;
 		command = command | i;
 		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-		lastAccBuffer = usb->safeReadData(32);
-		if(lastAccBuffer.size()==32)
+		lastAccBuffer = usb->safeReadData(ACDCFRAME);
+		if(lastAccBuffer.size()==ACDCFRAME)
 		{
 			if(lastAccBuffer.at(1)=0xbbbb)
 			{
@@ -598,6 +609,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 {
 	bool corruptBuffer;
 	vector<int> boardsReadyForRead;
+	map<int,int> readoutSize;
 	unsigned int command; 
 	bool clearCheck;
 
@@ -680,7 +692,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 			}
 		}
 		
-		lastAccBuffer = usb->safeReadData(32);
+		lastAccBuffer = usb->safeReadData(ACCFRAME);
 		
 		if(lastAccBuffer.size()==0)
 		{
@@ -690,9 +702,17 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k=0; k<MAX_NUM_BOARDS; k++)
 		{
-			if(lastAccBuffer.at(16+k)==7795)
+			if(lastAccBuffer.at(14) & (1 << k))
 			{
-				boardsReadyForRead.push_back(k);
+				if(lastAccBuffer.at(16+k)==PSECFRAME)
+				{
+					boardsReadyForRead.push_back(k);
+					readoutSize[k] = PSECFRAME;
+				}else if(lastAccBuffer.at(16+k)==PPSFRAME)
+				{
+					boardsReadyForRead.push_back(k);
+					readoutSize[k] = PPSFRAME;
+				}
 			}
 		}
 
@@ -743,10 +763,10 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
 
 		//Tranfser the data to a receive vector
-		vector<unsigned short> acdc_buffer = usb->safeReadData(7795);
+		vector<unsigned short> acdc_buffer = usb->safeReadData(readoutSize[bi]);
 
 		//Handles buffers =/= 7795 words
-		if(acdc_buffer.size() != 7795)
+		if(acdc_buffer.size() != readoutSize[bi])
 		{
 			string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
 			err_msg += to_string(acdc_buffer.size());
@@ -826,8 +846,8 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		command = 0x00210000;
 		command = command | i;
 		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-		lastAccBuffer = usb->safeReadData(32);
-		if(lastAccBuffer.size()>0)
+		lastAccBuffer = usb->safeReadData(ACDCFRAME);
+		if(lastAccBuffer.size()==ACDCFRAME)
 		{
 			if(lastAccBuffer.at(1)=0xbbbb)
 			{
