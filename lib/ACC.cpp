@@ -432,6 +432,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		
 		if(lastAccBuffer.size()==0)
 		{
+			std::cout << "ACCFRAME came up with " << lastAccBuffer.size() << std::endl;
 			continue;
 		}
 
@@ -696,6 +697,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		
 		if(lastAccBuffer.size()==0)
 		{
+			std::cout << "ACCFRAME came up with " << lastAccBuffer.size() << std::endl;
 			continue;
 		}
 
