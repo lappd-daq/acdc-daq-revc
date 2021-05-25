@@ -144,7 +144,7 @@ int ACC::whichAcdcsConnected()
 	lastAccBuffer = usb->safeReadData(SAFE_BUFFERSIZE);
 
 	//Check if buffer size is 32 words
-	if(lastAccBuffer.size() != 32) 
+	if(lastAccBuffer.size() != ACCFRAME) 
 	{
 		string err_msg = "Something wrong with ACC buffer, size: ";  
 		err_msg += to_string(lastAccBuffer.size());
@@ -156,17 +156,17 @@ int ACC::whichAcdcsConnected()
 	unsigned short alignment_packet = lastAccBuffer.at(7);	
 	for(int i = 0; i < MAX_NUM_BOARDS; i++)
 	{	
-		if(lastAccBuffer.at(16+i) == 32 && (lastAccBuffer.at(14) & (1 << i)))
+		if(lastAccBuffer.at(16+i) == ACDCFRAME && (lastAccBuffer.at(14) & (1 << i)))
 		{
 			cout << "Board "<< i << " with 32 words after ACC buffer read, ";
 			cout << "Board "<< i << " connected" << endl;
-		}else if(lastAccBuffer.at(16+i) != 32 && lastAccBuffer.at(16+i) != 0)
+		}else if(lastAccBuffer.at(16+i) != ACDCFRAME && lastAccBuffer.at(16+i) != 0)
 		{
 			cout << "Board "<< i << " not with 32 words after ACC buffer read, ";
 			cout << "Size " << lastAccBuffer.at(16+i)  << endl;
 			retval = -1;
 			continue;
-		}else if(lastAccBuffer.at(16+i) != 32)
+		}else if(lastAccBuffer.at(16+i) != ACDCFRAME)
 		{
 			cout << "Board "<< i << " not with 32 words after ACC buffer read ";
 			cout << "Size " << lastAccBuffer.at(16+i)  << endl;
@@ -889,7 +889,7 @@ void ACC::versionCheck()
 	usb->sendData(command);
 	
 	lastAccBuffer = usb->safeReadData(SAFE_BUFFERSIZE);
-	if(lastAccBuffer.size()>0)
+	if(lastAccBuffer.size()==ACCFRAME)
 	{
 		if(lastAccBuffer.at(1)=0xaaaa)
 		{
@@ -925,7 +925,7 @@ void ACC::versionCheck()
 		usb->sendData(command);
 
 		lastAccBuffer = usb->safeReadData(SAFE_BUFFERSIZE);
-		if(lastAccBuffer.size()>0)
+		if(lastAccBuffer.size()==ACDCFRAME)
 		{
 			if(lastAccBuffer.at(1)=0xbbbb)
 			{
@@ -984,7 +984,7 @@ bool ACC::emptyUsbLine()
 		tempbuff = usb->safeReadData(SAFE_BUFFERSIZE);
 
 		//if it is exactly an ACC buffer size, success. 
-		if(tempbuff.size() == 32)
+		if(tempbuff.size() == ACCFRAME)
 		{
 			return true;
 		}
@@ -996,7 +996,7 @@ bool ACC::emptyUsbLine()
 			writeErrorLog(err_msg);
 			usbWakeup();
 			tempbuff = usb->safeReadData(SAFE_BUFFERSIZE);
-			if(tempbuff.size() == 32){
+			if(tempbuff.size() == ACCFRAME){
 				return true;
 			}else{
 				writeErrorLog("Usb still sleeping. Problem is not fixed.");
@@ -1050,7 +1050,7 @@ vector<unsigned short> ACC::getACCInfoFrame()
 		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 		buffer = usb->safeReadData(SAFE_BUFFERSIZE);
 		
-		if(buffer.size()!=32)
+		if(buffer.size()!=ACCFRAME)
 		{
 			counter++;
 			writeErrorLog("Could not read ACC info frame");
