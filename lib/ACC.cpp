@@ -117,7 +117,7 @@ int ACC::createAcdcs()
 /*ID:11 Queries the ACC for information about connected ACDC boards*/
 int ACC::whichAcdcsConnected()
 {
-	int retval;
+	int retval=0;
 	unsigned int command;
 	vector<int> connectedBoards;
 
