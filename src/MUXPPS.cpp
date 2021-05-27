@@ -57,7 +57,7 @@ map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn)
 	tmpMap["fTIMESTAMP3"] = buffer.at(6204);    
 	tmpMap["fCOUNTER0"] = buffer.at(1549);  
 	tmpMap["fCOUNTER1"] = buffer.at(3101);  
-    }else if(buffer.size()==8)
+    }else if(buffer.size()==10)
     {
 	tmpMap["EVENTNBR"] = evn;
 	tmpMap["fTYPE"] = buffer.at(1);
