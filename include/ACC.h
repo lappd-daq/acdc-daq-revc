@@ -14,7 +14,7 @@ using namespace std;
 #define MAX_NUM_BOARDS 8 // maxiumum number of ACDC boards connectable to one ACC 
 #define ACCFRAME 32
 #define ACDCFRAME 32
-#define PPSFRAME 8
+#define PPSFRAME 10
 #define PSECFRAME 7795
 
 class ACC
