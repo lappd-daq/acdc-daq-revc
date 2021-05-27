@@ -66,7 +66,7 @@ map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn)
 	tmpMap["fTIMESTAMP1"] = buffer.at(4);
 	tmpMap["fTIMESTAMP2"] = buffer.at(3);
 	tmpMap["fTIMESTAMP3"] = buffer.at(2); 
-	tmpMap["fCOUNTER0"] = buffer.at(1);  
+	tmpMap["fCOUNTER0"] = buffer.at(7);  
 	tmpMap["fCOUNTER1"] = buffer.at(6);  
     }else{
 	    std::cout << "Incompatible size" << endl;
