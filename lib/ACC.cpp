@@ -489,7 +489,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		}*/
 
 		maxCounter++;
-		if(maxCounter>500)
+		if(maxCounter>5000)
 		{
 			return 2;
 		}
