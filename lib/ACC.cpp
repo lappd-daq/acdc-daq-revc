@@ -575,33 +575,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		writePsecData(dataofs, boardsReadyForRead);
 	}
 
-	command = 0xFFB54000;
-	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-	command = 0xFFD00000;
-	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-
-	for(int i: boardsReadyForRead)
-	{
-		command = 0x00210000;
-		command = command | i;
-		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-		lastAccBuffer = usb->safeReadData(ACDCFRAME);
-		if(lastAccBuffer.size()==ACDCFRAME)
-		{
-			if(lastAccBuffer.at(1)=0xbbbb)
-			{
-				map_acdcIF[i] = lastAccBuffer;
-			}else
-			{
-				std::cout << "Board " << i << " got the wrong info frame" << std::endl;
-			}
-		}else
-		{
-			std::cout << "Board " << i << " got =/= 32 words!" << std::endl;
-			map_acdcIF[i] = {0};
-		}
-	}
-
 	return 0;
 }
 
@@ -838,32 +811,6 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 		writePsecData(dataofs, boardsReadyForRead);
 	}
 
-	command = 0xFFB54000;
-	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-	command = 0xFFD00000;
-	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-
-	for(int i: boardsReadyForRead)
-	{
-		command = 0x00210000;
-		command = command | i;
-		usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-		lastAccBuffer = usb->safeReadData(ACDCFRAME);
-		if(lastAccBuffer.size()==ACDCFRAME)
-		{
-			if(lastAccBuffer.at(1)=0xbbbb)
-			{
-				map_acdcIF[i] = lastAccBuffer;
-			}else
-			{
-				std::cout << "Board " << i << " got the wrong info frame" << std::endl;
-			}
-		}else
-		{
-			std::cout << "Board " << i << " got =/= 32 words!" << std::endl;
-			map_acdcIF[i] = {0};
-		}
-	}
 
 	return 0;
 }
