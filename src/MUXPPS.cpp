@@ -499,5 +499,13 @@ int main()
 	auto t1 = std::chrono::high_resolution_clock::now();
 	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
 	cout << "It took "<< dt <<" second(s)."<< endl;
+	
+	int del;
+	cout << endl;
+	cout << "-------------------------------------------------------" << endl;
+	cout << "Do you want to delete the saved files? If not please keep in mind the 32GB storage capacity!" << endl;
+	cout << "Enter (0/1): ";
+	cin >> del;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+	if(del==1){system("rm -r Results");}
 	return 1;
 }
