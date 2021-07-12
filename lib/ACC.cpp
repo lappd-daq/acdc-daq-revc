@@ -842,7 +842,10 @@ void ACC::versionCheck()
 
 	//Give the firmware time to disable
 	usleep(10000); 
-
+	
+	command = 0x000200FF;
+	usb->sendData(command);
+	
 	//Read the ACC infoframe, use sendAndRead for additional buffersize to prevent
 	//leftover words
 	command = 0xFFD00000; 
