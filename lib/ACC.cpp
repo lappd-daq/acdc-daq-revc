@@ -394,6 +394,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 	//Enables the transfer of data from ACDC to ACC
    	enableTransfer(1);
 
+	std::cout << "Start looking for trigger conditions" << std::endl;
 	while(true)
 	{
 		boardsReadyForRead.clear();
@@ -474,12 +475,14 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		maxCounter++;
 		if(maxCounter>5000)
 		{
+			std::cout << "Failed to find a trigger condition" << std::endl;
 			return 2;
 		}
 	}
-
+	std::cout << "Trigger condition found starting to read data" << std::endl;
 	for(int bi: boardsReadyForRead)
 	{
+		std::cout << "Start reading board " << bi << std::endl;
 		//base command for set readmode and which board bi to read
 		unsigned int command = 0x00210000; 
 		command = command | (unsigned int)(bi); 
@@ -551,6 +554,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			}
 		}
 	}
+	std::cout << "Finished reading data for all boards" << std::endl;
 	if(raw==false && strcmp(timestamp.c_str(),"Oscope_b")!=0)
 	{
 		datafn = outfilename + "Data_" + timestamp + ".txt";
