@@ -555,6 +555,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		}
 	}
 	std::cout << "Finished reading data for all boards" << std::endl;
+	std::cout << "------------------------------------" << std::endl;
 	if(raw==false && strcmp(timestamp.c_str(),"Oscope_b")!=0)
 	{
 		datafn = outfilename + "Data_" + timestamp + ".txt";
