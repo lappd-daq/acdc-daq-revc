@@ -80,5 +80,6 @@ int main(int argc, char *argv[])
 		}
 	}
 
+	delete usb;
 	return 0;
 }
