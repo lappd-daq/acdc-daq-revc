@@ -179,6 +179,9 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 {
 	unsigned int command;
 	int retval;
+
+	std::cout << "Received board mask: ";
+	printf("0x%02x\n", boardMask);
 	
 	// Creates ACDCs for readout
 	retval = createAcdcs();
