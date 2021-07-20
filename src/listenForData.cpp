@@ -84,6 +84,9 @@ int main()
 	unsigned int psec_chip;
 	unsigned int psec_channel;
 	
+	int ACCsw;
+	int ACDCsw;
+	
 	std::vector<unsigned int> vec_psec_chip;
 	std::vector<unsigned int> vec_psec_channel;
 
@@ -94,6 +97,27 @@ int main()
 
 	system("mkdir -p Results");
 	
+	while(true)
+	{
+		std::cout << "Do you want to reset the ACC before use (0/1)?" << std::endl; 
+		std::cout << "Set it to: ";
+		std::cin >> ACCsw;  cin.ignore(numeric_limits<streamsize>::max(),'\n');	
+		if(ACCsw==1)
+		{
+			acc.resetACC();
+		}
+		
+		std::cout << "Do you want to reset all ACDCs before use (0/1)?" << std::endl; 
+		std::cout << "Set it to: ";
+		std::cin >> ACDCsw;  cin.ignore(numeric_limits<streamsize>::max(),'\n');	
+		if(ACDCsw==1)
+		{
+			acc.resetACDC();
+		}
+		
+		break;
+	}
+		
 	while(flag)
 	{
 		std::cout << "Please select triggermode: " << std::endl; 
