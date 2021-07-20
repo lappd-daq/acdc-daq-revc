@@ -1012,6 +1012,7 @@ void ACC::resetACDC()
 		unsigned int command = 0xFFFF0000;
 		usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 		usleep(1000000);
+		std::cout << "ACDCs were reset" << std::endl;
 }
 
 /*ID 28: Resets the ACCs*/
@@ -1020,6 +1021,7 @@ void ACC::resetACC()
 		unsigned int command = 0x00000000;
 		usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}
 		usleep(1000000);
+		std::cout << "ACCs was reset" << std::endl;
 }
 
 
