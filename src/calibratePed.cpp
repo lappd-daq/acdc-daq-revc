@@ -67,7 +67,7 @@ int main()
 	
 	for(int i=0; i<N_EVENTS; i++){
 		acc.softwareTrigger();
-
+		std::cout << "Event number " << i<< endl; 
 		retval = acc.listenForAcdcData(trigMode, raw, "Config");
 		if (retval!=0)
 		{

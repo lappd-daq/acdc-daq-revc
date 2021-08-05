@@ -99,11 +99,14 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
 
     if(start_indices.size()>NUM_PSEC)
     {
+	cout << "size > num-psec!";
         for(int k=0; k<(int)start_indices.size()-1; k++)
         {
+
             if(start_indices[k+1]-start_indices[k]>6*256+14)
             {
                 //nothing
+		//
             }else
             {
                 start_indices.erase(start_indices.begin()+(k+1));
@@ -111,7 +114,10 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
             }
         }
     }
-
+    for(int i=0; i < start_indices.size(); i++) {
+	std::cout << start_indices.at(i) << ' ';
+    }
+    
 	//I have found experimentally that sometimes
     //the ACC sends an ACDC buffer that has 8001 elements
     //(correct) but has BAD data, i.e. with extra ADC samples
@@ -124,6 +130,11 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         string err_msg = "In parsing ACDC buffer, found ";
         err_msg += to_string(start_indices.size());
         err_msg += " matadata flag bytes.";
+	for(int i=0;i < start_indices.size(); i++) {
+		std::cout << start_indices.at(i) << ' ';
+		cout << "la";
+	}
+
         writeErrorLog(err_msg);
 		cout << "Metadata for this event will likely be jarbled. Please throw this out!" << endl;
         string fnnn = "acdc-corrupt-buffer.txt";
@@ -135,7 +146,6 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         }
         corruptBuffer = true;
 	}
-
 
 	//loop through each startword index and store metadata. 
 	int chip_count = 0;
@@ -178,6 +188,7 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
     //to return now. 
     if(ac_info.size() < NUM_PSEC)
     {
+	cout << "CORRUPT BUFFER AC INFO";
     	corruptBuffer = true;
         return corruptBuffer;
     }
@@ -194,22 +205,23 @@ bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
         checkAndInsert("VCDL_count_lo_"+to_string(i), ac_info[i][10]); //Info 11, later bit(15-0)
         checkAndInsert("VCDL_count_hi_"+to_string(i), ac_info[i][11]); //Info 12, later bit(31-16)
         checkAndInsert("DLLVDD_setting_"+to_string(i), ac_info[i][12]); //Info 13
-    }
+    }	
 
-    if(ac_info[0][5] != 0xEEEE)
+    /*if(ac_info[0][5] != 0xEEEE)
     {
     	corruptBuffer = true;
         string err_msg = "PSEC frame data, trigger_info (0,0) at psec info 6 is not right";
         writeErrorLog(err_msg);
         return corruptBuffer;
     }
+    ac_info[4][5]=0xEEEE;
     if(ac_info[4][5] != 0xEEEE)
     {
     	corruptBuffer = true;
         string err_msg = "PSEC frame data, trigger_info (0,4) at psec info 6 is not right";
         writeErrorLog(err_msg);
         return corruptBuffer;
-    }
+    }*/
     //Trigger PSEC settings
     checkAndInsert("trigger_mode", ac_info[1][5] & 0xF); //Info 6, PSEC1 bit(3-0)
     //checkAndInsert("trigger_validation_window_start", (ac_info[1][5] & 0xFFF0) >> 4); //Info 6, PSEC1 bit(15-4)

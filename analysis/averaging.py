@@ -26,21 +26,36 @@ def get_board_number(filename):
     connectedBoards = len(f.split())
     # Return the number of acd boards
     return connectedBoards
+# function to extract the metadata from the text file
+# and return it as an array
+def get_metadata(filename):
+    markers=[]
+    f=open(filename,"r")
+    listOfLines = f.readlines()
+    # loops over each item of the text file
+    # and adds only the metadata portion
+    for line in listOfLines:
+        lineNew = line[:2]
+        lineContentList = lineNew.split()
+        importantMarker = lineContentList[-1]
+        markers += [importantMarker]
+    markers = np.array(markers)
+    f.close()
+    return markers
 
 # Main execution:::::::::
 if __name__ == "__main__":
     # Set the filename from an input argument
     filename = sys.argv[1] #input
     savefolder = sys.argv[2] #output
-
     # Get the number of acdc boards that were read out
     num_boards = (get_board_number(filename)-1)/31
     boardnumber = np.empty(int(num_boards))
-    # Loop ober all the read out acdc boards
+    # Loop over all the read out acdc boards
     for bi in range(0,int(num_boards)):
         # Grab the data of one acdc board and get the number of recorded events
         data = load_board_data(filename,bi*31+1)
-        meta = np.loadtxt(filename, dtype=str, delimiter=" ", usecols = 31*(bi+1))
+        meta = get_metadata(filename)
         boardnumber[bi] = int(meta[0])
         number_of_events = len(data[:,1])/N_SAMPLE
         # Helper arrays

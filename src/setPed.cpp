@@ -12,6 +12,8 @@
 #include <map>
 #include <numeric>
 
+#define CALIBRATION_DIRECTORY "directory"
+#define PED_TAG "pedtag"
 
 using namespace std;
 

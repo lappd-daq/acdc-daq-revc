@@ -151,10 +151,9 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
 			cout << "error 2" << endl;
 		}
 	}
-
 	bool corruptMetaBuffer;
 	corruptMetaBuffer = meta.parseBuffer(acdcBuffer);
-
+	
 	map_meta = meta.getMetadata();
 
 	if(corruptMetaBuffer)

@@ -59,7 +59,7 @@ target_link_libraries(Scope ACC ACDC)
 
 add_executable(connectedBoards ${EXECUTABLE_SOURCE_DIR}/connectedBoards.cpp)
 add_executable(calibratePed ${EXECUTABLE_SOURCE_DIR}/calibratePed.cpp)
-#add_executable(setPed ${EXECUTABLE_SOURCE_DIR}/setPed.cpp)
+add_executable(setPed ${EXECUTABLE_SOURCE_DIR}/setPed.cpp)
 add_executable(debug ${EXECUTABLE_SOURCE_DIR}/debug.cpp)
 add_executable(listenForData ${EXECUTABLE_SOURCE_DIR}/listenForData.cpp)
 #add_executable(oscope ${EXECUTABLE_SOURCE_DIR}/oscope.cpp)
@@ -72,7 +72,7 @@ add_executable(MUXPPS ${EXECUTABLE_SOURCE_DIR}/MUXPPS.cpp)
 
 target_link_libraries(connectedBoards PUBLIC ACC myusb)
 target_link_libraries(calibratePed PUBLIC ACC)
-#target_link_libraries(setPed PUBLIC ACC myusb)
+target_link_libraries(setPed PUBLIC ACC myusb)
 target_link_libraries(debug PUBLIC myusb)
 target_link_libraries(listenForData PUBLIC ACC)
 #target_link_libraries(oscope PUBLIC ACC Scope)
@@ -82,5 +82,6 @@ target_link_libraries(listenForData PUBLIC ACC)
 #target_link_libraries(onlySetup PUBLIC ACC)
 #target_link_libraries(DataCalibToConfig PUBLIC ACC)
 target_link_libraries(MUXPPS PUBLIC ACC)
+
 
 

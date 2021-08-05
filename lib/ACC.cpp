@@ -514,7 +514,6 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 			if(a->getBoardIndex() == bi)
 			{
 				int retval;
-
 				//If raw data is requested save and return 0
 				if(raw==true)
 				{
@@ -523,7 +522,7 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 					writeRawDataToFile(acdc_buffer, rawfn);
 					break;
 				}else
-				{
+				 {
 					retval = a->parseDataFromBuffer(acdc_buffer); 
 					corruptBuffer = meta.parseBuffer(acdc_buffer);
 					if(corruptBuffer)
