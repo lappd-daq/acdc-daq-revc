@@ -72,6 +72,7 @@ public:
 	}
 	void setPPSRatio(unsigned int in){PPSRatio = in;} 
 	void setPPSBeamMultiplexer(int in){PPSBeamMultiplexer = in;} 
+	void setMetaSwitch(int in){metaSwitch = in};
 
 	/*------------------------------------------------------------------------------------*/
 	/*-------------------------Local set functions for board setup------------------------*/
@@ -135,6 +136,7 @@ private:
 	int SELF_sign; //var: self trigger sign (normal or inverted)
 	int SELF_coincidence_onoff; //var: flag to enable self trigger coincidence
 	int trigMode; //var: decides the triggermode
+	int metaSwitch = 0;
 	unsigned int SELF_number_channel_coincidence; //var: number of channels required in coincidence for the self trigger
 	unsigned int SELF_threshold; //var: threshold for the selftrigger
 	unsigned int validation_start;
