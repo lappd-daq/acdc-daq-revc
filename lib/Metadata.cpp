@@ -159,7 +159,7 @@ int Metadata::parseBuffer(vector<unsigned short> buffer, unsigned short bi)
 	meta.push_back(bi);
 	for(int CHIP=0; CHIP<NUM_PSEC; CHIP++)
 	{
-		meta.push_back((0xCA00 | CHIP));
+		meta.push_back((0xDCB0 | CHIP));
 		for(int INFOWORD=0; INFOWORD<13; INFOWORD++)
 		{
 			if(CHIP==4 && INFOWORD==7)
