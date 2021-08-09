@@ -145,8 +145,8 @@ private:
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port) corresponds to the connected ACDC boards
 	vector<unsigned int> SELF_psec_channel_mask; //var: PSEC channels active for self trigger
 	vector<unsigned int> SELF_psec_chip_mask; //var: PSEC chips actove for self trigger
-	map<int, map<int, vector<double>>> map_data; //entire data map | index: board < channel < samplevector
-	map<int, map<string, unsigned short>> map_meta; //entire meta map | index: board < metakey < value
+	map<int, map<int, vector<unsigned short>>> map_data; //entire data map | index: board < channel < samplevector
+	map<int,vector<unsigned short>> map_meta; //entire meta map | index: board < metakey < value
 	vector<unsigned short> vbuffer;
 	map<int, vector<unsigned short>> map_acdcIF;
 	vector<unsigned short> map_accIF;
