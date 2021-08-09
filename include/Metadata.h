@@ -29,14 +29,14 @@ public:
 
 	//----------parse function for metadata stream
 	void checkAndInsert(string key, unsigned short val); //inserts vals into metadata map.
-	bool parseBuffer(vector<unsigned short> buffer); //returns success or fail 1/0 and parses the buffer
+	bool parseBuffer(vector<unsigned short> buffer, unsigned short bi = 0xdead); //returns success or fail 1/0 and parses the buffer
 	
 	//----------write functions
 	void writeErrorLog(string errorMsg); //writes the errorlog with timestamps
 
 private:
 	//----------all neccessary global variables
-	map<string, unsigned short> metadata; //var: metadata map | metakeys < value
+	vector<unsigned short> metadata; //var: metadata map | metakeys < value
 	vector<string> metadata_keys; //var: metadata keys
 
 	//----------general functions
