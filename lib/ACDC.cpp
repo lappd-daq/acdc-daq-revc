@@ -43,8 +43,7 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> buffer)
 
 	if(buffer.size() == 16)
 	{
-		pps = buffer;
-		data.clear();
+		data[0] = buffer;
 		return -3;	
 	}
 
