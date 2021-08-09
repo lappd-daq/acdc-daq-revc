@@ -768,14 +768,20 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 						break;
 					}else if(retval == 0)
 					{
-						retval = meta.parseBuffer(acdc_buffer,bi);
-						if(retval != 0)
+						if(metaSwitch == 1)
 						{
-							writeErrorLog("Metadata error not parsed correctly");
-							return 1;						
+							retval = meta.parseBuffer(acdc_buffer,bi);
+							if(retval != 0)
+							{
+								writeErrorLog("Metadata error not parsed correctly");
+								return 1;						
+							}else
+							{
+								map_meta[bi] = meta.getMetadata();
+							}
 						}else
 						{
-							map_meta[bi] = meta.getMetadata();
+							map_meta[bi] = {0};
 						}
 					}else
 					{
