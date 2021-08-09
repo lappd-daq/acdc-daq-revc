@@ -585,11 +585,11 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 
 	//this function is simply readAcdcBuffers
 	//if the trigMode is software
-	if(trigMode == 1)
-	{
-		int retval = readAcdcBuffers(raw, timestamp);
-		return retval;
-	}
+	//if(trigMode == 1)
+	//{
+	//	int retval = readAcdcBuffers(raw, timestamp);
+	//	return retval;
+	//}
 
 	//setup a sigint capturer to safely
 	//reset the boards if a ctrl-c signal is found
@@ -605,15 +605,16 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
-	auto printDuration = chrono::seconds(5); //prints as it loops and listens
+	auto printDuration = chrono::seconds(2); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
-	auto timeoutDuration = chrono::seconds(100); // will exit and reinitialize
+	auto timeoutDuration = chrono::seconds(20); // will exit and reinitialize
 
 	while(true)
 	{ 
 		//Clear the boards read vector
 		boardsReadyForRead.clear(); 
 		readoutSize.clear();
+		
 		//Time the listen fuction
 		now = chrono::steady_clock::now();
 		if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
@@ -760,42 +761,32 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 				}else
 				{
 					//parśe raw data to channel data and metadata
-					retval = a->parseDataFromBuffer(acdc_buffer); 
-					meta.checkAndInsert("Board", bi);
-					corruptBuffer = meta.parseBuffer(acdc_buffer);
-					
-					//check metadata for corrupt buffer
-					if(corruptBuffer)
+					retval = a->parseDataFromBuffer(acdc_buffer);
+					map_data[bi] = a->returnData();	
+					if(retval == -3)
 					{
-						writeErrorLog("Metadata error not parsed correctly");
-						return 1;
-					}
-					map_meta[bi] = meta.getMetadata();
-
-					//check channel data for corrupt buffer
-					if(retval !=0)
+						break;
+					}else if(retval == 0)
 					{
-						string err_msg = "Corrupt buffer caught at PSEC data level (2)";
-						if(retval == 3)
+						retval = meta.parseBuffer(acdc_buffer,bi);
+						if(retval != 0)
 						{
-							err_msg += "Because of the Metadata buffer";
+							writeErrorLog("Metadata error not parsed correctly");
+							return 1;						
+						}else
+						{
+							map_meta[bi] = meta.getMetadata();
 						}
-						writeErrorLog(err_msg);
-						corruptBuffer = true;
-					}
-					if(corruptBuffer)
+					}else
 					{
-						string err_msg = "got a corrupt buffer with retval ";
-						err_msg += to_string(retval);
-						writeErrorLog(err_msg);
+						writeErrorLog("Data parsing went wrong");
 						return 1;
-					}			
-					map_data[bi] = a->returnData();
+					}				
 				}
 			}
 		}
 	}
-	if(raw==false && strcmp(timestamp.c_str(),"Oscope_b")!=0)
+	if(raw==false)
 	{
 		datafn = outfilename + "Data_" + timestamp + ".txt";
 		dataofs.open(datafn.c_str(), ios::app); 
@@ -1063,22 +1054,6 @@ void ACC::writeRawDataToFile(vector<unsigned short> buffer, string rawfn)
 /*ID 31: Write function for the parsed data format*/
 void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 {
-	vector<string> keys;
-	//vector<string> lines;
-	map<string, unsigned short> extra_key;
-	for(int bi: boardsReadyForRead)
-	{
-		extra_key = map_meta[bi];
-		if(extra_key.size()!=0)
-		{
-			break;
-		}
-	}
-
-	for(auto const& element : extra_key) {
-		keys.push_back(element.first);
-	}
-
 	string delim = " ";
 	for(int enm=0; enm<NUM_SAMP; enm++)
 	{
@@ -1096,11 +1071,11 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 				{
 					//cout << "Writing board " << bi << " and ch " << ch << ": " << map_data[bi][ch+1][enm] << endl;
 				}
-				d << dec << (unsigned short)map_data[bi][ch+1][enm] << delim;
+				d << dec << (unsigned short)map_data[bi][ch][enm] << delim;
 			}
-			if(enm<(int)keys.size())
+			if(enm<(int)map_meta[bi].size())
 			{
-				d << hex << map_meta[bi][keys[enm]] << delim;
+				d << hex << map_meta[bi][enm] << delim;
 
 			}else
 			{
