@@ -21,7 +21,7 @@ public:
 
 	//----------local return functions
 	int getEventNumber(); //returns the event number
-	map<string, unsigned short> getMetadata(){return metadata;} //returns the metadata map | metakey < value
+	vector<unsigned short> getMetadata(){return meta;} //returns the metadata map | metakey < value
 	vector<string> getMetaKeys(){return metadata_keys;} //returns the metakeys seperatly
 
 	//----------local set functions
@@ -36,7 +36,7 @@ public:
 
 private:
 	//----------all neccessary global variables
-	vector<unsigned short> metadata; //var: metadata map | metakeys < value
+	vector<unsigned short> meta; //var: metadata map | metakeys < value
 	vector<string> metadata_keys; //var: metadata keys
 
 	//----------general functions
