@@ -13,7 +13,7 @@ using namespace std;
 
 Metadata::Metadata()
 {
-	initializeMetadataKeys();
+	//initializeMetadataKeys();
 }
 
 Metadata::Metadata(vector<unsigned short> acdcBuffer)
@@ -42,7 +42,7 @@ void Metadata::setBoardAndEvent(unsigned short board, int event)
 
 int Metadata::getEventNumber()
 {
-    return (int)metadata["Event"];
+    return -1;
 }
 
 //takes the full acdcBuffer as input. 
@@ -189,17 +189,7 @@ int Metadata::parseBuffer(vector<unsigned short> buffer, unsigned short bi = 0xd
 //into metadata map if they already exist. 
 void Metadata::checkAndInsert(string key, unsigned short val)
 {
-	//if the key exists, change the value
-    if(metadata.count(key) > 0)
-    {
-        metadata[key] = val;
-    }
-    //if it is new, insert
-    else
-    {
-        metadata.insert(pair<string, unsigned short>(key, val));
-    }
-    return;
+
 }
 
 
