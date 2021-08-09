@@ -18,8 +18,8 @@ Metadata::Metadata()
 
 Metadata::Metadata(vector<unsigned short> acdcBuffer)
 {
-	initializeMetadataKeys();
-	parseBuffer(acdcBuffer);
+	//initializeMetadataKeys();
+	//parseBuffer(acdcBuffer);
 }
 
 Metadata::~Metadata()
@@ -51,208 +51,137 @@ int Metadata::getEventNumber()
 //Returns:
 //false if a corrupt buffer happened
 //true if all good. 
-bool Metadata::parseBuffer(vector<unsigned short> acdcBuffer)
+int Metadata::parseBuffer(vector<unsigned short> buffer, unsigned short bi = 0xdead)
 {
-	//if the buffer is 0 length (i.e. bad usb comms)
-	//return doing nothing
-	if(acdcBuffer.size() == 0) return true;
-	int dist;
-
-	//byte that indicates the metadata of
-	//each psec chip is about to follow. 
-	const unsigned short startword = 0xBA11; 
-
-	//to hold data temporarily. local to this function. 
-	//this is used to match to my old convention
-	//from the old software (which took a while just)
-	//to type out properly. 
-	//ac_info[chip][index in buffer]
-	map<int, vector<unsigned short>> ac_info;
-
-	//this is the header to the ACDC buffer that
-	//the ACC appends at the beginning, found in
-	//packetUSB.vhd. 
-	vector<unsigned short> cc_header_info;
-
-	
-	//indices of elements in the acdcBuffer
-	//that correspond to the byte ba11
-	vector<int> start_indices; 
-	vector<unsigned short>::iterator bit;
-
-	//loop through the data and find locations of startwords. 
-    //this can be made more efficient if you are having efficiency problems.
-	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
+	//Catch empty buffers
+	if(buffer.size() == 0)
 	{
-		//the iterator is at an element with startword value. 
-		//push the index (integer, from std::distance) to a vector. 
-        if(*bit == startword)
-        {
-        	dist= std::distance(acdcBuffer.begin(), bit);
-        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()])<6*256)
-        	{
-          		continue;  
-        	}
-        	start_indices.push_back(dist);
-        }
+		std::cout << "You tried to parse ACDC data without pulling/setting an ACDC buffer" << std::endl;
+		return -1;
 	}
 
-    if(start_indices.size()>NUM_PSEC)
-    {
-        for(int k=0; k<(int)start_indices.size()-1; k++)
-        {
-            if(start_indices[k+1]-start_indices[k]>6*256+14)
-            {
-                //nothing
-            }else
-            {
-                start_indices.erase(start_indices.begin()+(k+1));
-                k--;
-            }
-        }
-    }
+ 	//Prepare the Metadata vector | global vector vector<unsigned short> meta 
+	meta.clear();
 
-	//I have found experimentally that sometimes
-    //the ACC sends an ACDC buffer that has 8001 elements
-    //(correct) but has BAD data, i.e. with extra ADC samples
-    //and missing PSEC metadata (startwords). This event
-    //needs to be thrown away really, but here all I can 
-    //do is return and say that the metadata is nothing. 
-    bool corruptBuffer = false;
+	//Helpers
+	int DistanceFromZero;
+	int chip_count = 0;
+	
+	//Indicator words for the start/end of the metadata
+	const unsigned short startword = 0xBA11; 
+	unsigned short endword = 0xFACE; 
+    	unsigned short endoffile = 0x4321;
+
+	//Empty metadata map for each Psec chip <PSEC #, vector with information>
+	map<int, vector<unsigned short>> PsecInfo;
+
+	//Empty trigger metadata map for each Psec chip <PSEC #, vector with trigger>
+	map<int, vector<unsigned short>> PsecTriggerInfo;
+	unsigned short CombinedTriggerRateCount;
+
+	//Empty vector with positions of aboves startword
+	vector<int> start_indices; 
+
+	//Find the startwords and write them to the vector
+	vector<unsigned short>::iterator bit;
+	for(bit = buffer.begin(); bit != buffer.end(); ++bit)
+	{
+        	if(*bit == startword)
+        	{
+        		DistanceFromZero= std::distance(buffer.begin(), bit);
+        		start_indices.push_back(DistanceFromZero);
+        	}
+	}
+
+	//Filter in cases where one of the start words is found in the metadata 
+	if(start_indices.size()>NUM_PSEC)
+	{
+		for(int k=0; k<(int)start_indices.size()-1; k++)
+		{
+		    	if(start_indices[k+1]-start_indices[k]>6*256+14)
+		    	{
+				//nothing
+		    	}else
+		    	{
+				start_indices.erase(start_indices.begin()+(k+1));
+				k--;
+		    	}
+		}
+	}
+
+	//Last case emergency stop if metadata is still not quite right
 	if(start_indices.size() != NUM_PSEC)
 	{
-        string err_msg = "In parsing ACDC buffer, found ";
-        err_msg += to_string(start_indices.size());
-        err_msg += " matadata flag bytes.";
-        writeErrorLog(err_msg);
-		cout << "Metadata for this event will likely be jarbled. Please throw this out!" << endl;
-        string fnnn = "acdc-corrupt-buffer.txt";
-        cout << "Printing to file : " << fnnn << endl;
-        ofstream cb(fnnn);
-        for(unsigned short k: acdcBuffer)
-        {
-            cb << hex << k << endl;
-        }
-        corruptBuffer = true;
+        	string fnnn = "meta-corrupt-psec-buffer.txt";
+        	cout << "Printing to file : " << fnnn << endl;
+        	ofstream cb(fnnn);
+        	for(unsigned short k: buffer)
+        	{
+            		cb << hex << k << endl;
+        	}
+        	return -2;
 	}
 
-
-	//loop through each startword index and store metadata. 
-	int chip_count = 0;
-	unsigned short endword = 0xFACE; //end of info buffer. 
-    unsigned short endoffile = 0x4321;
+	//Fill the psec info map
 	for(int i: start_indices)
 	{
-		//re-use buffer iterator from above
-		//to set starting point. 
-		bit = acdcBuffer.begin() + i + 1; //the 1 is to start one element after the startword
-		//while we are not at endword, 
-		//append elements to ac_info
-		vector<unsigned short> infobytes;
-		while(*bit != endword && *bit != endoffile && infobytes.size() < 20)
+		//Write the first word after the startword
+		bit = buffer.begin() + (i+1);
+
+		//As long as the endword isn't reached copy metadata words into a vector and add to map
+		vector<unsigned short> InfoWord;
+		while(*bit != endword && *bit != endoffile && InfoWord.size() < 14)
 		{
-			infobytes.push_back(*bit);
+			InfoWord.push_back(*bit);
 			++bit;
 		}
-		ac_info.insert(pair<int, vector<unsigned short>>(chip_count, infobytes));
+		PsecInfo.insert(pair<int, vector<unsigned short>>(chip_count, InfoWord));
 		chip_count++;
 	}
 
-    map<int, unsigned short> trigger_info;
-    vector<unsigned short> buffer;
-    for(int ch=0; ch<NUM_CH; ch++)
-    {
-        bit = acdcBuffer.begin() + ch + start_indices[4]+15;
-        trigger_info[ch] = *bit;
-    }
-    //trigger_info.insert(pair<int, unsigned short>(ch, bit));
-    unsigned short combined_trigger = acdcBuffer[7792];
+	//Fill the psec trigger info map
+	for(int chip=0; chip<NUM_PSEC; chip++)
+	{
+	    for(int ch=0; ch<NUM_CH; ch++)
+	    {
+	    	//Find the trigger data at begin + last_metadata_start + 13_info_words + 1_end_word + 1 
+	        bit = buffer.begin() + start_indices[4] + 13 + 1 + 1 + ch + (chip*NUM_CH-1);
+	        PsecTriggerInfo[chip].push_back(*bit);
+	    }
+	}
 
-    //Here is where bad access errors could occur. 
-    //It is presently coded such that if there are 
-    //more ba11 bytes than NUM_PSEC (sometimes a bug
-    //that happens at firmware level), nothing will go wrong
-    //but this function will return a corruptBuffer flag at the end. 
-    //However, if there are less than NUM_SEC ba11 sets of words
-    //in the ac_info vector, we will have an access error and need
-    //to return now. 
-    if(ac_info.size() < NUM_PSEC)
-    {
-    	corruptBuffer = true;
-        return corruptBuffer;
-    }
+	//Fill the combined trigger
+	CombinedTriggerRateCount = buffer[7792];
 
-    //Filling all the metadata infos with ac_info[chip][infoNr -1]
-    //General PSEC info 
-    for(int i = 0; i < NUM_PSEC; i++)
-    {
-        checkAndInsert("feedback_count_"+to_string(i), ac_info[i][0]); //Info 1
-        checkAndInsert("feedback_target_count_"+to_string(i), ac_info[i][1]); //Info 2
-        checkAndInsert("Vbias_setting_"+to_string(i), ac_info[i][2]); //Info 3
-        checkAndInsert("selftrigger_threshold_setting_"+to_string(i), ac_info[i][3]); //Info 4
-        checkAndInsert("PROVDD_setting_"+to_string(i), ac_info[i][4]); // Info 5
-        checkAndInsert("VCDL_count_lo_"+to_string(i), ac_info[i][10]); //Info 11, later bit(15-0)
-        checkAndInsert("VCDL_count_hi_"+to_string(i), ac_info[i][11]); //Info 12, later bit(31-16)
-        checkAndInsert("DLLVDD_setting_"+to_string(i), ac_info[i][12]); //Info 13
-    }
+	//----------------------------------------------------------
 
-    if(ac_info[0][5] != 0xEEEE)
-    {
-    	corruptBuffer = true;
-        string err_msg = "PSEC frame data, trigger_info (0,0) at psec info 6 is not right";
-        writeErrorLog(err_msg);
-        return corruptBuffer;
-    }
-    if(ac_info[4][5] != 0xEEEE)
-    {
-    	corruptBuffer = true;
-        string err_msg = "PSEC frame data, trigger_info (0,4) at psec info 6 is not right";
-        writeErrorLog(err_msg);
-        return corruptBuffer;
-    }
-    //Trigger PSEC settings
-    checkAndInsert("trigger_mode", ac_info[1][5] & 0xF); //Info 6, PSEC1 bit(3-0)
-    //checkAndInsert("trigger_validation_window_start", (ac_info[1][5] & 0xFFF0) >> 4); //Info 6, PSEC1 bit(15-4)
-    //checkAndInsert("trigger_validation_window_length", ac_info[2][5] & 0xFFF); //info 6, PSEC2 bit(11-0)
-    checkAndInsert("trigger_sma_invert", (ac_info[3][5] & 0x2) >> 1); // Info 6, PSEC3 bit(1)
-    //checkAndInsert("trigger_sma_detection_mode", ac_info[3][5] & 0x1); // Info 6, PSEC3 bit(0)
-    //checkAndInsert("trigger_acc_invert", (ac_info[3][5] & 0x8) >> 3); // Info 6, PSEC3 bit(3)
-    //checkAndInsert("trigger_acc_detection_mode", (ac_info[3][5] & 0x4) >> 2); // Info 6, PSEC3 bit(2)
-    checkAndInsert("trigger_self_sign", (ac_info[3][5] & 0x20) >> 5); //Info 6, PSEC3 bit(5)
-    //checkAndInsert("trigger_self_detection_mode", (ac_info[3][5] & 0x1) >> 4); // Info 6, PSEC3 bit(4)
-    checkAndInsert("trigger_self_coin", (ac_info[3][5] & 0x7C0) >> 6); // Info 6, PSEC3 bit(10-6)
+  	//Start the metadata parsing 
+	meta.push_back(bi);
+	for(int CHIP=0; CHIP<NUM_PSEC; CHIP++)
+	{
+		meta.push_back((0xCA00 | CHIP));
+		for(int INFOWORD=0; INFOWORD<13; INFOWORD++)
+		{
+			if(CHIP==4 && INFOWORD==7)
+			{
+				meta.push_back(((PsecInfo[CHIP][INFOWORD] & 0xf000)>>12));
+				meta.push_back(((PsecInfo[CHIP][INFOWORD] & 0x800)>>11));
+				meta.push_back(((PsecInfo[CHIP][INFOWORD] & 0x400)>>10));
+				meta.push_back((PsecInfo[CHIP][INFOWORD] & 0x3ff));
+			}else
+			{
+				meta.push_back(PsecInfo[CHIP][INFOWORD]);
+			}
+			
+		}
+		for(int TRIGGERWORD=0; TRIGGERWORD<6; TRIGGERWORD++)
+		{
+			meta.push_back(PsecTriggerInfo[CHIP][TRIGGERWORD]);
+		}
+	}
 
-    checkAndInsert("trigger_selfmask_0", ac_info[0][6]); //Info 7 PSEC0
-    checkAndInsert("trigger_selfmask_1", ac_info[1][6]); //Info 7 PSEC1
-    checkAndInsert("trigger_selfmask_2", ac_info[2][6]); //Info 7 PSEC2
-    checkAndInsert("trigger_selfmask_3", ac_info[3][6]); //Info 7 PSEC3
-    checkAndInsert("trigger_selfmask_4", ac_info[4][6]); //Info 7 PSEC4
-
-    checkAndInsert("trigger_self_threshold_0", ac_info[0][7] & 0xFFF); //Info 8 PSEC0 bit(11-0)
-    checkAndInsert("trigger_self_threshold_1", ac_info[1][7] & 0xFFF); //Info 8 PSEC1 bit(11-0)
-    checkAndInsert("trigger_self_threshold_2", ac_info[2][7] & 0xFFF); //Info 8 PSEC2 bit(11-0)
-    checkAndInsert("trigger_self_threshold_3", ac_info[3][7] & 0xFFF); //Info 8 PSEC3 bit(11-0)
-    checkAndInsert("trigger_self_threshold_4", ac_info[4][7] & 0xFFF); //Info 8 PSEC4 bit(11-0)
-
-    //Timestamp data
-    checkAndInsert("timestamp_0", ac_info[0][8]); // Info 9 PSEC0 later bit(15-0)
-    checkAndInsert("timestamp_1", ac_info[1][8]); // Info 9 PSEC1 later bit(31-16)
-    checkAndInsert("timestamp_2", ac_info[2][8]); // Info 9 PSEC2 later bit(47-32)
-    checkAndInsert("timestamp_3", ac_info[3][8]); // Info 9 PSEC3 later bit(63-48)
-
-    checkAndInsert("clockcycle_bits", ac_info[0][8] & 0x7); // Info 9 PSEC0 bit(2-0)
-
-    //Event count
-    checkAndInsert("event_count_lo", ac_info[0][9]); //Info 10 PSEC0 later bit(15-0)
-    checkAndInsert("event_count_hi", ac_info[1][9]); //Info 10 PSEC1 later bit(31-16)
-
-    for(int ch=0; ch<NUM_CH; ch++)
-    {
-        checkAndInsert("self_trigger_rate_count_psec_ch"+to_string(ch), trigger_info[ch]);
-    }
-    checkAndInsert("combined_trigger_rate_count", combined_trigger);
-
-	return corruptBuffer;
+	meta.push_back(CombinedTriggerRateCount);
+	return 0;
 }
 
 
