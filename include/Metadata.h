@@ -29,7 +29,7 @@ public:
 
 	//----------parse function for metadata stream
 	void checkAndInsert(string key, unsigned short val); //inserts vals into metadata map.
-	int parseBuffer(vector<unsigned short> buffer, unsigned short bi = 0xdead); //returns success or fail 1/0 and parses the buffer
+	int parseBuffer(vector<unsigned short> buffer, unsigned short bi = 57005); //returns success or fail 1/0 and parses the buffer
 	
 	//----------write functions
 	void writeErrorLog(string errorMsg); //writes the errorlog with timestamps
