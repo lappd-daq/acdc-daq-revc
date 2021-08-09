@@ -51,7 +51,7 @@ int Metadata::getEventNumber()
 //Returns:
 //false if a corrupt buffer happened
 //true if all good. 
-int Metadata::parseBuffer(vector<unsigned short> buffer, unsigned short bi = 0xdead)
+int Metadata::parseBuffer(vector<unsigned short> buffer, unsigned short bi = 57005)
 {
 	//Catch empty buffers
 	if(buffer.size() == 0)
