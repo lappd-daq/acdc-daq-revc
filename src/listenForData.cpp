@@ -92,6 +92,8 @@ int main()
 
 	int BeamgateMultiplexer;
 	int PPS_divide_ratio;
+	
+	int metaSwitch;
 
 	ACC acc;
 
@@ -386,6 +388,11 @@ int main()
 		if(rawMode==0)
 		{
 			rawBool = false;
+			std::cout << "Do you want to parse Metadata as well?" << std::endl;
+			
+			cin >> metaSwitch;
+			cin.ignore(numeric_limits<streamsize>::max(),'\n');
+			acc.setMetaSwitch(metaSwitch);
 			break;
 		}else if(rawMode==1)
 		{
