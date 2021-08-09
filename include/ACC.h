@@ -34,9 +34,9 @@ public:
 	/*ID Nan: Returns set triggermode */
 	int getTriggermode(){return trigMode;} 
 	/*ID Nan: Returns the data map*/
-	map<int, map<int, vector<double>>> returnData(){return map_data;} 
+	map<int, map<int, vector<unsigned short>>> returnData(){return map_data;} 
 	/*ID Nan: Returns the meta map*/
-	map<int, map<string, unsigned short>> returnMeta(){return map_meta;} 
+	map<int, vector<unsigned short>> returnMeta(){return map_meta;} 
 	/*ID Nan: Returns the raw data vector*/
 	vector<unsigned short> returnRaw(){return vbuffer;}
 	/*ID Nan: Returns the acdc info frame map*/
