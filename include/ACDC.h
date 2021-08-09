@@ -26,7 +26,7 @@ public:
 	int getNumCh() {int a = NUM_CH; return a;} //returns the number of total channels per acdc
 	int getNumPsec() {int a = NUM_PSEC; return a;} //returns the number of psec chips on an acdc
 	int getNumSamp() {int a = NUM_SAMP; return a;} //returns the number of samples for on event
-	map<int, vector<double>> returnData(){return data;} //returns the entire data map | index: channel < samplevector
+	map<int, vector<unsigned short>> returnData(){return data;} //returns the entire data map | index: channel < samplevector
 	map<string, unsigned short> returnMeta(){return map_meta;} //returns the entire meta map | index: metakey < value 
 
 	//----------local set functions
