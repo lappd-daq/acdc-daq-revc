@@ -72,7 +72,7 @@ public:
 	}
 	void setPPSRatio(unsigned int in){PPSRatio = in;} 
 	void setPPSBeamMultiplexer(int in){PPSBeamMultiplexer = in;} 
-	void setMetaSwitch(int in){metaSwitch = in};
+	void setMetaSwitch(int in){metaSwitch = in;}
 
 	/*------------------------------------------------------------------------------------*/
 	/*-------------------------Local set functions for board setup------------------------*/
