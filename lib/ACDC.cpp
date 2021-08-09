@@ -32,106 +32,92 @@ void ACDC::setBoardIndex(int bi)
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
+int ACDC::parseDataFromBuffer(vector<unsigned short> buffer)
 {
-	vector<unsigned short> acdcBuffer = acdc_buffer;
-
-	//make sure an acdc buffer has been
-	//filled. if not, there is nothing to be done.
-	if(acdcBuffer.size() == 0)
+	//Catch empty buffers
+	if(buffer.size() == 0)
 	{
-		string err_msg = "You tried to parse ACDC data without pulling/setting an ACDC buffer";
-		writeErrorLog(err_msg);
-		return 2;
+		std::cout << "You tried to parse ACDC data without pulling/setting an ACDC buffer" << std::endl;
+		return -1;
+	}
+
+	if(buffer.size() == 16)
+	{
+		pps = buffer;
+		data.clear();
+		return -3;	
 	}
 
 	//clear the data map prior.
 	data.clear();
 
-	//if the buffer is 0 length (i.e. bad usb comms)
-	//return doing nothing
-	if(acdcBuffer.size() == 0)
-	{
-		return true;
-	}
-	int dist;
-	int channel_count=1;
+	//Helpers
+	int DistanceFromZero;
+	int channel_count=0;
 
-	//byte that indicates the metadata of
-	//each psec chip is about to follow. 
+	//Indicator words for the start/end of the data
 	const unsigned short startword = 0xF005; 
 	unsigned short endword = 0xBA11;
 	unsigned short endoffile = 0x4321;
 
-	//indices of elements in the acdcBuffer
-	//that correspond to the byte ba11
+	//Empty vector with positions of aboves startword
 	vector<int> start_indices; 
-	vector<unsigned short>::iterator bit;
 
-	//loop through the data and find locations of startwords. 
-    //this can be made more efficient if you are having efficiency problems.
-	for(bit = acdcBuffer.begin(); bit != acdcBuffer.end(); ++bit)
+	//Find the startwords and write them to the vector
+	vector<unsigned short>::iterator bit;
+	for(bit = buffer.begin(); bit != buffer.end(); ++bit)
 	{
-		//the iterator is at an element with startword value. 
-		//push the index (integer, from std::distance) to a vector. 
-        if(*bit == startword)
-        {
-        	dist= std::distance(acdcBuffer.begin(), bit);
-        	if(start_indices.size()!=0 && abs(dist-start_indices[start_indices.size()])<(6*256+15))
-        	{
-            	continue;        
-        	}
-        	start_indices.push_back(dist);
-        }
+		if(*bit == startword)
+		{
+			DistanceFromZero= std::distance(buffer.begin(), bit);
+			start_indices.push_back(DistanceFromZero);
+		}
 	}
 
+	//Filter in cases where one of the start words is found in the metadata 
 	if(start_indices.size()>NUM_PSEC)
 	{
 		for(int k=0; k<(int)start_indices.size()-1; k++)
 		{
-			if(start_indices[k+1]-start_indices[k]>6*256+14)
-			{
+		    if(start_indices[k+1]-start_indices[k]>6*256+14)
+		    {
 				//nothing
-			}else
-			{
+		    }else
+		    {
 				start_indices.erase(start_indices.begin()+(k+1));
 				k--;
-			}
+		    }
 		}
 	}
 
-    bool corruptBuffer = false;
+	//Last case emergency stop if metadata is still not quite right
 	if(start_indices.size() != NUM_PSEC)
 	{
-        string err_msg = "In parsing ACDC buffer, found ";
-        err_msg += to_string(start_indices.size());
-        err_msg += " psec data flag bytes.";
-        writeErrorLog(err_msg);
-        string fnnn = "acdc-corrupt-psec-buffer.txt";
-        cout << "Printing to file : " << fnnn << endl;
-        ofstream cb(fnnn);
-        for(unsigned short k: acdcBuffer)
-        {
-            cb << hex << k << endl;
-        }
-        corruptBuffer = true;
+		string fnnn = "acdc-corrupt-psec-buffer.txt";
+		cout << "Printing to file : " << fnnn << endl;
+		ofstream cb(fnnn);
+		for(unsigned short k: buffer)
+		{
+		    cb << hex << k << endl;
+		}
+		return -2;
 	}
 
+	//Fill data map
 	for(int i: start_indices)
 	{
-		//re-use buffer iterator from above
-		//to set starting point. 
-		bit = acdcBuffer.begin() + i + 1; //the 1 is to start one element after the startword
-		//while we are not at endword, 
-		//append elements to ac_info
-		vector<double> infobytes;
+		//Write the first word after the startword
+		bit = buffer.begin() + (i+1);
+
+		//As long as the endword isn't reached copy metadata words into a vector and add to map
+		vector<unsigned short> InfoWord;
 		while(*bit != endword && *bit != endoffile)
 		{
-			infobytes.push_back(*bit);
-			if(infobytes.size()==NUM_SAMP)
+			InfoWord.push_back((unsigned short)*bit);
+			if(InfoWord.size()==NUM_SAMP)
 			{
-				data[channel_count] = infobytes;
-				infobytes.clear();
+				data.insert(pair<int, vector<unsigned short>>(channel_count, InfoWord));
+				InfoWord.clear();
 				channel_count++;
 			}
 			++bit;
@@ -140,30 +126,15 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> acdc_buffer)
 
 	if(data.size()!=NUM_CH)
 	{
-		cout << "error 1" << endl;
-		corruptBuffer = true; 
+		cout << "error 1: Not 30 channels" << endl;
 	}
 
 	for(int i=0; i<NUM_CH; i++)
 	{
-		if(data[i+1].size()!=NUM_SAMP)
+		if(data[i].size()!=NUM_SAMP)
 		{
-			cout << "error 2" << endl;
+			cout << "error 2: not 256 samples in channel " << i << endl;
 		}
-	}
-
-	bool corruptMetaBuffer;
-	corruptMetaBuffer = meta.parseBuffer(acdcBuffer);
-
-	map_meta = meta.getMetadata();
-
-	if(corruptMetaBuffer)
-	{
-		return 3;
-	}	
-	if(corruptBuffer)
-	{
-		return 2;
 	}
 
 	return 0;
