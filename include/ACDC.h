@@ -45,7 +45,7 @@ private:
 	//----------all neccessary global variables
 	int boardIndex; //var: represents the boardindex for the current board
 	vector<unsigned short> lastAcdcBuffer; //most recently received ACDC buffer
-	map<int, vector<double>> data; //entire data map | index: channel < samplevector
+	map<int, vector<unsigned short>> data; //entire data map | index: channel < samplevector
 	map<string, unsigned short> map_meta; //entire meta map | index: metakey < value
 };
 
