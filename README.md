@@ -162,13 +162,13 @@ The entries are the following as 16bit hex words:
 | 4 | Vbias (pedestal) value setting | 16 |
 | 5 | Self trigger threshold value setting | 16 |
 | 6 | PROVDD parameter setting | 16 |
-| 7 | Trigger info 0
-| 8 | Trigger info 1
-| 9 | Trigger info 2
-| 10 | PSEC0 timestamp [15:0] | 16 together with Line 30,50 and 70 |
-| 11 | PSEC0 event count [15:0] | 16 together with Line 31 |
-| 12 | VCDL count [15:0] | 16 together with Line 13 |
-| 13 | VCDL count [31:16] | 16 together with Line 12 |
+| 7 | Trigger info 0, Beamgate timestamp[63:48] | 16 together with Words 27,47 and 67 | 
+| 8 | Trigger info 1, Selftrigger mask PSEC 0 | 16 |
+| 9 | Trigger info 2, Selftrigger threshold PSEC 0 | 16 |
+| 10 | PSEC0 timestamp [15:0] | 16 together with Words 30,50 and 70 |
+| 11 | PSEC0 event count [15:0] | 16 together with Word 31 |
+| 12 | VCDL count [15:0] | 16 together with Word 13 |
+| 13 | VCDL count [31:16] | 16 together with Word 12 |
 | 14 | DLLVDD parameter setting | 16 |
 | 15 | PSEC0-ch0 Self trig rate counts | 16 | 
 | 16 | PSEC0-ch1 Self trig rate counts | 16 |
@@ -182,13 +182,13 @@ The entries are the following as 16bit hex words:
 | 24 | Vbias (pedestal) value setting | 16 |
 | 25 | Self trigger threshold value setting | 16 |
 | 26 | PROVDD parameter setting | 16 |
-| 27 | Trigger info 0
-| 28 | Trigger info 1
-| 29 | Trigger info 2
-| 30 | PSEC1 timestamp [31:16] | 16 together with Line 10,50 and 70 |
-| 31 | PSEC1 event count [31:16] | 16 together with Line 11 |
-| 32 | VCDL count [15:0] | 16 together with Line 33 |
-| 33 | VCDL count [31:16] | 16 together with Line 32 |
+| 27 | Trigger info 0, Beamgate timestamp[47:32] | 16 together with Words 7,47 and 67 | 
+| 28 | Trigger info 1, Selftrigger mask PSEC 1 | 16 |
+| 29 | Trigger info 2, Selftrigger threshold PSEC 1 | 16 |
+| 30 | PSEC1 timestamp [31:16] | 16 together with Words 10,50 and 70 |
+| 31 | PSEC1 event count [31:16] | 16 together with Word 11 |
+| 32 | VCDL count [15:0] | 16 together with Word 33 |
+| 33 | VCDL count [31:16] | 16 together with Word 32 |
 | 34 | DLLVDD parameter setting | 16 |
 | 35 | PSEC1-ch0 Self trig rate counts | 16 | 
 | 36 | PSEC1-ch1 Self trig rate counts | 16 |
@@ -202,13 +202,13 @@ The entries are the following as 16bit hex words:
 | 44 | Vbias (pedestal) value setting | 16 |
 | 45 | Self trigger threshold value setting | 16 |
 | 46 | PROVDD parameter setting | 16 |
-| 47 | Trigger info 0
-| 48 | Trigger info 1
-| 49 | Trigger info 2
-| 50 | PSEC2 timestamp [47:32] | 16 together with Line 10,30 and 70 |
+| 47 | Trigger info 0, Beamgate timestamp[31:16] | 16 together with Words 7,27 and 67 | 
+| 48 | Trigger info 1, Selftrigger mask PSEC 2 | 16 |
+| 49 | Trigger info 2, Selftrigger threshold PSEC 2 | 16 |
+| 50 | PSEC2 timestamp [47:32] | 16 together with Words 10,30 and 70 |
 | 51 | 0 | 0 |
-| 52 | VCDL count [15:0] | 16 together with Line 53 |
-| 53 | VCDL count [31:16] | 16 together with Line 52 |
+| 52 | VCDL count [15:0] | 16 together with Word 53 |
+| 53 | VCDL count [31:16] | 16 together with Word 52 |
 | 54 | DLLVDD parameter setting | 16 |
 | 55 | PSEC2-ch0 Self trig rate counts | 16 | 
 | 56 | PSEC2-ch1 Self trig rate counts | 16 |
@@ -222,13 +222,13 @@ The entries are the following as 16bit hex words:
 | 64 | Vbias (pedestal) value setting | 16 |
 | 65 | Self trigger threshold value setting | 16 |
 | 66 | PROVDD parameter setting | 16 |
-| 67 | Trigger info 0
-| 68 | Trigger info 1
-| 69 | Trigger info 2
-| 70 | PSEC3 timestamp [63:48] | 16 together with Line 10,30 and 50 |
+| 67 | Trigger info 0, Beamgate timestamp[15:0] | 16 together with Words 7,27 and 47 | 
+| 68 | Trigger info 1, Selftrigger mask PSEC 3 | 16 |
+| 69 | Trigger info 2, Selftrigger threshold PSEC 3 | 16 |
+| 70 | PSEC3 timestamp [63:48] | 16 together with Words 10,30 and 50 |
 | 71 | 0 | 0 |
-| 72 | VCDL count [15:0] | 16 together with Line 73 |
-| 73 | VCDL count [31:16] | 16 together with Line 72 |
+| 72 | VCDL count [15:0] | 16 together with Word 73 |
+| 73 | VCDL count [31:16] | 16 together with Word 72 |
 | 74 | DLLVDD parameter setting | 16 |
 | 75 | PSEC3-ch0 Self trig rate counts | 16 | 
 | 76 | PSEC3-ch1 Self trig rate counts | 16 |
@@ -242,13 +242,17 @@ The entries are the following as 16bit hex words:
 | 84 | Vbias (pedestal) value setting | 16 |
 | 85 | Self trigger threshold value setting | 16 |
 | 86 | PROVDD parameter setting | 16 |
-| 87 | Trigger info 0
-| 88 | Trigger info 1
-| 89 | Trigger info 2
+| 87 | Trigger info 0 | seperated see below |
+| . | Trigger setup mode | [15:12] | 
+| . | SMA invert setting | [11] |
+| . | Selftrigger sign | [10] |
+| . | Selftrigger coincidence minimum | [9:0] |
+| 88 | Trigger info 1, Selftrigger mask PSEC 4 | 16 |
+| 89 | Trigger info 2, Selftrigger threshold PSEC 4 | 16 |
 | 90 | 0 | 0 |
 | 91 | 0 | 0 |
-| 92 | VCDL count [15:0] | 16 together with Line 93 |
-| 93 | VCDL count [31:16] | 16 together with Line 92 |
+| 92 | VCDL count [15:0] | 16 together with Word 93 |
+| 93 | VCDL count [31:16] | 16 together with Word 92 |
 | 94 | DLLVDD parameter setting | 16 |
 | 95 | PSEC4-ch0 Self trig rate counts | 16 | 
 | 96 | PSEC4-ch1 Self trig rate counts | 16 |
