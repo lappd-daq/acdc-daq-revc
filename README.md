@@ -151,41 +151,110 @@ each consecutive event is appended at the end of the file
 
 ## Metadata format 
 Metadata is saved with the data in one file. It is always in the coloumn after the 30 channels of an acdc board (e.g. 31 [Because 0 is the enumeration and 1-30 the channels], 62, 93, ...).
-The entries are the following:
+The entries are the following as 16bit hex words:
 
-| Line | Metakey | Line | Metakey | Line | Metakey |
-|-----------|-----------|-----------|-----------|-----------|-----------|
-| 0 | Boardnumber | 34 | feedback_count_4 | 68 | self_trigger_rate_count_psec_ch28 |
-| 1 | DLLVDD_setting_0 | 35 | feedback_target_count_0 | 69 | self_trigger_rate_count_psec_ch29 |
-| 2 | DLLVDD_setting_1 | 36 | feedback_target_count_1 | 70 | selftrigger_threshold_setting_0 |
-| 3 | DLLVDD_setting_2 | 37 | feedback_target_count_2 | 71 | selftrigger_threshold_setting_1 |
-| 4 | DLLVDD_setting_3 | 38 | feedback_target_count_3 | 72 | selftrigger_threshold_setting_2 |
-| 5 | DLLVDD_setting_4 | 39 | feedback_target_count_4 | 73 | selftrigger_threshold_setting_3 |
-| 6 | PROVDD_setting_0 | 40 | self_trigger_rate_count_psec_ch0 | 74 | selftrigger_threshold_setting_4 |
-| 7 | PROVDD_setting_1 | 41 | self_trigger_rate_count_psec_ch1 | 75 | timestamp_0 |
-| 8 | PROVDD_setting_2 | 42 | self_trigger_rate_count_psec_ch2 | 76 | timestamp_1 |
-| 9 | PROVDD_setting_3 | 43 | self_trigger_rate_count_psec_ch3 | 77 | timestamp_2 |
-| 10 | PROVDD_setting_4 | 44 | self_trigger_rate_count_psec_ch4 | 78 | timestamp_3 |
-| 11 | VCDL_count_hi_0 | 45 | self_trigger_rate_count_psec_ch5 | 79 | trigger_acc_detection_mode |
-| 12 | VCDL_count_hi_1 | 46 | self_trigger_rate_count_psec_ch6 | 80 | trigger_acc_invert |
-| 13 | VCDL_count_hi_2 | 47 | self_trigger_rate_count_psec_ch7 | 81 | trigger_mode |
-| 14 | VCDL_count_hi_3 | 48 | self_trigger_rate_count_psec_ch8 | 82 | trigger_self_coin |
-| 15 | VCDL_count_hi_4 | 49 | self_trigger_rate_count_psec_ch9 | 83 | trigger_self_detection_mode |
-| 16 | VCDL_count_lo_0 | 50 | self_trigger_rate_count_psec_ch10 | 84 | trigger_self_sign |
-| 17 | VCDL_count_lo_1 | 51 | self_trigger_rate_count_psec_ch11 | 85 | trigger_self_threshold_0 |
-| 18 | VCDL_count_lo_2 | 52 | self_trigger_rate_count_psec_ch12 | 86 | trigger_self_threshold_1 |
-| 19 | VCDL_count_lo_3 | 53 | self_trigger_rate_count_psec_ch13 | 87 | trigger_self_threshold_2 |
-| 20 | VCDL_count_lo_4 | 54 | self_trigger_rate_count_psec_ch14 | 88 | trigger_self_threshold_3 |
-| 21 | Vbias_setting_0 | 55 | self_trigger_rate_count_psec_ch15 | 89 | trigger_self_threshold_4 |
-| 22 | Vbias_setting_1 | 56 | self_trigger_rate_count_psec_ch16 | 90 | trigger_selfmask_0 |
-| 23 | Vbias_setting_2 | 57 | self_trigger_rate_count_psec_ch17 | 91 | trigger_selfmask_1 |
-| 24 | Vbias_setting_3 | 58 | self_trigger_rate_count_psec_ch18 | 92 | trigger_selfmask_2 |
-| 25 | Vbias_setting_4 | 59 | self_trigger_rate_count_psec_ch19 | 93 | trigger_selfmask_3 |
-| 26 | clockcycle_bits | 60 | self_trigger_rate_count_psec_ch20 | 94 | trigger_selfmask_4 |
-| 27 | combined_trigger_rate_count | 61 | self_trigger_rate_count_psec_ch21 | 95 | trigger_sma_detection_mode |
-| 28 | event_count_hi | 62 | self_trigger_rate_count_psec_ch22 | 96 | trigger_sma_invert |
-| 29 | event_count_lo | 63 | self_trigger_rate_count_psec_ch23 | 97 | trigger_validation_window_start |
-| 30 | feedback_count_0 | 64 | self_trigger_rate_count_psec_ch24 | 98 | trigger_validation_window_length |
-| 31 | feedback_count_1 | 65 | self_trigger_rate_count_psec_ch25 | 100-255 | 0 |
-| 32 | feedback_count_2 | 66 | self_trigger_rate_count_psec_ch26 | | |    
-| 33 | feedback_count_3 | 67 | self_trigger_rate_count_psec_ch27 | | |   
+| Line | What it is | What bits are relevant |
+|-----------|-----------|-----------|
+| 0 | Board ID, refers to the connected port on the ACC | 16 |
+| 1 | PSEC ID for PSEC chip 0 (Always 0xDCBN with N as PSEC ID) | 16 |
+| 2 | Wilkinson feedback count (current) | 16 |
+| 3 | Wilkinson feedback target count setting | 16 |
+| 4 | Vbias (pedestal) value setting | 16 |
+| 5 | Self trigger threshold value setting | 16 |
+| 6 | PROVDD parameter setting | 16 |
+| 7 | Trigger info 0
+| 8 | Trigger info 1
+| 9 | Trigger info 2
+| 10 | PSEC0 timestamp [15:0] | 16 together with Line 30,50 and 70 |
+| 11 | PSEC0 event count [15:0] | 16 together with Line 31 |
+| 12 | VCDL count [15:0] | 16 together with Line 13 |
+| 13 | VCDL count [31:16] | 16 together with Line 12 |
+| 14 | DLLVDD parameter setting | 16 |
+| 15 | PSEC0-ch0 Self trig rate counts | 16 | 
+| 16 | PSEC0-ch1 Self trig rate counts | 16 |
+| 17 | PSEC0-ch2 Self trig rate counts | 16 |
+| 18 | PSEC0-ch3 Self trig rate counts | 16 |
+| 19 | PSEC0-ch4 Self trig rate counts | 16 |
+| 20 | PSEC0-ch5 Self trig rate counts | 16 |
+| 21 | PSEC ID for PSEC chip 1 (Always 0xDCBN with N as PSEC ID) | 16 |
+| 22 | Wilkinson feedback count (current) | 16 |
+| 23 | Wilkinson feedback target count setting | 16 |
+| 24 | Vbias (pedestal) value setting | 16 |
+| 25 | Self trigger threshold value setting | 16 |
+| 26 | PROVDD parameter setting | 16 |
+| 27 | Trigger info 0
+| 28 | Trigger info 1
+| 29 | Trigger info 2
+| 30 | PSEC1 timestamp [31:16] | 16 together with Line 10,50 and 70 |
+| 31 | PSEC1 event count [31:16] | 16 together with Line 11 |
+| 32 | VCDL count [15:0] | 16 together with Line 33 |
+| 33 | VCDL count [31:16] | 16 together with Line 32 |
+| 34 | DLLVDD parameter setting | 16 |
+| 35 | PSEC1-ch0 Self trig rate counts | 16 | 
+| 36 | PSEC1-ch1 Self trig rate counts | 16 |
+| 37 | PSEC1-ch2 Self trig rate counts | 16 |
+| 38 | PSEC1-ch3 Self trig rate counts | 16 |
+| 39 | PSEC1-ch4 Self trig rate counts | 16 |
+| 40 | PSEC1-ch5 Self trig rate counts | 16 |
+| 41 | PSEC ID for PSEC chip 2 (Always 0xDCBN with N as PSEC ID) | 16 |
+| 42 | Wilkinson feedback count (current) | 16 |
+| 43 | Wilkinson feedback target count setting | 16 |
+| 44 | Vbias (pedestal) value setting | 16 |
+| 45 | Self trigger threshold value setting | 16 |
+| 46 | PROVDD parameter setting | 16 |
+| 47 | Trigger info 0
+| 48 | Trigger info 1
+| 49 | Trigger info 2
+| 50 | PSEC2 timestamp [47:32] | 16 together with Line 10,30 and 70 |
+| 51 | 0 | 0 |
+| 52 | VCDL count [15:0] | 16 together with Line 53 |
+| 53 | VCDL count [31:16] | 16 together with Line 52 |
+| 54 | DLLVDD parameter setting | 16 |
+| 55 | PSEC2-ch0 Self trig rate counts | 16 | 
+| 56 | PSEC2-ch1 Self trig rate counts | 16 |
+| 57 | PSEC2-ch2 Self trig rate counts | 16 |
+| 58 | PSEC2-ch3 Self trig rate counts | 16 |
+| 59 | PSEC2-ch4 Self trig rate counts | 16 |
+| 60 | PSEC2-ch5 Self trig rate counts | 16 |
+| 61 | PSEC ID for PSEC chip 3 (Always 0xDCBN with N as PSEC ID) | 16 |
+| 62 | Wilkinson feedback count (current) | 16 |
+| 63 | Wilkinson feedback target count setting | 16 |
+| 64 | Vbias (pedestal) value setting | 16 |
+| 65 | Self trigger threshold value setting | 16 |
+| 66 | PROVDD parameter setting | 16 |
+| 67 | Trigger info 0
+| 68 | Trigger info 1
+| 69 | Trigger info 2
+| 70 | PSEC3 timestamp [63:48] | 16 together with Line 10,30 and 50 |
+| 71 | 0 | 0 |
+| 72 | VCDL count [15:0] | 16 together with Line 73 |
+| 73 | VCDL count [31:16] | 16 together with Line 72 |
+| 74 | DLLVDD parameter setting | 16 |
+| 75 | PSEC3-ch0 Self trig rate counts | 16 | 
+| 76 | PSEC3-ch1 Self trig rate counts | 16 |
+| 77 | PSEC3-ch2 Self trig rate counts | 16 |
+| 78 | PSEC3-ch3 Self trig rate counts | 16 |
+| 79 | PSEC3-ch4 Self trig rate counts | 16 |
+| 80 | PSEC3-ch5 Self trig rate counts | 16 |
+| 81 | PSEC ID for PSEC chip 4 (Always 0xDCBN with N as PSEC ID) | 16 |
+| 82 | Wilkinson feedback count (current) | 16 |
+| 83 | Wilkinson feedback target count setting | 16 |
+| 84 | Vbias (pedestal) value setting | 16 |
+| 85 | Self trigger threshold value setting | 16 |
+| 86 | PROVDD parameter setting | 16 |
+| 87 | Trigger info 0
+| 88 | Trigger info 1
+| 89 | Trigger info 2
+| 90 | 0 | 0 |
+| 91 | 0 | 0 |
+| 92 | VCDL count [15:0] | 16 together with Line 93 |
+| 93 | VCDL count [31:16] | 16 together with Line 92 |
+| 94 | DLLVDD parameter setting | 16 |
+| 95 | PSEC4-ch0 Self trig rate counts | 16 | 
+| 96 | PSEC4-ch1 Self trig rate counts | 16 |
+| 97 | PSEC4-ch2 Self trig rate counts | 16 |
+| 98 | PSEC4-ch3 Self trig rate counts | 16 |
+| 99 | PSEC4-ch4 Self trig rate counts | 16 |
+| 100 | PSEC4-ch5 Self trig rate counts | 16 |
+| 101 | Combined trigger rate count | 16 |
+| 102 | Endword 0xeeee | 0 |
