@@ -145,7 +145,7 @@ int Metadata::parseBuffer(vector<unsigned short> buffer, unsigned short bi)
 	    for(int ch=0; ch<NUM_CH/NUM_PSEC; ch++)
 	    {
 	    	//Find the trigger data at begin + last_metadata_start + 13_info_words + 1_end_word + 1 
-	        bit = buffer.begin() + start_indices[4] + 13 + 1 + 1 + ch + (chip*NUM_CH);
+	        bit = buffer.begin() + start_indices[4] + 13 + 1 + 1 + ch + (chip*(NUM_CH/NUM_PSEC));
 	        PsecTriggerInfo[chip].push_back(*bit);
 	    }
 	}
