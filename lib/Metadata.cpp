@@ -171,6 +171,7 @@ int Metadata::parseBuffer(vector<unsigned short> buffer, unsigned short bi)
 	}
 
 	meta.push_back(CombinedTriggerRateCount);
+	meta.push_back(0xeeee);
 	return 0;
 }
 
