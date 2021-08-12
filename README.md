@@ -163,10 +163,10 @@ The entries are the following as 16bit hex words:
 | 5 | Self trigger threshold value setting | 16 |
 | 6 | PROVDD parameter setting | 16 |
 | 7 | Trigger info 0, Beamgate timestamp[63:48] | 16 together with Words 27,47 and 67 | 
-| . | Clockcycle bit | The last 3 bit (dec 0-7) will give the clockcycle the trigger happened | 
 | 8 | Trigger info 1, Selftrigger mask PSEC 0 | 16 |
 | 9 | Trigger info 2, Selftrigger threshold PSEC 0 | 16 |
 | 10 | PSEC0 timestamp [15:0] | 16 together with Words 30,50 and 70 |
+| . | Clockcycle bit | The last 3 bit (dec 0-7) will give the clockcycle the trigger happened | 
 | 11 | PSEC0 event count [15:0] | 16 together with Word 31 |
 | 12 | VCDL count [15:0] | 16 together with Word 13 |
 | 13 | VCDL count [31:16] | 16 together with Word 12 |
