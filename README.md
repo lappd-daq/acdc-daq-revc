@@ -153,7 +153,7 @@ each consecutive event is appended at the end of the file
 Metadata is saved with the data in one file. It is always in the coloumn after the 30 channels of an acdc board (e.g. 31 [Because 0 is the enumeration and 1-30 the channels], 62, 93, ...).
 The entries are the following as 16bit hex words:
 
-| Line | What it is | What bits are relevant |
+| Word | What it is | What bits are relevant |
 |-----------|-----------|-----------|
 | 0 | Board ID, refers to the connected port on the ACC | 16 |
 | 1 | PSEC ID for PSEC chip 0 (Always 0xDCBN with N as PSEC ID) | 16 |
@@ -163,6 +163,7 @@ The entries are the following as 16bit hex words:
 | 5 | Self trigger threshold value setting | 16 |
 | 6 | PROVDD parameter setting | 16 |
 | 7 | Trigger info 0, Beamgate timestamp[63:48] | 16 together with Words 27,47 and 67 | 
+| . | Clockcycle bit | The last 3 bit (dec 0-7) will give the clockcycle the trigger happened | 
 | 8 | Trigger info 1, Selftrigger mask PSEC 0 | 16 |
 | 9 | Trigger info 2, Selftrigger threshold PSEC 0 | 16 |
 | 10 | PSEC0 timestamp [15:0] | 16 together with Words 30,50 and 70 |
