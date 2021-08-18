@@ -3,7 +3,14 @@ Welcome to Tobias Abelmann and Marek Michulka's (alphabetical) attempt to proces
 We have created some very basic functions that allow you to plot ACDC outputs in 2 ways currently: 
 1. Plotting a single event of a single channel
 2. Plotting a single event from all channels of one PSEC4 chip
+3. PLotting a single event from one channel of each PSEC4 chip.
 
 To do this, at the bottom of Main.py, you need to do a few things:
 1. Copy and paste the path to the desired data file in line 106
-2. Uncomment the desired command (either plotOneChannel or plotOnePSEC) and input the desired event and channel/PSEC4 number. 
+2. Copy and paste the calibration data for the
+3. Uncomment the desired command (either plotOneChannel, plotOnePSEC, makeChart) and input the desired event and channel/PSEC4 number. 
+
+Currently, each of the functions are designed to save the graph as a .png file. If this is not desired, comment out the "plt.savefig" lines.
+
+This would be better with classes. We know. We are sorry.
+
