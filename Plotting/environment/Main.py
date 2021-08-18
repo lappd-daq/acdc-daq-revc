@@ -143,10 +143,10 @@ def plotChannel(data, calibration_data, en, cn):
     
 #main functionality:::::::
 if True:
-    d = "Data.txt"
-    c = "Peds.txt"
-    #makeChart(data, c,3,6)
-    plotChannel(d,c,8,6)
+    d = "path_to_data_file.txt"
+    c = "path_to_pedestal_file.txt"
+    #makeChart(d,c,3,6)
+    #plotChannel(d,c,8,6)
     #plotOnePSEC(d,c,4,7)
 
 
