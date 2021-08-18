@@ -794,7 +794,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 	}
 	if(raw==false)
 	{
-		datafn = outfilename + "ACDC_data.txt";
+		datafn = outfilename + "Data_" + timestamp + ".txt";
 		dataofs.open(datafn.c_str(), ios::app); 
 		writePsecData(dataofs, boardsReadyForRead);
 	}
