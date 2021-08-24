@@ -81,13 +81,13 @@ int main()
 	int validationStart;
 	int validationWindow;
 
-	unsigned int psec_chip;
+	int psec_chip;
 	unsigned int psec_channel;
 	
 	int ACCsw;
 	int ACDCsw;
 	
-	std::vector<unsigned int> vec_psec_chip;
+	std::vector<int> vec_psec_chip;
 	std::vector<unsigned int> vec_psec_channel;
 
 	int BeamgateMultiplexer;
@@ -325,11 +325,10 @@ int main()
 						cin >> psec_channel;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
 					}else
 					{
-						run++;
-						continue;
+						psec_channel = 0x00;
 					}
-					vec_psec_chip.push_back(run);
-					vec_psec_channel.push_back(psec_chip);
+					vec_psec_chip.push_back(psec_chip);
+					vec_psec_channel.push_back(psec_channel);
 					run++;
 				}
 
