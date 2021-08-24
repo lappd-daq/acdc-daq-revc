@@ -52,8 +52,8 @@ public:
 	void setNumChCoin(unsigned int in){SELF_number_channel_coincidence = in;} //sets the number of channels needed for self trigger coincidence	
 	void setEnableCoin(int in){SELF_coincidence_onoff = in;} //sets the enable coincidence requirement flag for the self trigger
 	void setThreshold(unsigned int in){SELF_threshold = in;} //sets the threshold for the self trigger
-	void setPsecChipMask(vector<unsigned int> in){SELF_psec_channel_mask = in;} //sets the PSEC chip mask to set individual chips for the self trigger 
-	void setPsecChannelMask(vector<unsigned int> in){SELF_psec_chip_mask = in;} //sets the PSEC channel mask to set individual channels for the self trigger 
+	void setPsecChipMask(vector<int> in){SELF_psec_chip_mask = in;} //sets the PSEC chip mask to set individual chips for the self trigger 
+	void setPsecChannelMask(vector<unsigned int> in){SELF_psec_channel_mask = in;} //sets the PSEC channel mask to set individual channels for the self trigger 
 	void setValidationStart(unsigned int in){validation_start=in;} //sets the validation window start delay for required trigger modes
 	void setValidationWindow(unsigned int in){validation_window=in;} //sets the validation window length for required trigger modes
 	void setTriggermode(int in){trigMode = in;} //sets the overall triggermode
@@ -146,7 +146,7 @@ private:
 	vector<unsigned short> lastAccBuffer; //most recently received ACC buffer
 	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port) corresponds to the connected ACDC boards
 	vector<unsigned int> SELF_psec_channel_mask; //var: PSEC channels active for self trigger
-	vector<unsigned int> SELF_psec_chip_mask; //var: PSEC chips actove for self trigger
+	vector<int> SELF_psec_chip_mask; //var: PSEC chips actove for self trigger
 	map<int, map<int, vector<unsigned short>>> map_data; //entire data map | index: board < channel < samplevector
 	map<int,vector<unsigned short>> map_meta; //entire meta map | index: board < metakey < value
 	vector<unsigned short> vbuffer;
