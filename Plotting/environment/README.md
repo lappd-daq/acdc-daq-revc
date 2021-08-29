@@ -14,5 +14,4 @@ The ACDC will give the data file in the Results folder and the calibrations in A
 
 Currently, each of the functions are designed to save the graph as a .png file. If this is not desired, comment out the "plt.savefig" lines.
 
-This would be better with classes. We know. We are sorry.
 
