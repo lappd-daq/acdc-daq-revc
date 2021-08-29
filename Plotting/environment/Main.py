@@ -28,20 +28,10 @@ def makeDataArray(file):
             for i in range(0,len(data[0])):
                 data[j][i]=float(data[j][i])
     return data
-    
-    
-#Given the data set, finds how many events there are
-def getNumEvents(data):
-    #There should be an even multiple of 256 lines for each event
-    if len(data)%256!=0:
-        print("Wrong number of lines, could be faulty data!")
-    return len(data)//256
-#Given the dataset, looks at the last element in every line to extract the metadata
 
-
-def getMetaDataList(data):
+def getMetadataList(data):
     metadata=[]
-    #Appends the last element of every line to list
+    #Appends the last element of every line (metadata) to a list
     for line in data:
         metadata.append(line[31])
     print(len(metadata))
@@ -53,6 +43,7 @@ def getTimes(acdc_clock=25*10**6):
     timestep=10**9/(256*acdc_clock)
     times = [i*timestep for i in range(256)]
     return times
+    
 #Separates out one event (256 samples, 30 channels + 1 channel metadata) from 'data' and applies calibrations
 def getEvent(d, calibration_data, eventNumber):
     #flags an error if you ask for an event that did not happen
@@ -77,6 +68,7 @@ def getChannelData(event,channelNumber):
     for i in range(len(event)):
         channelData.append(event[i][channelNumber])
     return channelData
+    
 #Plots an event of one channel 
 def makeChart(data, calibration_data, eventNumber, channelNumber):
     #Takes the data you want to look at
@@ -94,7 +86,7 @@ def makeChart(data, calibration_data, eventNumber, channelNumber):
     plt.savefig("Event"+str(eventNumber) + "_Channel" + str(channelNumber)+".png", dpi=300, )
     plt.show()
     
-#takes in data, event number, psec number
+#takes in data, event number, psec number and plots all channels of that PSEC4
 def plotOnePSEC(data, calibration_data, pn, en):
     e = getEvent(data, calibration_data, en)
     channelList = []
@@ -119,6 +111,7 @@ def plotOnePSEC(data, calibration_data, pn, en):
     plt.show()
     print("my goodness gracious, this is working so swimmingly")
     
+#plots one event from the nth channel (1-6) of every PSEC4 chip
 def plotChannel(data, calibration_data, en, cn):
     e=getEvent(data,calibration_data, en)
     t=getTimes()
