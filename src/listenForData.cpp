@@ -78,8 +78,8 @@ int main()
 
 	int run=0;
 
-	int validationStart;
-	int validationWindow;
+	float validationStart;
+	float validationWindow;
 
 	int psec_chip;
 	unsigned int psec_channel;
