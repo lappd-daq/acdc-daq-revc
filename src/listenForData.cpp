@@ -171,15 +171,15 @@ int main()
 				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in us: ";
+				std::cout << "Enter in ns: ";
 				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationStart*40);
+				ss3 << std::hex << (int)(validationStart/25);
 				valstr = std::stoul(ss3.str(),nullptr,16);
 
 				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in us: ";
+				std::cout << "Enter in ns: ";
 				cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss4 << std::hex << (int)(validationWindow*40);
+				ss4 << std::hex << (int)(validationWindow/25);
 				valstr2 = std::stoul(ss4.str(),nullptr,16);
 
 				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
@@ -228,15 +228,15 @@ int main()
 				acc.setSign(invertMode, 3);
 
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in us: ";
+				std::cout << "Enter in ns: ";
 				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationStart*40);
+				ss3 << std::hex << (int)(validationStart/25);
 				valstr = std::stoul(ss3.str(),nullptr,16);
 
 				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in us: ";
+				std::cout << "Enter in ns: ";
 				cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss4 << std::hex << (int)(validationWindow*40);
+				ss4 << std::hex << (int)(validationWindow/25);
 				valstr2 = std::stoul(ss4.str(),nullptr,16);
 
 				acc.setValidationStart(valstr);
@@ -260,15 +260,15 @@ int main()
 
 
 				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in us: ";
+				std::cout << "Enter in ns: ";
 				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationStart*40);
+				ss3 << std::hex << (int)(validationStart/25);
 				valstr = std::stoul(ss3.str(),nullptr,16);
 
 				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in us: ";
+				std::cout << "Enter in ns: ";
 				cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss4 << std::hex << (int)(validationWindow*40);
+				ss4 << std::hex << (int)(validationWindow/25);
 				valstr2 = std::stoul(ss4.str(),nullptr,16);
 
 				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
