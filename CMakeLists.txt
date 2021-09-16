@@ -69,6 +69,7 @@ add_executable(listenForData ${EXECUTABLE_SOURCE_DIR}/listenForData.cpp)
 #add_executable(onlySetup ${EXECUTABLE_SOURCE_DIR}/onlySetup.cpp)
 #add_executable(DataCalibToConfig ${EXECUTABLE_SOURCE_DIR}/DataCalibToConfig.cpp)
 add_executable(MUXPPS ${EXECUTABLE_SOURCE_DIR}/MUXPPS.cpp)
+add_executable(configurePLL ${EXECUTABLE_SOURCE_DIR}/configurePLL.cpp)
 
 target_link_libraries(connectedBoards PUBLIC ACC myusb)
 target_link_libraries(calibratePed PUBLIC ACC)
