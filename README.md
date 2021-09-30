@@ -263,3 +263,25 @@ The entries are the following as 16bit hex words:
 | 100 | PSEC4-ch5 Self trig rate counts | 16 |
 | 101 | Combined trigger rate count | 16 |
 | 102 | Endword 0xeeee | 0 |
+
+
+PPS frame:
+| Word | What it is | What bits are relevant |
+|-----------|-----------|-----------|
+| 0 | Startword 0x1234 | 16 |
+| 1 | 0xEEEE | 16 |
+| 2 | PPS timestamp[63:48] | 16 |
+| 3 | PPS timestamp[47:32] | 16 |
+| 4 | PPS timestamp[31:16] | 16 |
+| 5 | PPS timestamp[15:0] | 16 |
+| 6 | Serialnumber[31:16] | 16 |
+| 7 | Serialnumber[15:0] | 16 | 
+| 8 | PPS count[31:16] | 16 |
+| 9 | PPS count[15:0] | 16 |
+| 10 | 0x0000 |
+| 11 | 0x0000 |
+| 12 | 0x0000 |
+| 13 | 0x0000 |
+| 14 | 0xEEEE | 16 |
+| 15 | Endword 0x4321 | 16 | 
+
