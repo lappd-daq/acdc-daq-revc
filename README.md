@@ -153,116 +153,116 @@ each consecutive event is appended at the end of the file
 Metadata is saved with the data in one file. It is always in the coloumn after the 30 channels of an acdc board (e.g. 31 [Because 0 is the enumeration and 1-30 the channels], 62, 93, ...).
 The entries are the following as 16bit hex words:
 
-| Word | What it is | What bits are relevant |
-|-----------|-----------|-----------|
-| 0 | Board ID, refers to the connected port on the ACC | 16 |
-| 1 | PSEC ID for PSEC chip 0 (Always 0xDCBN with N as PSEC ID) | 16 |
-| 2 | Wilkinson feedback count (current) | 16 |
-| 3 | Wilkinson feedback target count setting | 16 |
-| 4 | Vbias (pedestal) value setting | 16 |
-| 5 | Self trigger threshold value setting | 16 |
-| 6 | PROVDD parameter setting | 16 |
-| 7 | Trigger info 0, Beamgate timestamp[63:48] | 16 together with Words 27,47 and 67 | 
-| 8 | Trigger info 1, Selftrigger mask PSEC 0 | 16 |
-| 9 | Trigger info 2, Selftrigger threshold PSEC 0 | 16 |
-| 10 | PSEC0 timestamp [15:0] | 16 together with Words 30,50 and 70 |
+| Word | What it is | What bits are relevant | Refrece to the data framw word |
+|-----------|-----------|-----------|-----------|
+| 0 | Board ID, refers to the connected port on the ACC | 16 | - | 
+| 1 | PSEC ID for PSEC chip 0 (Always 0xDCBN with N as PSEC ID) | 16 | - | 
+| 2 | Wilkinson feedback count (current) | 16 | 1540 | 
+| 3 | Wilkinson feedback target count setting | 16 | 1541 | 
+| 4 | Vbias (pedestal) value setting | 16 | 1542 | 
+| 5 | Self trigger threshold value setting | 16 | 1543 | 
+| 6 | PROVDD parameter setting | 16 | 1544 | 
+| 7 | Trigger info 0, Beamgate timestamp[63:48] | 16 together with Words 27,47 and 67 | 1545 | 
+| 8 | Trigger info 1, Selftrigger mask PSEC 0 | 16 | 1546 | 
+| 9 | Trigger info 2, Selftrigger threshold PSEC 0 | 16 | 1547 | 
+| 10 | PSEC0 timestamp [15:0] | 16 together with Words 30,50 and 70 | 1548 | 
 | . | Clockcycle bit | The last 3 bit (dec 0-7) will give the clockcycle the trigger happened | 
-| 11 | PSEC0 event count [15:0] | 16 together with Word 31 |
-| 12 | VCDL count [15:0] | 16 together with Word 13 |
-| 13 | VCDL count [31:16] | 16 together with Word 12 |
-| 14 | DLLVDD parameter setting | 16 |
-| 15 | PSEC0-ch0 Self trig rate counts | 16 | 
-| 16 | PSEC0-ch1 Self trig rate counts | 16 |
-| 17 | PSEC0-ch2 Self trig rate counts | 16 |
-| 18 | PSEC0-ch3 Self trig rate counts | 16 |
-| 19 | PSEC0-ch4 Self trig rate counts | 16 |
-| 20 | PSEC0-ch5 Self trig rate counts | 16 |
-| 21 | PSEC ID for PSEC chip 1 (Always 0xDCBN with N as PSEC ID) | 16 |
-| 22 | Wilkinson feedback count (current) | 16 |
-| 23 | Wilkinson feedback target count setting | 16 |
-| 24 | Vbias (pedestal) value setting | 16 |
-| 25 | Self trigger threshold value setting | 16 |
-| 26 | PROVDD parameter setting | 16 |
-| 27 | Trigger info 0, Beamgate timestamp[47:32] | 16 together with Words 7,47 and 67 | 
-| 28 | Trigger info 1, Selftrigger mask PSEC 1 | 16 |
-| 29 | Trigger info 2, Selftrigger threshold PSEC 1 | 16 |
-| 30 | PSEC1 timestamp [31:16] | 16 together with Words 10,50 and 70 |
-| 31 | PSEC1 event count [31:16] | 16 together with Word 11 |
-| 32 | VCDL count [15:0] | 16 together with Word 33 |
-| 33 | VCDL count [31:16] | 16 together with Word 32 |
-| 34 | DLLVDD parameter setting | 16 |
-| 35 | PSEC1-ch0 Self trig rate counts | 16 | 
-| 36 | PSEC1-ch1 Self trig rate counts | 16 |
-| 37 | PSEC1-ch2 Self trig rate counts | 16 |
-| 38 | PSEC1-ch3 Self trig rate counts | 16 |
-| 39 | PSEC1-ch4 Self trig rate counts | 16 |
-| 40 | PSEC1-ch5 Self trig rate counts | 16 |
-| 41 | PSEC ID for PSEC chip 2 (Always 0xDCBN with N as PSEC ID) | 16 |
-| 42 | Wilkinson feedback count (current) | 16 |
-| 43 | Wilkinson feedback target count setting | 16 |
-| 44 | Vbias (pedestal) value setting | 16 |
-| 45 | Self trigger threshold value setting | 16 |
-| 46 | PROVDD parameter setting | 16 |
-| 47 | Trigger info 0, Beamgate timestamp[31:16] | 16 together with Words 7,27 and 67 | 
-| 48 | Trigger info 1, Selftrigger mask PSEC 2 | 16 |
-| 49 | Trigger info 2, Selftrigger threshold PSEC 2 | 16 |
-| 50 | PSEC2 timestamp [47:32] | 16 together with Words 10,30 and 70 |
-| 51 | 0 | 0 |
-| 52 | VCDL count [15:0] | 16 together with Word 53 |
-| 53 | VCDL count [31:16] | 16 together with Word 52 |
-| 54 | DLLVDD parameter setting | 16 |
-| 55 | PSEC2-ch0 Self trig rate counts | 16 | 
-| 56 | PSEC2-ch1 Self trig rate counts | 16 |
-| 57 | PSEC2-ch2 Self trig rate counts | 16 |
-| 58 | PSEC2-ch3 Self trig rate counts | 16 |
-| 59 | PSEC2-ch4 Self trig rate counts | 16 |
-| 60 | PSEC2-ch5 Self trig rate counts | 16 |
-| 61 | PSEC ID for PSEC chip 3 (Always 0xDCBN with N as PSEC ID) | 16 |
-| 62 | Wilkinson feedback count (current) | 16 |
-| 63 | Wilkinson feedback target count setting | 16 |
-| 64 | Vbias (pedestal) value setting | 16 |
-| 65 | Self trigger threshold value setting | 16 |
-| 66 | PROVDD parameter setting | 16 |
-| 67 | Trigger info 0, Beamgate timestamp[15:0] | 16 together with Words 7,27 and 47 | 
-| 68 | Trigger info 1, Selftrigger mask PSEC 3 | 16 |
-| 69 | Trigger info 2, Selftrigger threshold PSEC 3 | 16 |
-| 70 | PSEC3 timestamp [63:48] | 16 together with Words 10,30 and 50 |
-| 71 | 0 | 0 |
-| 72 | VCDL count [15:0] | 16 together with Word 73 |
-| 73 | VCDL count [31:16] | 16 together with Word 72 |
-| 74 | DLLVDD parameter setting | 16 |
-| 75 | PSEC3-ch0 Self trig rate counts | 16 | 
-| 76 | PSEC3-ch1 Self trig rate counts | 16 |
-| 77 | PSEC3-ch2 Self trig rate counts | 16 |
-| 78 | PSEC3-ch3 Self trig rate counts | 16 |
-| 79 | PSEC3-ch4 Self trig rate counts | 16 |
-| 80 | PSEC3-ch5 Self trig rate counts | 16 |
-| 81 | PSEC ID for PSEC chip 4 (Always 0xDCBN with N as PSEC ID) | 16 |
-| 82 | Wilkinson feedback count (current) | 16 |
-| 83 | Wilkinson feedback target count setting | 16 |
-| 84 | Vbias (pedestal) value setting | 16 |
-| 85 | Self trigger threshold value setting | 16 |
-| 86 | PROVDD parameter setting | 16 |
-| 87 | Trigger info 0 | seperated see below |
+| 11 | PSEC0 event count [15:0] | 16 together with Word 31 | 1549 | 
+| 12 | VCDL count [15:0] | 16 together with Word 13 | 1550 | 
+| 13 | VCDL count [31:16] | 16 together with Word 12 | 1551 | 
+| 14 | DLLVDD parameter setting | 16 | 1552 | 
+| 15 | PSEC0-ch0 Self trig rate counts | 16 | 7762 |
+| 16 | PSEC0-ch1 Self trig rate counts | 16 | 7763 |
+| 17 | PSEC0-ch2 Self trig rate counts | 16 | 7764 |
+| 18 | PSEC0-ch3 Self trig rate counts | 16 | 7765 |
+| 19 | PSEC0-ch4 Self trig rate counts | 16 | 7766 |
+| 20 | PSEC0-ch5 Self trig rate counts | 16 | 7767 |
+| 21 | PSEC ID for PSEC chip 1 (Always 0xDCBN with N as PSEC ID) | 16 | - | 
+| 22 | Wilkinson feedback count (current) | 16 | 3092 |
+| 23 | Wilkinson feedback target count setting | 16 | 3093 |
+| 24 | Vbias (pedestal) value setting | 16 | 3094 |
+| 25 | Self trigger threshold value setting | 16 | 3095 |
+| 26 | PROVDD parameter setting | 16 | 3096 |
+| 27 | Trigger info 0, Beamgate timestamp[47:32] | 16 together with Words 7,47 and 67 | 3097 | 
+| 28 | Trigger info 1, Selftrigger mask PSEC 1 | 16 | 3098 |
+| 29 | Trigger info 2, Selftrigger threshold PSEC 1 | 16 | 3099 |
+| 30 | PSEC1 timestamp [31:16] | 16 together with Words 10,50 and 70 | 3100 |
+| 31 | PSEC1 event count [31:16] | 16 together with Word 11 | 3101 |
+| 32 | VCDL count [15:0] | 16 together with Word 33 | 3102 |
+| 33 | VCDL count [31:16] | 16 together with Word 32 | 3103 |
+| 34 | DLLVDD parameter setting | 16 | 3104 |
+| 35 | PSEC1-ch0 Self trig rate counts | 16 | 7768 |
+| 36 | PSEC1-ch1 Self trig rate counts | 16 | 7769 |
+| 37 | PSEC1-ch2 Self trig rate counts | 16 | 7770 |
+| 38 | PSEC1-ch3 Self trig rate counts | 16 | 7771 |
+| 39 | PSEC1-ch4 Self trig rate counts | 16 | 7772 |
+| 40 | PSEC1-ch5 Self trig rate counts | 16 | 7773 |
+| 41 | PSEC ID for PSEC chip 2 (Always 0xDCBN with N as PSEC ID) | 16 | - |
+| 42 | Wilkinson feedback count (current) | 16 | 4644 |
+| 43 | Wilkinson feedback target count setting | 16 | 4645 |
+| 44 | Vbias (pedestal) value setting | 16 | 4646 |
+| 45 | Self trigger threshold value setting | 16 | 4647 |
+| 46 | PROVDD parameter setting | 16 | 4648 |
+| 47 | Trigger info 0, Beamgate timestamp[31:16] | 16 together with Words 7,27 and 67 | 4649 | 
+| 48 | Trigger info 1, Selftrigger mask PSEC 2 | 16 | 4650 |
+| 49 | Trigger info 2, Selftrigger threshold PSEC 2 | 16 | 4651 |
+| 50 | PSEC2 timestamp [47:32] | 16 together with Words 10,30 and 70 | 4652 |
+| 51 | 0 | 0 | - |
+| 52 | VCDL count [15:0] | 16 together with Word 53 | 4654 |
+| 53 | VCDL count [31:16] | 16 together with Word 52 | 4655 |
+| 54 | DLLVDD parameter setting | 16 | 4656 | 7774 |
+| 55 | PSEC2-ch0 Self trig rate counts | 16 | 7775 |
+| 56 | PSEC2-ch1 Self trig rate counts | 16 | 7776 |
+| 57 | PSEC2-ch2 Self trig rate counts | 16 | 7777 |
+| 58 | PSEC2-ch3 Self trig rate counts | 16 | 7778 |
+| 59 | PSEC2-ch4 Self trig rate counts | 16 | 7779 |
+| 60 | PSEC2-ch5 Self trig rate counts | 16 | 7780 |
+| 61 | PSEC ID for PSEC chip 3 (Always 0xDCBN with N as PSEC ID) | 16 | - |
+| 62 | Wilkinson feedback count (current) | 16 | 6196
+| 63 | Wilkinson feedback target count setting | 16 | 6197 |
+| 64 | Vbias (pedestal) value setting | 16 | 6198 |
+| 65 | Self trigger threshold value setting | 16 | 6199 |
+| 66 | PROVDD parameter setting | 16 | 6200 |
+| 67 | Trigger info 0, Beamgate timestamp[15:0] | 16 together with Words 7,27 and 47 | 6201 | 
+| 68 | Trigger info 1, Selftrigger mask PSEC 3 | 16 | 6202 |
+| 69 | Trigger info 2, Selftrigger threshold PSEC 3 | 16 | 6203 |
+| 70 | PSEC3 timestamp [63:48] | 16 together with Words 10,30 and 50 | 6204 |
+| 71 | 0 | 0 | - |
+| 72 | VCDL count [15:0] | 16 together with Word 73 | 6026 |
+| 73 | VCDL count [31:16] | 16 together with Word 72 | 6207 |
+| 74 | DLLVDD parameter setting | 16 | 6208 |
+| 75 | PSEC3-ch0 Self trig rate counts | 16 | 7780 |
+| 76 | PSEC3-ch1 Self trig rate counts | 16 | 7781 |
+| 77 | PSEC3-ch2 Self trig rate counts | 16 | 7782 |
+| 78 | PSEC3-ch3 Self trig rate counts | 16 | 7783 |
+| 79 | PSEC3-ch4 Self trig rate counts | 16 | 7784 |
+| 80 | PSEC3-ch5 Self trig rate counts | 16 | 7785 |
+| 81 | PSEC ID for PSEC chip 4 (Always 0xDCBN with N as PSEC ID) | 16 | - |
+| 82 | Wilkinson feedback count (current) | 16 | 7748 |
+| 83 | Wilkinson feedback target count setting | 16 | 7749 | 
+| 84 | Vbias (pedestal) value setting | 16 | 7750 |
+| 85 | Self trigger threshold value setting | 16 | 7751 |
+| 86 | PROVDD parameter setting | 16 | 7752 |
+| 87 | Trigger info 0 | seperated see below | 7753 |
 | . | Trigger setup mode | [15:12] | 
 | . | SMA invert setting | [11] |
 | . | Selftrigger sign | [10] |
 | . | Selftrigger coincidence minimum | [9:0] |
-| 88 | Trigger info 1, Selftrigger mask PSEC 4 | 16 |
-| 89 | Trigger info 2, Selftrigger threshold PSEC 4 | 16 |
-| 90 | 0 | 0 |
-| 91 | 0 | 0 |
-| 92 | VCDL count [15:0] | 16 together with Word 93 |
-| 93 | VCDL count [31:16] | 16 together with Word 92 |
-| 94 | DLLVDD parameter setting | 16 |
-| 95 | PSEC4-ch0 Self trig rate counts | 16 | 
-| 96 | PSEC4-ch1 Self trig rate counts | 16 |
-| 97 | PSEC4-ch2 Self trig rate counts | 16 |
-| 98 | PSEC4-ch3 Self trig rate counts | 16 |
-| 99 | PSEC4-ch4 Self trig rate counts | 16 |
-| 100 | PSEC4-ch5 Self trig rate counts | 16 |
-| 101 | Combined trigger rate count | 16 |
-| 102 | Endword 0xeeee | 0 |
+| 88 | Trigger info 1, Selftrigger mask PSEC 4 | 16 | 7754 |
+| 89 | Trigger info 2, Selftrigger threshold PSEC 4 | 16 | 7755 |
+| 90 | 0 | 0 | - |
+| 91 | 0 | 0 | - |
+| 92 | VCDL count [15:0] | 16 together with Word 93 | 7758 |
+| 93 | VCDL count [31:16] | 16 together with Word 92 | 7759 |
+| 94 | DLLVDD parameter setting | 16 | 7760 |
+| 95 | PSEC4-ch0 Self trig rate counts | 16 | 7786 |
+| 96 | PSEC4-ch1 Self trig rate counts | 16 | 7787 |
+| 97 | PSEC4-ch2 Self trig rate counts | 16 | 7788 |
+| 98 | PSEC4-ch3 Self trig rate counts | 16 | 7789 |
+| 99 | PSEC4-ch4 Self trig rate counts | 16 | 7790 |
+| 100 | PSEC4-ch5 Self trig rate counts | 16 | 7791 |
+| 101 | Combined trigger rate count | 16 | 7792 |
+| 102 | Endword 0xeeee | 0 | - |
 
 
 PPS frame:
