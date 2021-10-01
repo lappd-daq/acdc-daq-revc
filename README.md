@@ -153,7 +153,7 @@ each consecutive event is appended at the end of the file
 Metadata is saved with the data in one file. It is always in the coloumn after the 30 channels of an acdc board (e.g. 31 [Because 0 is the enumeration and 1-30 the channels], 62, 93, ...).
 The entries are the following as 16bit hex words:
 
-| Word | What it is | What bits are relevant | Refrece to the data framw word |
+| Word | What it is | What bits are relevant | Refrece to the data frame word |
 |-----------|-----------|-----------|-----------|
 | 0 | Board ID, refers to the connected port on the ACC | 16 | - | 
 | 1 | PSEC ID for PSEC chip 0 (Always 0xDCBN with N as PSEC ID) | 16 | - | 
