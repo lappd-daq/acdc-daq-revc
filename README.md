@@ -210,13 +210,13 @@ The entries are the following as 16bit hex words:
 | 51 | 0 | 0 | - |
 | 52 | VCDL count [15:0] | 16 together with Word 53 | 4654 |
 | 53 | VCDL count [31:16] | 16 together with Word 52 | 4655 |
-| 54 | DLLVDD parameter setting | 16 | 4656 | 7774 |
-| 55 | PSEC2-ch0 Self trig rate counts | 16 | 7775 |
-| 56 | PSEC2-ch1 Self trig rate counts | 16 | 7776 |
-| 57 | PSEC2-ch2 Self trig rate counts | 16 | 7777 |
-| 58 | PSEC2-ch3 Self trig rate counts | 16 | 7778 |
-| 59 | PSEC2-ch4 Self trig rate counts | 16 | 7779 |
-| 60 | PSEC2-ch5 Self trig rate counts | 16 | 7780 |
+| 54 | DLLVDD parameter setting | 16 | 4656 | 
+| 55 | PSEC2-ch0 Self trig rate counts | 16 | 7774 |
+| 56 | PSEC2-ch1 Self trig rate counts | 16 | 7775 |
+| 57 | PSEC2-ch2 Self trig rate counts | 16 | 7776 |
+| 58 | PSEC2-ch3 Self trig rate counts | 16 | 7777 |
+| 59 | PSEC2-ch4 Self trig rate counts | 16 | 7778 |
+| 60 | PSEC2-ch5 Self trig rate counts | 16 | 7779 |
 | 61 | PSEC ID for PSEC chip 3 (Always 0xDCBN with N as PSEC ID) | 16 | - |
 | 62 | Wilkinson feedback count (current) | 16 | 6196
 | 63 | Wilkinson feedback target count setting | 16 | 6197 |
