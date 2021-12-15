@@ -157,10 +157,10 @@ int main()
 	int validationStart;
 	int validationWindow;
 
-	unsigned int psec_chip;
+	int psec_chip;
 	unsigned int psec_channel;
 	
-	std::vector<unsigned int> vec_psec_chip;
+	std::vector<int> vec_psec_chip;
 	std::vector<unsigned int> vec_psec_channel;
 
 	int BeamgateMultiplexer;
@@ -335,7 +335,7 @@ int main()
 			default:
 				std::cout << " Trigger input not found " << std::endl;
 				break;
-     			selfsetup:
+			selfsetup:
 				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) for selftrigger?" << std::endl;
 				std::cout << "Enter: ";
 				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
@@ -375,11 +375,10 @@ int main()
 						cin >> psec_channel;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
 					}else
 					{
-						run++;
-						continue;
+						psec_channel = 0x00;
 					}
-					vec_psec_chip.push_back(run);
-					vec_psec_channel.push_back(psec_chip);
+					vec_psec_chip.push_back(psec_chip);
+					vec_psec_channel.push_back(psec_channel);
 					run++;
 				}
 
