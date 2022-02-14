@@ -125,46 +125,19 @@ int main()
 		std::cout << "Please select triggermode: " << std::endl; 
 		std::cout << "(0) Off" << std::endl;
 		std::cout << "(1) Software trigger" << std::endl;
-		std::cout << "(2) SMA trigger ACC" << std::endl;
-		std::cout << "(3) SMA trigger ACDC" << std::endl;
-		std::cout << "(4) Self-trigger" << std::endl;
-		std::cout << "(5) Self-trigger with validation ACC" << std::endl;
-		std::cout << "(6) Self-trigger with validation ACDC" << std::endl;
-		std::cout << "(7) SMA ACC with validation SMA ACDC" << std::endl;
-		std::cout << "(8) SMA ACDC with validation SMA ACC" << std::endl;
-		std::cout << "(9) Pulse-per-second trigger mode" << std::endl;
+		std::cout << "(2) Self-trigger with validation ACC" << std::endl;
 		std::cout << "Set it to: ";
 
 		std::cin >> triggermode;
 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-		if(triggermode==1 || triggermode==9)
+		if(triggermode==1)
 		{
 			break;
 		}
 
 		switch(triggermode)
 		{
-			case 2:
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode; 		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				acc.setSign(invertMode, 2);
-
-				flag = false;
-				break;
-			case 3:
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACDC SMA?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				acc.setSign(invertMode, 3);
-
-				flag = false;
-				break;
-			case 4:
-				goto selfsetup;
 			case 5: 
 				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA validation?" << std::endl;
 				std::cout << "Enter: ";
@@ -192,96 +165,6 @@ int main()
 				acc.setSign(invertMode, 2);
 
 				goto selfsetup;
-			case 6:
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACDC SMA validation?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationStart/25);
-				valstr = std::stoul(ss3.str(),nullptr,16);
-
-				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss4 << std::hex << (int)(validationWindow/25);
-				valstr2 = std::stoul(ss4.str(),nullptr,16);
-
-				acc.setValidationStart(valstr);
-				acc.setValidationWindow(valstr2);
-				acc.setSign(invertMode, 3);
-
-				goto selfsetup;
-			case 7:
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				acc.setSign(invertMode, 2);
-
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACDC SMA validation?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				acc.setSign(invertMode, 3);
-
-				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationStart/25);
-				valstr = std::stoul(ss3.str(),nullptr,16);
-
-				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss4 << std::hex << (int)(validationWindow/25);
-				valstr2 = std::stoul(ss4.str(),nullptr,16);
-
-				acc.setValidationStart(valstr);
-				acc.setValidationWindow(valstr2);
-
-				flag = false;
-
-				break;
-			case 8:
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACDC SMA?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				acc.setSign(invertMode, 3);
-
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA validation?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				acc.setSign(invertMode, 2);
-
-
-				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationStart/25);
-				valstr = std::stoul(ss3.str(),nullptr,16);
-
-				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss4 << std::hex << (int)(validationWindow/25);
-				valstr2 = std::stoul(ss4.str(),nullptr,16);
-
-				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
-				std::cout << "Enter : ";
-				cin >> BeamgateMultiplexer;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-				acc.setValidationStart(valstr);
-				acc.setValidationWindow(valstr2);
-				acc.setPPSBeamMultiplexer(BeamgateMultiplexer);
-
-				flag = false;
-
-				break;
 			default:
 				std::cout << " Trigger input not found " << std::endl;
 				break;
