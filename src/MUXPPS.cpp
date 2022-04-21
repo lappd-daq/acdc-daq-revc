@@ -427,7 +427,6 @@ int main()
 		return 0;
 	}
   
-	acc.emptyUsbLine();
 	acc.dumpData(0xFF);
 	
   timestamp = getTime();
@@ -456,17 +455,17 @@ int main()
 		{
 			case 0:
 				
-				buffer = acc.returnRaw();
-				if(buffer.size()==0)
-				{
-					std::cout << "Empty buffer?" << std::endl;
-					break;
-				}
-				datamap = parseInfos(buffer,eventCounter);
-				printInfos(datamap);
-        
-				eventCounter++;
-				failCounter=0;
+//				buffer = acc.returnRaw();
+//				if(buffer.size()==0)
+//				{
+//					std::cout << "Empty buffer?" << std::endl;
+//					break;
+//				}
+//				datamap = parseInfos(buffer,eventCounter);
+//				printInfos(datamap);
+//        
+//				eventCounter++;
+//				failCounter=0;
 				break;
 			case 1:
 				writeErrorLog("Successfully found data and but buffer corrupted");

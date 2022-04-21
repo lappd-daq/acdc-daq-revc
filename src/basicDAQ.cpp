@@ -10,217 +10,126 @@
 #include <atomic>
 #include <map>
 #include <numeric>
-#include "stdUSB.h"
+#include "EthernetInterface.h"
 
 using namespace std;
 
-void usbWakeup(stdUSB* usb)
-{
-	unsigned int command = 0x00200000;
-	bool usbcheck=usb->sendData(command);
-	//if(usbcheck==false){writeErrorLog("Send Error");}
-}
-
-
-bool emptyUsbLine(stdUSB* usb)
-{
-    int send_counter = 0; //number of usb sends
-    int max_sends = 10; //arbitrary. 
-    unsigned int command = 0x00200000; // a refreshing command
-    vector<unsigned short> tempbuff;
-    while(true)
-    {
-	usb->safeReadData(100000);
-	bool usbcheck=usb->sendData(command);
-	//if(usbcheck==false){writeErrorLog("Send Error");}
-	send_counter++;
-	tempbuff = usb->safeReadData(100000);
-
-	//if it is exactly an ACC buffer size, success. 
-	if(tempbuff.size() == 32)
-	{
-	    return true;
-	}
-	if(send_counter > max_sends)
-	{
-	    string err_msg = "Something wrong with USB line, waking it up. got ";
-	    err_msg += to_string(tempbuff.size());
-	    err_msg += " words";
-	    //writeErrorLog(err_msg);
-	    usbWakeup(usb);
-	    tempbuff = usb->safeReadData(100000);
-	    if(tempbuff.size() == 32){
-		return true;
-	    }else{
-		//writeErrorLog("Usb still sleeping. Problem is not fixed.");
-		return false;
-	    }
-	}
-    }
-}
-
-
 int main()
 {
-    stdUSB* usb = new stdUSB();
-    if(!usb->isOpen())
-    {
-	cout << "Usb was unable to connect to ACC" << endl;
-	delete usb;
-	return 0;
-    }
-
-    bool clearCheck = emptyUsbLine(usb);
-    if(clearCheck==false)
-    {
-	printf("Failed to clear USB line on constructor!");
-    }
-
-    // reset ACC
+    EthernetInterface eth("192.168.133.107", "2007");
+    
+//    // reset ACC
 //    if(!usb->sendData(0x00000000))
 //    {
 //    	printf("Send Error!!!\n");
 //    }
 //    
-//    usleep(100000);
+//    usleep(1000);
 //    
-    // reset ACDC
-    if(!usb->sendData(0xffff0000))
-    {
-    	printf("Send Error!!!\n");
-    }
-    
-    usleep(10000);
+//    // reset ACDC
+//    if(!usb->sendData(0xffff0000))
+//    {
+//    	printf("Send Error!!!\n");
+//    }
+//    
+//    usleep(1000);
 
     // reset ACC data input FIFOs
-    if(!usb->sendData(0x000100ff))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x0001, 0xff);
 
-    usleep(10000);
+    usleep(2000);
+
+    // set pedestal values
+//    eth.send(0x100, 0xffa20300);
+
+//    usleep(100000);
 
     // disable all calib switches
-    if(!usb->sendData(0xffc00000))
-    {
-	printf("Send Error!!!\n");
-    }    
+    eth.send(0x100, 0xffc0ffff);
 
     // disable user calib input
-    if(!usb->sendData(0xffc10000))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x100, 0xffc10000);
 
     // set trig mode 2 in ACC (HARDWAR TRIG)
-    if(!usb->sendData(0x00300FF2))
-    {
-	printf("Send Error!!!\n");
-    }
+    for(int i = 0; i < 8; ++i) eth.send(0x0030 + i, 1);
 
     // set ACDC high speed data outputs to IDLE 
-    if(!usb->sendData(0xFFF60000))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x100, 0xFFF60000);
 
     // set ACDC trigger mode to OFF
-    if(!usb->sendData(0xFFB00000))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x100, 0xFFB00000);
 
     // send manchester training pulse (backpressure and trig)
-    if(!usb->sendData(0x00600000))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x0060, 1);
+
+    usleep(500);
 
     // Enable ACDC trig mode EXT
-    if(!usb->sendData(0xFFB00001))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x100, 0xFFB00001);
 
     // Enable ACDC data output mode 3 (DATA)
-    if(!usb->sendData(0xFFF60003))
-    {
-	printf("Send Error!!!\n");
-    }
-
-    usleep(100000);
-    
-    // reset ACC link error counters 
-    if(!usb->sendData(0x00530000))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x100, 0xFFF60003);
 
     usleep(1000);
+    
+    // reset ACC link error counters 
+    eth.send(0x0053, 0x1);
 
     // send software trigger
-    if(!usb->sendData(0x00100000))
-    {
-	printf("Send Error!!!\n");
-    }
+    eth.send(0x0010, 0xff);
 
-    usleep(1);
+    eth.setBurstTarget();
+    eth.setBurstMode(true);
+
+    // lazy wait to ensure data is all received 
+    usleep(1000);
+
+    std::vector<uint64_t> bufferOccMany = eth.recieve_many(0x1130, 8);
     
     for(int i = 0; i < 8; ++i)
     {
-	// Read FIFO occupancy
-	if(!usb->sendData(0x00230000 + 48 + i))
-	{
-	    printf("Send Error!!!\n");
-	}
+        uint64_t bufferOcc = eth.recieve(0x1130+i);
+        
+        printf("ACDC %1d: %10ld %10ld\n", i, bufferOcc, bufferOccMany[i]);
 
-	std::vector<unsigned short> buffer = usb->safeReadData(10);
+        if(bufferOcc >= 7696)
+        {
+            eth.send(0x22, i);
 
-	if(buffer.size() > 0)
-	{
-	    printf("ACDC %1d: %10d\n", i, buffer[0]);
+            std::vector<uint64_t> data = eth.recieve_burst(1540);
 
-	    if(buffer[0] >= 7680)
-	    {
-		// Read data FIFO
-		if(!usb->sendData(0x00220000+i))
-		{
-		    printf("Send Error!!!\n");
-		}
 
-		std::vector<unsigned short> buffer = usb->safeReadData(20000);
-		unsigned int size = buffer.size();
-		if(size <= 0) break;
-		printf("Words read: %d\n", size);
-		printf("Header start: %12x\n", buffer[0]);
-		printf("Event count:  %12d\n", buffer [1]);
-		printf("sys time: %16llu\n", (uint64_t(buffer[2]) << 48) | (uint64_t(buffer[3]) << 32) | (uint64_t(buffer[4]) << 16) | (uint64_t(buffer[5]) << 0));
-		printf("wr time (s):  %12llu\n", (uint64_t(buffer[6]) << 16) | (uint64_t(buffer[7]) << 0));
-		printf("wr time (us): %12llu\n", (uint64_t(buffer[8]) << 16) | (uint64_t(buffer[9]) << 0));
-		printf("Header end:   %12x\n", buffer[15]);
-		printf("Channel : ");
-		for(int i = 0; i < 5; ++i) printf("%6d%6d%6d%6d%6d%6d ", 0 + i*6, 1 + i*6, 2 + i*6, 3 + i*6, 4 + i*6, 5 + i*6);
-		printf("\n");
-		for(int i = 0; i < 256; ++i)
-		{
-		    printf("%7d : ", i);
-		    for(int k = 0; k < 5; ++k)
-		    {
-			printf("%6x%6x%6x%6x%6x%6x ",
-			       buffer[16 + i + 0*256 + k*(256*6)],
-			       buffer[16 + i + 1*256 + k*(256*6)],
-			       buffer[16 + i + 2*256 + k*(256*6)],
-			       buffer[16 + i + 3*256 + k*(256*6)],
-			       buffer[16 + i + 4*256 + k*(256*6)],
-			       buffer[16 + i + 5*256 + k*(256*6)]);
-		    }
-		    printf("\n");
-		}
-	    }
-	}
+            printf("Header start: %12lx\n", (data[1] >> 48) & 0xffff);
+            printf("Event count:  %12ld\n", (data[1] >> 32) & 0xffff);
+            printf("sys time: %16lu\n", ((data[1] << 32) & 0xffffffff00000000) | ((data[2] >> 32) & 0xffffffff));
+            printf("wr time (s):  %12lu\n", (data[2]) & 0xffffffff);
+            printf("wr time (ns): %12lu\n", (data[3] >> 32) & 0xffffffff);
+            printf("Header end:   %12lx\n", data[4] & 0xffff);
+            
+        }
+        
+//            //printf("Channel : ");
+//            //for(int i = 0; i < 5; ++i) printf("%6d%6d%6d%6d%6d%6d ", 0 + i*6, 1 + i*6, 2 + i*6, 3 + i*6, 4 + i*6, 5 + i*6);
+//            //printf("\n");
+//            //for(int i = 0; i < 256; ++i)
+//            //{
+//            //    printf("%7d : ", i);
+//            //    for(int k = 0; k < 5; ++k)
+//            //    {
+//            //	printf("%6x%6x%6x%6x%6x%6x ",
+//            //	       buffer[16 + i + 0*256 + k*(256*6)],
+//            //	       buffer[16 + i + 1*256 + k*(256*6)],
+//            //	       buffer[16 + i + 2*256 + k*(256*6)],
+//            //	       buffer[16 + i + 3*256 + k*(256*6)],
+//            //	       buffer[16 + i + 4*256 + k*(256*6)],
+//            //	       buffer[16 + i + 5*256 + k*(256*6)]);
+//            //    }
+//            //    printf("\n");
+//            //}
 
     }
 
+    eth.setBurstMode(false);
 
     return 0;
 }
