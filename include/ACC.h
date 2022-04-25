@@ -106,6 +106,8 @@ public:
 	void usbWakeup(); 
 	/*ID 24: Special function to check connected ACDCs for their firmware version*/ 
 	void versionCheck();
+	/*ID 25: Scan possible high speed link clock phases and select the optimal phase setting*/ 
+	void scanLinkPhase(unsigned int boardMask, bool print = false);
 	//:::
 	void resetACDC(); //resets the acdc boards
 	void resetACC(); //resets the acdc boards 

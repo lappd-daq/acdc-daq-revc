@@ -700,6 +700,8 @@ void ACC::versionCheck()
     command = 0xFFD00000; 
     eth.send(0x100, command);
 
+    usleep(500);
+
     //Loop over the ACC buffer words that show the ACDC buffer size
     //32 words represent a connected ACDC
     for(int i = 0; i < MAX_NUM_BOARDS; i++)
@@ -858,4 +860,107 @@ void ACC::writePsecData(ofstream& d, vector<int> boardsReadyForRead)
 		d << endl;
 	}
 	d.close();
+}
+
+/*ID 25: Scan possible high speed link clock phases and select the optimal phase setting*/ 
+void ACC::scanLinkPhase(unsigned int boardMask, bool print)
+{
+    std::vector<std::vector<uint64_t>> errors;
+
+    if(print)
+    {
+        printf("Phase  ");
+        for(int iChan = 0; iChan < 8; ++iChan) printf("%12s %2d          ", "Channel:", iChan);
+        printf("\n      ");
+        for(int iChan = 0; iChan < 8; ++iChan) printf(" %10s %9s    ", "Encode err", "PRBS err");
+        printf("\n");
+    }
+    
+    for(int iOffset = 0; iOffset < 24; ++iOffset)
+    {
+        // advance phase one step (there are 24 total steps in one cock cycle)
+        eth.send(0x0054, 0x0000);
+        for(int iChan = 0; iChan < 8; ++iChan)
+        {
+            eth.send(0x0055, 0x0000 + iChan);
+            eth.send(0x0056, 0x0000);
+        }
+
+        // transmit idle pattern to make sure link is aligned 
+        eth.send(0x0100, 0xfff60000);
+
+        usleep(1000);
+
+        //transmit PRBS pattern 
+        eth.send(0x0100, 0xfff60001);
+
+        usleep(100);
+
+        //reset error counters 
+        eth.send(0x0053, 0x0000);
+
+        usleep(1000);
+
+        std::vector<uint64_t> decode_errors = eth.recieve_many(0x1120, 8);
+        if(print)
+        {
+            std::vector<uint64_t> prbs_errors = eth.recieve_many(0x1110, 8);
+
+            printf("%5d  ", iOffset);
+            for(int iChan = 0; iChan < 8; ++iChan) printf("%10d %9d     ", uint32_t(decode_errors[iChan]), uint32_t(prbs_errors[iChan]));
+            printf("\n");
+        }
+
+        errors.push_back(decode_errors);
+    }
+
+    if(boardMask)
+    {
+        if(print) printf("Set:   "); 
+        for(int iChan = 0; iChan < 8; ++iChan)
+        {
+            // set phase for chanels in boardMask
+            if(boardMask & (1 << iChan))
+            {
+                int stop = 0;
+                int length = 0;
+                int length_best = 0;
+                for(int i = 0; i < int(2*errors.size()); ++i)
+                {
+                    int imod = i % errors.size();
+                    if(errors[imod][iChan] == 0)
+                    {
+                        ++length;
+                    }
+                    else
+                    {
+                        if(length >= length_best)
+                        {
+                            stop = imod;
+                            length_best = length;
+                        }
+                        length = 0;
+//                if(i > int(errors.size())) break;
+                    }
+                }
+                int phaseSetting = (stop - length_best/2)%errors.size();
+                if(print) printf("%15d          ", phaseSetting);
+                eth.send(0x0054, 0x0000);
+                eth.send(0x0055,  iChan);
+                for(int i = 0; i < phaseSetting; ++i)
+                {
+                    eth.send(0x0056, 0x0000);	    
+                }
+            }
+            else
+            {
+                if(print) printf("%25s", " ");
+            }
+        }
+        if(print) printf("\n"); 
+    }
+
+    // set transmitter back to idle mode
+    eth.send(0x100, 0xfff60000);
+
 }
