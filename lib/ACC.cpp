@@ -145,7 +145,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 
 	//train manchester links
 	eth.send(0x0060, 0);
-	
+
 	// Set trigger conditions
 	switch(trigMode)
 	{ 	
@@ -226,6 +226,12 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
                             }
                         }
 	}
+
+        //train manchester links
+	eth.send(0x0060, 0);
+
+        //scan hs link phases and pick optimal phase
+        scanLinkPhase(boardMask);
 
         //unused for TOF system 
 //	command = 0x00340000;
@@ -870,7 +876,9 @@ void ACC::scanLinkPhase(unsigned int boardMask, bool print)
     if(print)
     {
         printf("Phase  ");
-        for(int iChan = 0; iChan < 8; ++iChan) printf("%12s %2d          ", "Channel:", iChan);
+        for(int iChan = 0; iChan < 8; iChan += 2) printf("%25s %2d %21s", "ACDC:", iChan/2, " ");
+        printf("\n      ");
+        for(int iChan = 0; iChan < 8; ++iChan) printf("%12s %2d          ", "Channel:", iChan%2);
         printf("\n      ");
         for(int iChan = 0; iChan < 8; ++iChan) printf(" %10s %9s    ", "Encode err", "PRBS err");
         printf("\n");
@@ -962,5 +970,62 @@ void ACC::scanLinkPhase(unsigned int boardMask, bool print)
 
     // set transmitter back to idle mode
     eth.send(0x100, 0xfff60000);
+
+}
+
+void ACC::sendJCPLLSPIWord(unsigned int word, bool verbose)
+{
+    unsigned int clearRequest = 0xFFF10000;
+    unsigned int lower16 = 0xFFF30000 | (0xFFFF & word);
+    unsigned int upper16 = 0xFFF40000 | (0xFFFF & (word >> 16));
+    unsigned int setPLL = 0xFFF50000;
+    
+    eth.send(0x100, clearRequest);
+    eth.send(0x100, lower16);
+    eth.send(0x100, upper16);
+    eth.send(0x100, setPLL);
+    eth.send(0x100, clearRequest);
+
+    if(verbose)
+    {
+	printf("send 0x%08x\n", lower16);
+	printf("send 0x%08x\n", upper16);
+	printf("send 0x%08x\n", setPLL);
+    }
+}
+
+/*ID 26: Configure the jcPLL settings */
+void ACC::configJCPLL()
+{
+    // program registers 0 and 1 with approperiate settings for 40 MHz output 
+    sendJCPLLSPIWord(0x55500060); // 25 MHz input
+    //sendJCPLLSPIWord(0x5557C060); // 125 MHz input
+    usleep(2000);    
+    sendJCPLLSPIWord(0x83810001); // 25 MHz input
+    //sendJCPLLSPIWord(0xFF810081); // 125 MHz input
+    usleep(2000);
+
+    // cycle "power down" to force VCO calibration 
+    sendJCPLLSPIWord(0x00001802);
+    usleep(2000);
+    sendJCPLLSPIWord(0x00001002);
+    usleep(2000);
+    sendJCPLLSPIWord(0x00001802);
+    usleep(2000);
+
+    // toggle sync bit to synchronize output clocks
+    sendJCPLLSPIWord(0x0001802);
+    usleep(2000);
+    sendJCPLLSPIWord(0x0000802);
+    usleep(2000);
+    sendJCPLLSPIWord(0x0001802);
+    usleep(2000);
+
+    // read register
+//    sendJCPLLSPIWord(0x0000000e);
+//    sendJCPLLSPIWord(0x00000000);
+
+    // write register contents to EEPROM
+    //sendJCPLLSPIWord(0x0000000f);
 
 }
