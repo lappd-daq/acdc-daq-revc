@@ -101,9 +101,9 @@ int main()
 
             printf("Header start: %12lx\n", (data[1] >> 48) & 0xffff);
             printf("Event count:  %12ld\n", (data[1] >> 32) & 0xffff);
-            printf("sys time: %16lu\n", ((data[1] << 32) & 0xffffffff00000000) | ((data[2] >> 32) & 0xffffffff));
-            printf("wr time (s):  %12lu\n", (data[2]) & 0xffffffff);
-            printf("wr time (ns): %12lu\n", (data[3] >> 32) & 0xffffffff);
+            printf("sys time: %16lu\n", data[2]);
+            printf("wr time (s):  %12lu\n", (data[3] >> 32) & 0xffffffff);
+            printf("wr time (ns): %12lu\n", (data[3]) & 0xffffffff);
             printf("Header end:   %12lx\n", data[4] & 0xffff);
             
         }

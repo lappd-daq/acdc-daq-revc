@@ -233,6 +233,9 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
         //scan hs link phases and pick optimal phase
         scanLinkPhase(boardMask);
 
+        //flush data FIFOs
+        eth.send(0x0001, boardMask);
+
         //unused for TOF system 
 //	command = 0x00340000;
 //	command = command | PPSRatio;
@@ -390,10 +393,10 @@ int ACC::readAcdcBuffers(bool raw, string timestamp)
 		//base command for set readmode and which board bi to read
                 eth.send(0x22, bi);
 
-                std::vector<uint64_t> acdc_data = eth_burst.recieve_burst(1540);
+                std::vector<uint64_t> acdc_data = eth_burst.recieve_burst(1541);
 
 		//Handles buffers =/= 7795 words
-		if(acdc_data.size() != 1540)
+		if(acdc_data.size() != 1541)
 		{
 			string err_msg = "Couldn't read ";
 			err_msg += to_string(1540);
@@ -572,10 +575,10 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
         //base command for set data readmode and which board bi to read
         eth.send(0x22, bi);
 
-        std::vector<uint64_t> acdc_data = eth_burst.recieve_burst(1540);
+        std::vector<uint64_t> acdc_data = eth_burst.recieve_burst(1541);
 
         //Handles buffers =/= 7795 words
-        if((int)acdc_data.size() != 1540)
+        if((int)acdc_data.size() != 1541)
         {
             string err_msg = "Couldn't read " + std::to_string(readoutSize[bi]) + " words as expected! Tryingto fix it! Size was: ";
             err_msg += to_string(acdc_data.size());
@@ -594,24 +597,24 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
                 int retval;
 
                 //If raw data is requested save and return 0
-                if(true)//raw==true)
+                if(raw==true)
                 {
                     //vbuffer = acdc_data;
                     string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
                     writeRawDataToFile(acdc_data, rawfn);
                     break;
                 }
-//                else
-//                {
-//                    //parśe raw data to channel data and metadata
-//                    retval = a->parseDataFromBuffer(acdc_buffer);
-//                    map_data[bi] = a->returnData(); 
-//                    if(retval == -3)
-//                    {
-//                        break;
-//                    }
-//                    else if(retval == 0)
-//                    {
+                else
+                {
+                    //parśe raw data to channel data and metadata
+                    retval = a->parseDataFromBuffer(acdc_data);
+                    map_data[bi] = a->returnData(); 
+                    if(retval == -3)
+                    {
+                        break;
+                    }
+                    else if(retval == 0)
+                    {
 //                        if(metaSwitch == 1)
 //                        {
 //                            retval = meta.parseBuffer(acdc_buffer,bi);
@@ -629,22 +632,22 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 //                        {
 //                            map_meta[bi] = {0};
 //                        }
-//                    }
-//                    else
-//                    {
-//                        writeErrorLog("Data parsing went wrong");
-//                        return 1;
-//                    }                               
-//                }
+                    }
+                    else
+                    {
+                        writeErrorLog("Data parsing went wrong");
+                        return 1;
+                    }                               
+                }
             }
         }
     }
-//    if(raw==false)
-//    {
-//        datafn = outfilename + "Data_" + timestamp + ".txt";
-//        dataofs.open(datafn.c_str(), ios::app); 
-//        writePsecData(dataofs, boardsReadyForRead);
-//    }
+    if(raw==false)
+    {
+        datafn = outfilename + "Data_" + timestamp + ".txt";
+        dataofs.open(datafn.c_str(), ios::app); 
+        writePsecData(dataofs, boardsReadyForRead);
+    }
     eth.setBurstMode(false);
 
     return 0;

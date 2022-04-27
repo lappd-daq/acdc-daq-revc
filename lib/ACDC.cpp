@@ -32,7 +32,7 @@ void ACDC::setBoardIndex(int bi)
 //2: other error
 //1: corrupt buffer 
 //0: all good
-int ACDC::parseDataFromBuffer(vector<unsigned short> buffer)
+int ACDC::parseDataFromBuffer(const vector<uint64_t>& buffer)
 {
     //Catch empty buffers
     if(buffer.size() == 0)
@@ -41,33 +41,40 @@ int ACDC::parseDataFromBuffer(vector<unsigned short> buffer)
         return -1;
     }
 
-    if(buffer.size() == 16)
-    {
-        data[0] = buffer;
-        return -3;      
-    }
-
     //clear the data map prior.
     data.clear();
 
     //check for fixed words in header
-    if(buffer[0] != 0xac9c || buffer[15] != 0xcac9)
+    if(((buffer[1] >> 48) & 0xffff) != 0xac9c || (buffer[4] & 0xffff) != 0xcac9)
     {
+        printf("%lx, %lx\n", (buffer[1] >> 48) & 0xffff, buffer[4] & 0xffff);
         std::cout << "Data buffer header corrupt" << std::endl;
         return -2;
     }
 
     //Fill data map
     int channel_count = 0;
-    for(int i = 16; i < 16 + 256*30; i += 256)
+    int cap_count = 0;
+    decltype(data.emplace()) empl_retval;
+    for(unsigned int i = 5; i < buffer.size(); ++i)
     {
-        data.emplace(std::piecewise_construct, std::forward_as_tuple(channel_count), std::forward_as_tuple(buffer.begin()+i, buffer.begin()+(i+256)));
-        channel_count++;
+        for(int j = 4; j >=0; --j)
+        {
+            if(cap_count == 0) empl_retval = data.emplace(std::piecewise_construct, std::forward_as_tuple(channel_count), std::forward_as_tuple(256));
+            (*(empl_retval.first)).second[cap_count] = (buffer[i] >> (j*12)) & 0xfff;
+            ++cap_count;
+            if(cap_count >= 256)
+            {
+                cap_count = 0;
+                ++channel_count;
+            }
+        }
     }
 
     if(data.size()!=NUM_CH)
     {
-        cout << "error 1: Not 30 channels" << endl;
+        cout << "error 1: Not 30 channels " << data.size() << endl;
+        for(const auto& thing : data) cout << thing.second.size() << std::endl;
     }
 
     for(int i=0; i<NUM_CH; i++)
