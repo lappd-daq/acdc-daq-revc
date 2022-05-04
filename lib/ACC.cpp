@@ -152,11 +152,11 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
                 std::cout << "ACDC" << bi << " has invalid info frame" << std::endl;
             }
 
-            if(acdcInfo[6] != 0x4) std::cout << "ACDC" << bi << " has unlocked ACC pll" << std::endl;
-            if(acdcInfo[6] != 0x2) std::cout << "ACDC" << bi << " has unlocked serial pll" << std::endl;
-            if(acdcInfo[6] != 0x1) std::cout << "ACDC" << bi << " has unlocked white rabbit pll" << std::endl;
+            if(!(acdcInfo[6] & 0x4)) std::cout << "ACDC" << bi << " has unlocked ACC pll" << std::endl;
+            if(!(acdcInfo[6] & 0x2)) std::cout << "ACDC" << bi << " has unlocked serial pll" << std::endl;
+            if(!(acdcInfo[6] & 0x1)) std::cout << "ACDC" << bi << " has unlocked white rabbit pll" << std::endl;
 
-            if(acdcInfo[6] != 0x8)
+            if(!(acdcInfo[6] & 0x8))
             {
                 // external PLL must be unconfigured, attempt to configure them 
                 configJCPLL();
@@ -175,7 +175,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
                     std::cout << "ACDC" << bi << " has invalid info frame" << std::endl;
                 }
                 
-                if(acdcInfo[6] != 0x8) writeErrorLog("ACDC" + std::to_string(bi) + " has unlocked sys pll");
+                if(!(acdcInfo[6] & 0x8)) writeErrorLog("ACDC" + std::to_string(bi) + " has unlocked sys pll");
             }
 	}
 
