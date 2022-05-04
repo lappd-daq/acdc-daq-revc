@@ -20,7 +20,7 @@ string getTime()
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%Y%d%m_%H%M%S");
+    //    ss << std::put_time(std::localtime(&in_time_t), "%Y%d%m_%H%M%S");
     return ss.str();
 }
 
@@ -33,13 +33,13 @@ void writeErrorLog(string errorMsg)
     ofstream os_err(err, ios_base::app);
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
-    std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
-    os_err << "------------------------------------------------------------" << std::endl;
-    os_err << ss.str() << endl;
-    os_err << errorMsg << endl;
-    os_err << "------------------------------------------------------------" << std::endl;
-    os_err.close();
+//    std::stringstream ss;
+//    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
+//    os_err << "------------------------------------------------------------" << std::endl;
+//    os_err << ss.str() << endl;
+//    os_err << errorMsg << endl;
+//    os_err << "------------------------------------------------------------" << std::endl;
+//    os_err.close();
 }
 
 map<string, unsigned int> parseInfos(vector<unsigned short> buffer, int evn)

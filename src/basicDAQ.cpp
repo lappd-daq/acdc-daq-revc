@@ -16,7 +16,10 @@ using namespace std;
 
 int main()
 {
-    EthernetInterface eth("192.168.133.107", "2007");
+    EthernetInterface eth("192.168.46.107", "2007");
+
+    eth.setBurstTarget();
+    eth.setBurstMode(true);
     
 //    // reset ACC
 //    if(!usb->sendData(0x00000000))
@@ -51,13 +54,15 @@ int main()
     eth.send(0x100, 0xffc10000);
 
     // set trig mode 2 in ACC (HARDWAR TRIG)
-    for(int i = 0; i < 8; ++i) eth.send(0x0030 + i, 1);
+    for(int i = 0; i < 8; ++i) eth.send(0x0030 + i, 0);
 
     // set ACDC high speed data outputs to IDLE 
     eth.send(0x100, 0xFFF60000);
 
     // set ACDC trigger mode to OFF
     eth.send(0x100, 0xFFB00000);
+
+    usleep(10000);
 
     // send manchester training pulse (backpressure and trig)
     eth.send(0x0060, 1);
@@ -70,6 +75,9 @@ int main()
     // Enable ACDC data output mode 3 (DATA)
     eth.send(0x100, 0xFFF60003);
 
+    // set trig mode 2 in ACC (HARDWAR TRIG)
+    for(int i = 0; i < 8; ++i) eth.send(0x0030 + i, 1);
+
     usleep(1000);
     
     // reset ACC link error counters 
@@ -78,25 +86,21 @@ int main()
     // send software trigger
     eth.send(0x0010, 0xff);
 
-    eth.setBurstTarget();
-    eth.setBurstMode(true);
-
     // lazy wait to ensure data is all received 
-    usleep(1000);
+    usleep(5000);
 
-    std::vector<uint64_t> bufferOccMany = eth.recieve_many(0x1130, 8);
-    
     for(int i = 0; i < 8; ++i)
     {
         uint64_t bufferOcc = eth.recieve(0x1130+i);
         
-        printf("ACDC %1d: %10ld %10ld\n", i, bufferOcc, bufferOccMany[i]);
-
-        if(bufferOcc >= 7696)
+	printf("ACDC %1d: %10ld\n", i, bufferOcc);
+        while(bufferOcc >= 7696)
         {
+	  printf("ACDC %1d: %10ld\n", i, bufferOcc);
+
             eth.send(0x22, i);
 
-            std::vector<uint64_t> data = eth.recieve_burst(1540);
+            std::vector<uint64_t> data = eth.recieve_burst(1541);
 
 
             printf("Header start: %12lx\n", (data[1] >> 48) & 0xffff);
@@ -106,6 +110,7 @@ int main()
             printf("wr time (ns): %12lu\n", (data[3]) & 0xffffffff);
             printf("Header end:   %12lx\n", data[4] & 0xffff);
             
+	    bufferOcc = eth.recieve(0x1130+i);
         }
         
 //            //printf("Channel : ");
@@ -130,6 +135,13 @@ int main()
     }
 
     eth.setBurstMode(false);
+
+    // set ACDC high speed data outputs to IDLE 
+    //    eth.send(0x100, 0xFFF60000);
+
+    // set ACDC trigger mode to OFF
+    //eth.send(0x100, 0xFFB00000);
+
 
     return 0;
 }

@@ -109,7 +109,7 @@ public:
 	/*ID 25: Scan possible high speed link clock phases and select the optimal phase setting*/ 
 	void scanLinkPhase(unsigned int boardMask, bool print = false);
         /*ID 26: Configure the jcPLL settings */
-	void configJCPLL();
+	void configJCPLL(unsigned int boardMask = 0xff);
 	//:::
 	void resetACDC(); //resets the acdc boards
 	void resetACC(); //resets the acdc boards 
@@ -152,7 +152,7 @@ private:
 	vector<unsigned short> map_accIF;
 
 	static void got_signal(int);
-        void sendJCPLLSPIWord(unsigned int word, bool verbose = false);
+        void sendJCPLLSPIWord(unsigned int word, unsigned int boardMask = 0xff, bool verbose = false);
 };
 
 #endif

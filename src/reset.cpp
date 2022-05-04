@@ -19,7 +19,7 @@ int main()
 {
     ACC acc;
     acc.resetACC();
-    usleep(1000);
+    usleep(5000);
     acc.resetACDC();
 
     return 0;

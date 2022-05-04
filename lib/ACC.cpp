@@ -26,7 +26,7 @@ void ACC::got_signal(int){quitacc.store(true);}
 /*--------------------------------Constructor/Deconstructor---------------------------*/
 
 /*ID:5 Constructor*/
-ACC::ACC() : eth("192.168.133.107", "2007"), eth_burst("192.168.133.107", "2008")
+ACC::ACC() : eth("192.168.46.107", "2007"), eth_burst("192.168.46.107", "2008")
 {
 	bool clearCheck;
 }
@@ -43,14 +43,13 @@ ACC::~ACC()
 /*ID:9 Create ACDC class instances for each connected ACDC board*/
 int ACC::createAcdcs()
 {
-	//To prepare clear the USB line just in case
 	//Check for connected ACDC boards
 	int retval = whichAcdcsConnected(); 
 	if(retval==-1)
 	{
 		std::cout << "Trying to reset ACDC boards" << std::endl;
 		eth.send(0x100, 0xFFFF0000);
-		usleep(1000000);
+		usleep(10000);
 		int retval = whichAcdcsConnected();
 		if(retval==-1)
 		{
@@ -95,7 +94,7 @@ int ACC::whichAcdcsConnected()
 	//New sequence to ask the ACC to reply with the number of boards connected 
 	//Disables the PSEC4 frame data transfer for this sequence. Has to be set to HIGH later again
 	enableTransfer(0); 
-	usleep(100000);
+	usleep(1000);
 
 	//Resets the RX buffer on all 8 ACDC boards
 	eth.send(0x0020, 0xff);
@@ -137,14 +136,66 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 	retval = createAcdcs();
 	if(retval==0)
 	{
-		writeErrorLog("ACDCs could not be created");
+            writeErrorLog("ACDCs could not be created");
 	}
+
+        //check ACDC PLL Settings
+        // REVIEW ERRORS AND MESSAGES 
+        for(int bi: alignedAcdcIndices)
+	{
+            // read ACD info frame 
+            eth.send(0x100, 0x00D00000 | (1 << (bi + 24)));
+
+            std::vector<uint64_t> acdcInfo = eth.recieve_many(0x1200 + bi, 32);
+            if((acdcInfo[0] & 0xffff) != 0x1234)
+            {
+                std::cout << "ACDC" << bi << " has invalid info frame" << std::endl;
+            }
+
+            if(acdcInfo[6] != 0x4) std::cout << "ACDC" << bi << " has unlocked ACC pll" << std::endl;
+            if(acdcInfo[6] != 0x2) std::cout << "ACDC" << bi << " has unlocked serial pll" << std::endl;
+            if(acdcInfo[6] != 0x1) std::cout << "ACDC" << bi << " has unlocked white rabbit pll" << std::endl;
+
+            if(acdcInfo[6] != 0x8)
+            {
+                // external PLL must be unconfigured, attempt to configure them 
+                configJCPLL();
+
+                // reset the ACDC after configuring JCPLL
+                resetACDC();
+                usleep(5000);
+
+                // check PLL bit again
+                // read ACD info frame 
+                eth.send(0x100, 0x00D00000 | (1 << (bi + 24)));
+
+                acdcInfo = eth.recieve_many(0x1200 + bi, 32);
+                if((acdcInfo[0] & 0xffff) != 0x1234)
+                {
+                    std::cout << "ACDC" << bi << " has invalid info frame" << std::endl;
+                }
+                
+                if(acdcInfo[6] != 0x8) writeErrorLog("ACDC" + std::to_string(bi) + " has unlocked sys pll");
+            }
+	}
+
+
+	//disable all triggers
+	//ACC trigger
+        for(unsigned int i = 0; i < 8; ++i) eth.send(0x0030+i, 0);
+	//ACDC trigger
+	command = 0xffB00000;
+	eth.send(0x100, command);
 
 	// Toogels the calibration mode on if requested
 	toggleCal(calibMode, 0x7FFF, boardMask);
 
 	//train manchester links
 	eth.send(0x0060, 0);
+	usleep(250);
+
+        //scan hs link phases and pick optimal phase
+        scanLinkPhase(boardMask);
 
 	// Set trigger conditions
 	switch(trigMode)
@@ -226,12 +277,6 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
                             }
                         }
 	}
-
-        //train manchester links
-	eth.send(0x0060, 0);
-
-        //scan hs link phases and pick optimal phase
-        scanLinkPhase(boardMask);
 
         //flush data FIFOs
         eth.send(0x0001, boardMask);
@@ -696,6 +741,11 @@ void ACC::versionCheck()
         std::cout << "ACC got the no info frame" << std::endl;
     }
 
+    //for(int i = 0; i < 16; ++i) printf("byteFIFO occ %5d: %10d\n", i, eth.recieve(0x1100+i));
+
+    //lastAccBuffer = eth.recieve_many(0x1100, 64);
+    //for(unsigned int i = 0; i < lastAccBuffer.size(); ++i) printf("stuff: 11%02x: %10ld\n", i, lastAccBuffer[i]);
+
     //Disables Psec communication
     //command = 0xFFB54000; 
     //usb->sendData(command);
@@ -722,7 +772,7 @@ void ACC::versionCheck()
             std::cout << "Board " << i << " got the firmware version: " << std::hex << buf.at(2) << std::dec;
             std::cout << " from " << std::hex << ((buf.at(4) >> 8) & 0xff) << std::dec << "/" << std::hex << (buf.at(4) & 0xff) << std::dec << "/" << std::hex << buf.at(3) << std::dec << std::endl;
             //printf("bufLen: %ld\n", bufLen);
-            //for(auto& val : buf) printf("%016lx\n", val);
+            //for(unsigned int j = 0; j < buf.size(); ++j) printf("%3i: %016lx\n", j, buf[j]);
         }
         else
         {
@@ -814,12 +864,12 @@ void ACC::writeErrorLog(string errorMsg)
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
-    os_err << "------------------------------------------------------------" << endl;
-    os_err << ss.str() << endl;
-    os_err << errorMsg << endl;
-    os_err << "------------------------------------------------------------" << endl;
-    os_err.close();
+//    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
+//    os_err << "------------------------------------------------------------" << endl;
+//    os_err << ss.str() << endl;
+//    os_err << errorMsg << endl;
+//    os_err << "------------------------------------------------------------" << endl;
+//    os_err.close();
 }
 
 /*ID 30: Write function for the raw data format*/
@@ -925,6 +975,9 @@ void ACC::scanLinkPhase(unsigned int boardMask, bool print)
         errors.push_back(decode_errors);
     }
 
+    // set transmitter back to idle mode
+    eth.send(0x100, 0xfff60000);
+
     if(boardMask)
     {
         if(print) printf("Set:   "); 
@@ -969,19 +1022,22 @@ void ACC::scanLinkPhase(unsigned int boardMask, bool print)
             }
         }
         if(print) printf("\n"); 
-    }
 
-    // set transmitter back to idle mode
-    eth.send(0x100, 0xfff60000);
+	// ensure at least 1 ms for links to realign (ensures at least 25 alignment markers)
+	usleep(1000);
+
+        //reset error counters 
+        eth.send(0x0053, 0x0000);
+    }
 
 }
 
-void ACC::sendJCPLLSPIWord(unsigned int word, bool verbose)
+void ACC::sendJCPLLSPIWord(unsigned int word, unsigned int boardMask, bool verbose)
 {
-    unsigned int clearRequest = 0xFFF10000;
-    unsigned int lower16 = 0xFFF30000 | (0xFFFF & word);
-    unsigned int upper16 = 0xFFF40000 | (0xFFFF & (word >> 16));
-    unsigned int setPLL = 0xFFF50000;
+    unsigned int clearRequest = 0x00F10000 | (boardMask << 24);
+    unsigned int lower16 = 0x00F30000 | (boardMask << 24) | (0xFFFF & word);
+    unsigned int upper16 = 0x00F40000 | (boardMask << 24) | (0xFFFF & (word >> 16));
+    unsigned int setPLL = 0x00F50000 | (boardMask << 24);
     
     eth.send(0x100, clearRequest);
     eth.send(0x100, lower16);
@@ -998,30 +1054,30 @@ void ACC::sendJCPLLSPIWord(unsigned int word, bool verbose)
 }
 
 /*ID 26: Configure the jcPLL settings */
-void ACC::configJCPLL()
+void ACC::configJCPLL(unsigned int boardMask)
 {
     // program registers 0 and 1 with approperiate settings for 40 MHz output 
-    sendJCPLLSPIWord(0x55500060); // 25 MHz input
+    sendJCPLLSPIWord(0x55500060, boardMask); // 25 MHz input
     //sendJCPLLSPIWord(0x5557C060); // 125 MHz input
     usleep(2000);    
-    sendJCPLLSPIWord(0x83810001); // 25 MHz input
+    sendJCPLLSPIWord(0x83810001, boardMask); // 25 MHz input
     //sendJCPLLSPIWord(0xFF810081); // 125 MHz input
     usleep(2000);
 
     // cycle "power down" to force VCO calibration 
-    sendJCPLLSPIWord(0x00001802);
+    sendJCPLLSPIWord(0x00001802, boardMask);
     usleep(2000);
-    sendJCPLLSPIWord(0x00001002);
+    sendJCPLLSPIWord(0x00001002, boardMask);
     usleep(2000);
-    sendJCPLLSPIWord(0x00001802);
+    sendJCPLLSPIWord(0x00001802, boardMask);
     usleep(2000);
 
     // toggle sync bit to synchronize output clocks
-    sendJCPLLSPIWord(0x0001802);
+    sendJCPLLSPIWord(0x0001802, boardMask);
     usleep(2000);
-    sendJCPLLSPIWord(0x0000802);
+    sendJCPLLSPIWord(0x0000802, boardMask);
     usleep(2000);
-    sendJCPLLSPIWord(0x0001802);
+    sendJCPLLSPIWord(0x0001802, boardMask);
     usleep(2000);
 
     // read register
