@@ -146,7 +146,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
             // read ACD info frame 
             eth.send(0x100, 0x00D00000 | (1 << (bi + 24)));
 
-            std::vector<uint64_t> acdcInfo = eth.recieve_many(0x1200 + bi, 32);
+            std::vector<uint64_t> acdcInfo = eth.recieve_many(0x1200 + bi, 32, EthernetInterface::NO_ADDR_INC);
             if((acdcInfo[0] & 0xffff) != 0x1234)
             {
                 std::cout << "ACDC" << bi << " has invalid info frame" << std::endl;
@@ -169,7 +169,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
                 // read ACD info frame 
                 eth.send(0x100, 0x00D00000 | (1 << (bi + 24)));
 
-                acdcInfo = eth.recieve_many(0x1200 + bi, 32);
+                acdcInfo = eth.recieve_many(0x1200 + bi, 32, EthernetInterface::NO_ADDR_INC);
                 if((acdcInfo[0] & 0xffff) != 0x1234)
                 {
                     std::cout << "ACDC" << bi << " has invalid info frame" << std::endl;
