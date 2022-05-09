@@ -105,11 +105,13 @@ public:
 	/*ID 23: Wakes up the USB by requesting an ACC info frame*/
 	void usbWakeup(); 
 	/*ID 24: Special function to check connected ACDCs for their firmware version*/ 
-	void versionCheck();
+	void versionCheck(bool debug = false);
 	/*ID 25: Scan possible high speed link clock phases and select the optimal phase setting*/ 
 	void scanLinkPhase(unsigned int boardMask, bool print = false);
         /*ID 26: Configure the jcPLL settings */
 	void configJCPLL(unsigned int boardMask = 0xff);
+        /*ID 27: Turn off triggers and data transfer off */
+	void endRun(unsigned int boardMask = 0xff);
 	//:::
 	void resetACDC(); //resets the acdc boards
 	void resetACC(); //resets the acdc boards 
