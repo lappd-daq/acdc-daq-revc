@@ -53,7 +53,7 @@ int main()
 	int trigMode = 1; //software trigger for calibration
 	unsigned int boardMask = 0xFF;
 	int calibMode = 1;
-	bool raw = true;
+	bool raw = false;
 	int retval;
 	string datafn;//file to ultimately save avg
 

@@ -12,11 +12,15 @@
 #include <numeric>
 #include "EthernetInterface.h"
 
+#include "ACDC.h"
+
 using namespace std;
 
-int main()
+int main(int argn, char * argc[])
 {
-    EthernetInterface eth("192.168.46.107", "2007");
+    ACDC acdc;
+
+    EthernetInterface eth("192.168.46.108", "2007");
 
     eth.setBurstTarget();
     eth.setBurstMode(true);
@@ -37,6 +41,11 @@ int main()
 //    
 //    usleep(1000);
 
+    // Enable ACDC data output IDLE
+    //eth.send(0x100, 0xFFF60000);
+
+    usleep(2000);
+
     // reset ACC data input FIFOs
     eth.send(0x0001, 0xff);
 
@@ -48,16 +57,35 @@ int main()
 //    usleep(100000);
 
     // disable all calib switches
-    eth.send(0x100, 0xffc0ffff);
+    eth.send(0x100, 0xffc00000);
 
     // disable user calib input
     eth.send(0x100, 0xffc10000);
 
-    // set trig mode 2 in ACC (HARDWAR TRIG)
+    // set self trigger thresholds
+    const unsigned int thresh = 0x750;
+    for(int i = 0; i < 5; ++i)
+    {	
+	eth.send(0x100, 0xffa60000 | (i << 12) | thresh);
+	eth.send(0x100, 0xffa70000 | (i << 12) | thresh);
+	eth.send(0x100, 0xffa80000 | (i << 12) | thresh);
+	eth.send(0x100, 0xffa90000 | (i << 12) | thresh);
+	eth.send(0x100, 0xffaa0000 | (i << 12) | thresh);
+	eth.send(0x100, 0xffab0000 | (i << 12) | thresh);
+    }
+
+    //set self trigger mask
+    eth.send(0x100, 0xffb10000);
+    eth.send(0x100, 0xffb1101f);
+    eth.send(0x100, 0xffb1201f);
+    eth.send(0x100, 0xffb1301f);
+    eth.send(0x100, 0xffb14000);
+
+    // set trig mode 2 in ACC (HARDWARE TRIG)
     for(int i = 0; i < 8; ++i) eth.send(0x0030 + i, 0);
 
     // set ACDC high speed data outputs to IDLE 
-    eth.send(0x100, 0xFFF60000);
+    //eth.send(0x100, 0xFFF60000);
 
     // set ACDC trigger mode to OFF
     eth.send(0x100, 0xFFB00000);
@@ -70,13 +98,13 @@ int main()
     usleep(500);
 
     // Enable ACDC trig mode EXT
-    eth.send(0x100, 0xFFB00001);
+    eth.send(0x100, 0xFFB00002);
 
     // Enable ACDC data output mode 3 (DATA)
     eth.send(0x100, 0xFFF60003);
 
     // set trig mode 2 in ACC (HARDWAR TRIG)
-    for(int i = 0; i < 8; ++i) eth.send(0x0030 + i, 1);
+    for(int i = 0; i < 8; ++i) eth.send(0x0030 + i, 0);
 
     usleep(1000);
     
@@ -87,7 +115,7 @@ int main()
     eth.send(0x0010, 0xff);
 
     // lazy wait to ensure data is all received 
-    usleep(5000);
+    usleep(50000);
 
     for(int i = 0; i < 8; ++i)
     {
@@ -109,28 +137,38 @@ int main()
             printf("wr time (s):  %12lu\n", (data[3] >> 32) & 0xffffffff);
             printf("wr time (ns): %12lu\n", (data[3]) & 0xffffffff);
             printf("Header end:   %12lx\n", data[4] & 0xffff);
-            
-	    bufferOcc = eth.recieve(0x1130+i);
+	    
+	    acdc.parseDataFromBuffer(data);
+	    auto parsedData = acdc.returnData();
+
+	    if(argn > 1)
+	    {
+		printf("Channel : ");
+		for(int i = 0; i < 5; ++i) printf("%6d%6d%6d%6d%6d%6d ", 0 + i*6, 1 + i*6, 2 + i*6, 3 + i*6, 4 + i*6, 5 + i*6);
+		printf("\n");
+		for(int i = 0; i < 256; ++i)
+		{
+		    printf("%7d : ", i);
+		    for(int k = 0; k < 5; ++k)
+		    {
+                        if(parsedData[k*6 + 0][i] < thresh or parsedData[k*6 + 1][i] < thresh or parsedData[k*6 + 2][i] < thresh or parsedData[k*6 + 3][i] < thresh or parsedData[k*6 + 4][i] < thresh or parsedData[k*6 + 5][i] < thresh)printf("AAA");
+                        if(parsedData[k*6 + 0][i] < thresh or parsedData[k*6 + 1][i] < thresh or parsedData[k*6 + 2][i] < thresh or parsedData[k*6 + 3][i] < thresh or parsedData[k*6 + 4][i] < thresh or parsedData[k*6 + 5][i] < thresh)printf("---");
+			printf("%6x%6x%6x%6x%6x%6x ",
+			       parsedData[k*6 + 0][i],
+			       parsedData[k*6 + 1][i],
+			       parsedData[k*6 + 2][i],
+			       parsedData[k*6 + 3][i],
+			       parsedData[k*6 + 4][i],
+			       parsedData[k*6 + 5][i]);
+		    }
+		    printf("\n");
+		}
+	    }
+
+
+	    bufferOcc = 0;//eth.recieve(0x1130+i);
         }
         
-//            //printf("Channel : ");
-//            //for(int i = 0; i < 5; ++i) printf("%6d%6d%6d%6d%6d%6d ", 0 + i*6, 1 + i*6, 2 + i*6, 3 + i*6, 4 + i*6, 5 + i*6);
-//            //printf("\n");
-//            //for(int i = 0; i < 256; ++i)
-//            //{
-//            //    printf("%7d : ", i);
-//            //    for(int k = 0; k < 5; ++k)
-//            //    {
-//            //	printf("%6x%6x%6x%6x%6x%6x ",
-//            //	       buffer[16 + i + 0*256 + k*(256*6)],
-//            //	       buffer[16 + i + 1*256 + k*(256*6)],
-//            //	       buffer[16 + i + 2*256 + k*(256*6)],
-//            //	       buffer[16 + i + 3*256 + k*(256*6)],
-//            //	       buffer[16 + i + 4*256 + k*(256*6)],
-//            //	       buffer[16 + i + 5*256 + k*(256*6)]);
-//            //    }
-//            //    printf("\n");
-//            //}
 
     }
 

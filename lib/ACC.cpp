@@ -26,7 +26,7 @@ void ACC::got_signal(int){quitacc.store(true);}
 /*--------------------------------Constructor/Deconstructor---------------------------*/
 
 /*ID:5 Constructor*/
-ACC::ACC() : eth("192.168.46.107", "2007"), eth_burst("192.168.46.107", "2008")
+ACC::ACC() : eth("192.168.46.108", "2007"), eth_burst("192.168.46.108", "2008")
 {
 	bool clearCheck;
 }
@@ -208,7 +208,7 @@ int ACC::initializeForDataReadout(int trigMode, unsigned int boardMask, int cali
 			break;
 		case 2: //Self trigger
 			setHardwareTrigSrc(trigMode,boardMask);
-			break;
+			break;//goto selfsetup;
 		case 3: //Self trigger with validation 
 			setHardwareTrigSrc(trigMode,boardMask);
                         //timeout 
@@ -1083,11 +1083,11 @@ void ACC::sendJCPLLSPIWord(unsigned int word, unsigned int boardMask, bool verbo
 void ACC::configJCPLL(unsigned int boardMask)
 {
     // program registers 0 and 1 with approperiate settings for 40 MHz output 
-    sendJCPLLSPIWord(0x55500060, boardMask); // 25 MHz input
-    //sendJCPLLSPIWord(0x5557C060); // 125 MHz input
+    //sendJCPLLSPIWord(0x55500060, boardMask); // 25 MHz input
+    sendJCPLLSPIWord(0x5557C060, boardMask); // 125 MHz input
     usleep(2000);    
-    sendJCPLLSPIWord(0x83810001, boardMask); // 25 MHz input
-    //sendJCPLLSPIWord(0xFF810081); // 125 MHz input
+    //sendJCPLLSPIWord(0x83810001, boardMask); // 25 MHz input
+    sendJCPLLSPIWord(0xFF810081, boardMask); // 125 MHz input
     usleep(2000);
 
     // cycle "power down" to force VCO calibration 

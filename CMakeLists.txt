@@ -29,7 +29,7 @@ include_directories(${source_dir}/include)
 include_directories(${source_dir}/local/include)
 
 
-add_compile_options(-o -Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector -Wno-unused-variable) 
+add_compile_options(-Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector -Wno-unused-variable) 
 
 add_library(ACC
         ${LIBRARY_SOURCE_DIR}/ACC.cpp)
@@ -76,7 +76,7 @@ add_executable(reset ${EXECUTABLE_SOURCE_DIR}/reset.cpp)
 
 target_link_libraries(connectedBoards PUBLIC ACC ethernet)
 target_link_libraries(scanLinkPhase PUBLIC ACC ethernet)
-target_link_libraries(basicDAQ PUBLIC ethernet)
+target_link_libraries(basicDAQ PUBLIC ACC ethernet)
 target_link_libraries(reset PUBLIC ACC ethernet)
 target_link_libraries(configurePLL PUBLIC ACC ethernet)
 target_link_libraries(calibratePed PUBLIC ACC ethernet)

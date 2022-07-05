@@ -87,8 +87,8 @@ int main()
 	int ACCsw;
 	int ACDCsw;
 	
-	std::vector<int> vec_psec_chip;
-	std::vector<unsigned int> vec_psec_channel;
+	std::vector<int> vec_psec_chip = {1,2,3,4,5};
+	std::vector<unsigned int> vec_psec_channel = {0x3f, 0x3f, 0x3f, 0x3f, 0x3f};
 
 	int BeamgateMultiplexer;
 	int PPS_divide_ratio;
@@ -99,26 +99,26 @@ int main()
 
 	system("mkdir -p Results");
 	
-	while(true)
-	{
-		std::cout << "Do you want to reset the ACC before use (0/1)?" << std::endl; 
-		std::cout << "Set it to: ";
-		std::cin >> ACCsw;  cin.ignore(numeric_limits<streamsize>::max(),'\n');	
-		if(ACCsw==1)
-		{
-			acc.resetACC();
-		}
-		
-		std::cout << "Do you want to reset all ACDCs before use (0/1)?" << std::endl; 
-		std::cout << "Set it to: ";
-		std::cin >> ACDCsw;  cin.ignore(numeric_limits<streamsize>::max(),'\n');	
-		if(ACDCsw==1)
-		{
-			acc.resetACDC();
-		}
-		
-		break;
-	}
+//	while(true)
+//	{
+//		std::cout << "Do you want to reset the ACC before use (0/1)?" << std::endl; 
+//		std::cout << "Set it to: ";
+//		std::cin >> ACCsw;  cin.ignore(numeric_limits<streamsize>::max(),'\n');	
+//		if(ACCsw==1)
+//		{
+//			acc.resetACC();
+//		}
+//		
+//		std::cout << "Do you want to reset all ACDCs before use (0/1)?" << std::endl; 
+//		std::cout << "Set it to: ";
+//		std::cin >> ACDCsw;  cin.ignore(numeric_limits<streamsize>::max(),'\n');	
+//		if(ACDCsw==1)
+//		{
+//			acc.resetACDC();
+//		}
+//		
+//		break;
+//	}
 		
 	while(flag)
 	{
@@ -143,31 +143,31 @@ int main()
                     
 			case 2:
                         case 3:
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA validation?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				//std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) on ACC SMA validation?" << std::endl;
+				//std::cout << "Enter: ";
+				//cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				acc.setSign(invertMode, 2);
+				acc.setSign(0, 2);
                                 if(triggermode == 2) goto selfsetup;
 
-				std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss3 << std::hex << (int)(validationStart/25);
-				valstr = std::stoul(ss3.str(),nullptr,16);
-
-				std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
-				std::cout << "Enter in ns: ";
-				cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				ss4 << std::hex << (int)(validationWindow/25);
-				valstr2 = std::stoul(ss4.str(),nullptr,16);
+				//std::cout << "How long should the validation window start be delayed from 0 to 819us in 25ns steps?" << std::endl;
+				//std::cout << "Enter in ns: ";
+				//cin >> validationStart;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				//ss3 << std::hex << (int)(validationStart/25);
+				//valstr = std::stoul(ss3.str(),nullptr,16);
+                                //
+				//std::cout << "How long should the validation window be from 0 to 819us in 25ns steps?" << std::endl;
+				//std::cout << "Enter in ns: ";
+				//cin >> validationWindow;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				//ss4 << std::hex << (int)(validationWindow/25);
+				//valstr2 = std::stoul(ss4.str(),nullptr,16);
 
 //				std::cout << "Do you want to enable the PPS/Beamgate multiplexer? (0/1)" << std::endl;
 //				std::cout << "Enter : ";
 //				cin >> BeamgateMultiplexer;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
 //		
-				acc.setValidationStart(valstr);
-				acc.setValidationWindow(valstr2);
+				//acc.setValidationStart(valstr);
+				//acc.setValidationWindow(valstr2);
 //				acc.setPPSBeamMultiplexer(BeamgateMultiplexer);
 
 				goto selfsetup;
@@ -179,24 +179,24 @@ int main()
 				std::cout << " Trigger input not found " << std::endl;
 				break;
 			selfsetup:
-				std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) for selftrigger?" << std::endl;
-				std::cout << "Enter: ";
-				cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				//std::cout << "Use normal polarity (0, high level or rising edge) or inverted polarity (1, low level or falling edge) for selftrigger?" << std::endl;
+				//std::cout << "Enter: ";
+				//cin >> invertMode;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
 
-				std::cout << "Enable coincidence for self trigger? (0/1)" << std::endl;
-				std::cout << "Enter: ";
-				cin >> enableCoin;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-				if(enableCoin == 1)
-				{
-					std::cout << "How many of 30 ch need to be in coincidence to self trigger? (0-30)" << std::endl;
-					std::cout << "Enter: ";
-					cin >> ChCoin;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-					stringstream ss;
-					unsigned int hexstr;
-					ss << ChCoin;
-					ss >> std::hex >> hexstr;
-					acc.setNumChCoin(hexstr);
-				}
+//				std::cout << "Enable coincidence for self trigger? (0/1)" << std::endl;
+//				std::cout << "Enter: ";
+//				cin >> enableCoin;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//				if(enableCoin == 1)
+//				{
+//					std::cout << "How many of 30 ch need to be in coincidence to self trigger? (0-30)" << std::endl;
+//					std::cout << "Enter: ";
+//					cin >> ChCoin;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//					stringstream ss;
+//					unsigned int hexstr;
+//					ss << ChCoin;
+//					ss >> std::hex >> hexstr;
+//					acc.setNumChCoin(hexstr);
+//				}
 
 				std::cout << "Set the threshold of the self trigger in adc counts from 0 to 4095" << std::endl;
 				std::cout << "Enter: ";
@@ -206,28 +206,30 @@ int main()
 				ss2 << threshold;
 				ss2 >> std::hex >> adcstr;
 
-				while(run<5)
-				{
-					std::cout << "Do you want to enable channels on Psec chip " << run << "? (0/1)" << std::endl;
-					std::cout << "Enter: ";
-					cin >> psec_chip;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-					if(psec_chip==1)
-					{
-						std::cout << "What channels of psec chip" << run << "do you want to enable? (From 0x00 to 0x3F, each bit representing a channel)" << std::endl;
-						std::cout << "Enter: ";
-						cin >> psec_channel;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
-					}else
-					{
-						psec_channel = 0x00;
-					}
-					vec_psec_chip.push_back(psec_chip);
-					vec_psec_channel.push_back(psec_channel);
-					run++;
-				}
+				//while(run<5)
+				//{
+				//	std::cout << "Do you want to enable channels on Psec chip " << run << "? (0/1)" << std::endl;
+				//	std::cout << "Enter: ";
+				//	cin >> psec_chip;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				//	if(psec_chip==1)
+				//	{
+				//		std::cout << "What channels of psec chip" << run << "do you want to enable? (From 0x00 to 0x3F, each bit representing a channel)" << std::endl;
+				//		std::cout << "Enter: ";
+				//		cin >> psec_channel;	cin.ignore(numeric_limits<streamsize>::max(),'\n');
+				//	}else
+				//	{
+				//		psec_channel = 0x00;
+				//	}
+				//	vec_psec_chip.push_back(psec_chip);
+				//	vec_psec_channel.push_back(psec_channel);
+				//	run++;
+				//}
 
 				acc.setThreshold(adcstr);
-				acc.setEnableCoin(enableCoin);
-				acc.setSign(invertMode, 4);
+				//acc.setEnableCoin(enableCoin);
+                                acc.setEnableCoin(0);
+				//acc.setSign(invertMode, 4);
+                                acc.setSign(0, 4);
 				acc.setPsecChipMask(vec_psec_chip);
 				acc.setPsecChannelMask(vec_psec_channel);
 
@@ -243,55 +245,58 @@ int main()
 //	valstr3 = std::stoul(ss5.str(),nullptr,16);
 //	acc.setPPSRatio(valstr3);
 
-	while(true)
-	{
-		std::cout << "Please select which boards to use from 0x00 to 0xFF (default)" << std::endl;
-		
-		std::cin >> bbm;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(bbm.size()>0)
-		{
-			boardmask = std::stoul(bbm,nullptr,16);
-			break;
-		}
-	}
-
-	while(true)
-	{
-		std::cout << "Do you want to use the calibration input mode? (0/1)" << std::endl;
-
-		cin >> calibMode;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(calibMode==0 || calibMode==1)
-		{
-			break;
-		}
-	}
-
-	while(true)
-	{
-		std::cout << "Do you want to use raw mode(0/1)? Yes means you get a file with 7795 words in hex, No will give the usual data format." << std::endl;
-
-		cin >> rawMode;
-		cin.ignore(numeric_limits<streamsize>::max(),'\n');
-
-		if(rawMode==0)
-		{
-			rawBool = false;
-			std::cout << "Do you want to parse Metadata as well?" << std::endl;
-			
-			cin >> metaSwitch;
-			cin.ignore(numeric_limits<streamsize>::max(),'\n');
-			acc.setMetaSwitch(metaSwitch);
-			break;
-		}else if(rawMode==1)
-		{
-			rawBool = true;
-			break;
-		}
-	}
+//	while(true)
+//	{
+//		std::cout << "Please select which boards to use from 0x00 to 0xFF (default)" << std::endl;
+//		
+//		std::cin >> bbm;
+//		cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//
+//		if(bbm.size()>0)
+//		{
+//			boardmask = std::stoul(bbm,nullptr,16);
+//			break;
+//		}
+//	}
+        boardmask = 0xff;
+//
+//	while(true)
+//	{
+//		std::cout << "Do you want to use the calibration input mode? (0/1)" << std::endl;
+//
+//		cin >> calibMode;
+//		cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//
+//		if(calibMode==0 || calibMode==1)
+//		{
+//			break;
+//		}
+//	}
+        calibMode = 0;
+//
+//	while(true)
+//	{
+//		std::cout << "Do you want to use raw mode(0/1)? Yes means you get a file with 7795 words in hex, No will give the usual data format." << std::endl;
+//
+//		cin >> rawMode;
+//		cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//
+//		if(rawMode==0)
+//		{
+//			rawBool = false;
+//			std::cout << "Do you want to parse Metadata as well?" << std::endl;
+//			
+//			cin >> metaSwitch;
+//			cin.ignore(numeric_limits<streamsize>::max(),'\n');
+//			acc.setMetaSwitch(metaSwitch);
+//			break;
+//		}else if(rawMode==1)
+//		{
+//			rawBool = true;
+//			break;
+//		}
+//	}
+        rawBool = true;
 
 
 	while(true)
