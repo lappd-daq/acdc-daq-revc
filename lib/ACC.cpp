@@ -156,9 +156,6 @@ int ACC::initializeForDataReadout(const YAML::Node& config)
 	unsigned int command;
 	int retval;
 
-	std::cout << "Received board mask: ";
-	printf("0x%02x\n", params_.boardMask);
-
         //read ACC parameters from cfg file
         parseConfig(config);
 
@@ -174,6 +171,9 @@ int ACC::initializeForDataReadout(const YAML::Node& config)
 	{
             writeErrorLog("ACDCs could not be created");
 	}
+
+	std::cout << "Received board mask: ";
+	printf("0x%02x\n", params_.boardMask);
 		
         //check ACDC PLL Settings
         // REVIEW ERRORS AND MESSAGES 
@@ -321,6 +321,7 @@ int ACC::initializeForDataReadout(const YAML::Node& config)
                             {		
 				command = 0x00B10000;
 				command = (command | (acdcMask << 24)) | CHIPMASK[i] | acdc.params_.selfTrigMask[i]; 
+                                printf("%x\n", command);
 				eth.send(0x100, command);
                             }
 			
@@ -428,11 +429,15 @@ void ACC::toggleCal(int onoff, unsigned int channelmask, unsigned int boardMask)
 	{
 		//channelmas is default 0x7FFF
 		command = (command | (boardMask << 24)) | channelmask;
+                eth.send(0x100, 0x00c10001 | (boardMask << 24));
 	}else if(onoff == 0)
 	{
 		command = (command | (boardMask << 24));
+                eth.send(0x100, 0x00c10000 | (boardMask << 24));
 	}
         eth.send(0x100, command);
+
+
 }
 
 
@@ -452,6 +457,12 @@ int ACC::listenForAcdcData(const string& timestamp)
     string outfilename = "./Results/";
     string datafn;
     ofstream dataofs;
+
+    unsigned int boardsForRead = 0;
+    for(ACDC& acdc : acdcs)
+    {
+        if((1 << acdc.getBoardIndex()) & params_.boardMask) ++boardsForRead;
+    }
 
     string rawfn;
     if(params_.rawMode==true)
@@ -526,19 +537,24 @@ int ACC::listenForAcdcData(const string& timestamp)
         }
 
         //old trigger
-        if(boardsReadyForRead.size()==acdcs.size())
+        if(boardsReadyForRead.size()==boardsForRead)
         {
             break;
         }
     }
 
+    int test = 0;
     //read out data FIFOs 
     for(ACDC& acdc: acdcs)
     {
         //base command for set data readmode and which board bi to read
         int bi = acdc.getBoardIndex();
-        eth.send(0x22, bi);
 
+        //skip if board is not active 
+        if(!((1 << bi) & params_.boardMask)) continue;
+
+        eth.send(0x22, bi);
+        
         std::vector<uint64_t> acdc_data = eth_burst.recieve_burst(1541);
 
         //Handles buffers of incorrect size
@@ -558,7 +574,6 @@ int ACC::listenForAcdcData(const string& timestamp)
         if(params_.rawMode==true)
         {
             writeRawDataToFile(acdc_data, rawfn + to_string(bi) + ".txt");
-            break;
         }
         else
         {
@@ -609,9 +624,9 @@ int ACC::listenForAcdcData(const string& timestamp)
 
 
 /*ID 27: Turn off triggers and data transfer off */
-void ACC::endRun(unsigned int boardMask)
+void ACC::endRun()
 {
-    setHardwareTrigSrc(0, boardMask);
+    setHardwareTrigSrc(0, params_.boardMask);
     eth.setBurstMode(false);
     enableTransfer(0); 
 }

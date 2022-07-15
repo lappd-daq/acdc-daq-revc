@@ -42,6 +42,7 @@ void writeErrorLog(string errorMsg)
 
 int main()
 {
+    //YAML::Node config = YAML::LoadFile("calibPed.yaml");
     YAML::Node config = YAML::LoadFile("test.yaml");
 
     YAML::Node config_DAQ = config["basicConfig"]["DAQSettings"];
@@ -55,9 +56,6 @@ int main()
     int threshold;
 
     string timestamp;
-    string label;
-
-    int run=0;
 
     ACC acc(config_DAQ["ip"].as<std::string>());
 
@@ -88,7 +86,7 @@ int main()
         }
         if(eventCounter>=reTime*mult)
         {
-            timestamp = getTime();
+            //timestamp = getTime();
             mult++;
         }
         retval = acc.listenForAcdcData(timestamp);
@@ -125,6 +123,8 @@ int main()
             break;
         }
     }
+
+    acc.endRun();
 	
     auto t1 = std::chrono::high_resolution_clock::now();
     auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
