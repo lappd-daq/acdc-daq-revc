@@ -41,7 +41,7 @@ class Ethernet
 
         std::vector<unsigned short> ReceiveDataVector(uint32_t addr, uint64_t value, int size=-1);
         uint64_t ReceiveDataSingle(uint32_t addr, uint64_t value);
-        bool SendData(uint32_t addr, uint64_t value, std::string read_or_write);
+        bool SendData(uint32_t addr, uint64_t value, std::string read_or_write="w");
 
 };
 

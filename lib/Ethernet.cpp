@@ -39,6 +39,7 @@ bool Ethernet::OpenInterface(std::string ipaddr, std::string port)
     {
         m_socket = socket(list_of_addresses->ai_family, list_of_addresses->ai_socktype, list_of_addresses->ai_protocol);
         if(m_socket == -1){continue;}
+
         if(connect(m_socket, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen)!=-1)
         {
             break;
@@ -46,7 +47,7 @@ bool Ethernet::OpenInterface(std::string ipaddr, std::string port)
         close(m_socket);
     }
 
-    if(list_of_addresses == NULL)
+    if(list_of_addresses == NULL || m_socket==-1)
     {
 	    fprintf(stderr, "Failed to create socket\n");
         return false;
@@ -92,10 +93,8 @@ bool Ethernet::SendData(uint32_t addr, uint64_t value, std::string read_or_write
 
     //Make command from in
     memcpy(&buffer[RX_ADDR_OFFSET_], &addr, 4);
-    if(rw==1)
-    {
-        memcpy(&buffer[RX_DATA_OFFSET_], &value, 8);
-    }
+    memcpy(&buffer[RX_DATA_OFFSET_], &value, 8);
+
     int packet_size = RX_DATA_OFFSET_ + 8;
 
     int returnval = sendto(m_socket,buffer,packet_size,0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen);
@@ -104,7 +103,7 @@ bool Ethernet::SendData(uint32_t addr, uint64_t value, std::string read_or_write
         std::cout << "Error data not send, tried to send " << buffer << std::endl; 
     }else
     {
-        std::cout << "Data was sucessfully sent, sent was " << std::hex << "0x" << buffer[0] << std::dec << " with " << returnval << " bytes" << std::endl; 
+        printf("Data was sucessfully sent, sent was 0x%016llx to 0x%08llx with %i bytes\n",value,addr,returnval);
     }
 
     return true;

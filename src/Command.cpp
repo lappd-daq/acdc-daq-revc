@@ -25,6 +25,9 @@ int main(int argc, char *argv[])
     std::string command = argv[4];
     std::string value = argv[5];
 
+    uint32_t c_addr = strtoul(command.c_str(), NULL, 16);
+    uint64_t c_value = strtoull(value.c_str(), NULL, 16);
+
     std:cout << "Connect to: " << ip << ":" << port << std::endl;
     Ethernet *eth = new Ethernet(ip,port);
 
@@ -32,18 +35,18 @@ int main(int argc, char *argv[])
     {
         if(rw=="rs")
         {
-            std::vector<unsigned short> returndata = eth->ReceiveDataVector(std::stoul(command),std::stoul(value),-1);
+            std::vector<unsigned short> returndata = eth->ReceiveDataVector(c_addr,c_value,-1);
             for(unsigned short k: returndata)
             {
                 std::cout << std::hex << k << std::dec << std::endl;
             }
         }else
         {
-            unsigned int returndata = eth->ReceiveDataSingle(std::stoul(command),std::stoul(value),-1);
+            unsigned int returndata = eth->ReceiveDataSingle(c_addr,c_value);
         }
     }else if(rw=="w")
     {
-        eth->SendData(std::stoul(command),std::stoul(value),rw);
+        eth->SendData(c_addr,c_value,rw);
     }else
     {
         std::cout << "Invalid read or write command chosen: " << rw << std::endl;
