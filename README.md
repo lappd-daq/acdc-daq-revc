@@ -4,7 +4,7 @@ Test version for the ethernet comms to read out an ACC. Please keep in mind that
 ## Install
 To install the software just execute 
 ```bash
-./INSATLL.sh 
+./INSTALL.sh 
 ```
 if it does not execute because of missing permissions use 
 ```bash
