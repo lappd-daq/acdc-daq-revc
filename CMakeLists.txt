@@ -22,11 +22,11 @@ add_library(Ethernet ${LIBRARY_SOURCE_DIR}/Ethernet.cpp)
 target_link_libraries(ACC myusb DataParser Ethernet)
 target_link_libraries(myusb PUBLIC usb-1.0)
 
-add_executable(Test ${EXECUTABLE_SOURCE_DIR}/Test.cpp)
+add_executable(TestConnection ${EXECUTABLE_SOURCE_DIR}/TestConnection.cpp)
 add_executable(Command ${EXECUTABLE_SOURCE_DIR}/Command.cpp)
 add_executable(ConnectedBoards ${EXECUTABLE_SOURCE_DIR}/ConnectedBoards.cpp)
 
-target_link_libraries(Test PUBLIC Ethernet)
+target_link_libraries(TestConnection PUBLIC Ethernet)
 target_link_libraries(Command PUBLIC Ethernet)
 target_link_libraries(ConnectedBoards PUBLIC Ethernet ACC)
 

@@ -1,29 +1,66 @@
+#include <iostream>
+#include <string>
+#include <map>
+#include <fstream>
+#include <sstream>
+#include <vector>
+
 #include "Ethernet.h"
 
 using namespace std;
 
-int main(int argc, char *argv[])
+std::map<std::string,std::string> LoadFile()
 {
-    if(argc < 5)
-    {
-        std::cout << "Usage: ./Command [ip adress] [port] [read/write] [command address] [command value]" << std::endl;
-        std::cout << "[ip address]: IP address of the ACC connection" << std::endl;
-        std::cout << "[port]: Port of the ACC conection" << std::endl;
-        std::cout << "[read/write]: Read single/vector or write command selected by rs, rv or w" << std::endl;
-        std::cout << "[command address]: Address for the RX command" << std::endl;
-        std::cout << "[command value]: Value for the RX command (optional, default = 0)" << std::endl;
+    std::map<std::string,std::string> Settings;
 
-        return 0;
-    }else if(argc == 5)
+    std::string line;
+    std::fstream infile("./ConnectionSettings", std::ios_base::in);
+    if(!infile.is_open())
     {
-        argv[4] = 0;
+        std::cout<<"File was not found! Please check for file ConnectionSettings!"<<std::endl;
     }
 
-    std::string ip = argv[1];
-    std::string port = argv[2];
+    std::string token;
+    std::vector<std::string> tokens;
+    while(getline(infile, line))
+    {
+        if(line.empty() || line[0] == '#')
+        {
+            continue;
+        }
+
+        std::stringstream ss(line);
+        tokens.clear();
+        while(ss >> token) 
+        {
+            tokens.push_back((std::string)token);
+        }
+        Settings.insert(std::pair<std::string,std::string>(tokens[0],tokens[1]));
+    }
+
+    infile.close();
+    return Settings;
+}
+
+int main(int argc, char *argv[])
+{
+    if(argc < 4)
+    {
+        std::cout << "Usage: ./Command [command address] [command value] [read/write]" << std::endl;
+        std::cout << "[command address]: Address for the RX command" << std::endl;
+        std::cout << "[command value]: Value for the RX command" << std::endl;
+        std::cout << "[read/write]: Read single/vector or write command selected by rs, rv or w" << std::endl;
+
+        return 0;
+    }
+
+    std::map<std::string,std::string> Settings = LoadFile();
+
+    std::string ip = Settings["IP"];
+    std::string port = Settings["Port"];
     std::string rw = argv[3];
-    std::string command = argv[4];
-    std::string value = argv[5];
+    std::string command = argv[1];
+    std::string value = argv[2];
 
     uint32_t c_addr = strtoul(command.c_str(), NULL, 16);
     uint64_t c_value = strtoull(value.c_str(), NULL, 16);
@@ -33,7 +70,7 @@ int main(int argc, char *argv[])
 
     if(rw=="rv" || rw=="rs")
     {
-        if(rw=="rs")
+        if(rw=="rv")
         {
             std::vector<unsigned short> returndata = eth->ReceiveDataVector(c_addr,c_value,-1);
             for(unsigned short k: returndata)
@@ -43,6 +80,7 @@ int main(int argc, char *argv[])
         }else
         {
             unsigned int returndata = eth->ReceiveDataSingle(c_addr,c_value);
+            std::cout << std::hex << returndata << std::dec << std::endl;
         }
     }else if(rw=="w")
     {
