@@ -1,9 +1,9 @@
-#ifndef _ACC_H_INCLUDED
-#define _ACC_H_INCLUDED
+#ifndef _ACC_ETH_H_INCLUDED
+#define _ACC_ETH_H_INCLUDED
 
 #include "Ethernet.h"
 #include "CommandLibrary.h"
-
+#include <iostream>
 #include <cstdlib> 
 #include <bitset> 
 #include <sstream> 
@@ -29,17 +29,17 @@ using namespace std;
 #define PPSFRAME 16
 #define PSECFRAME 7795
 
-class ACC
+class ACC_ETH
 {
 public:
 	//------------------------------------------------------------------------------------//
 	//--------------------------------Constructor/Deconstructor---------------------------//
 	// >>>> ID 1: Constructor
-	ACC();
+	ACC_ETH();
     // >>>> ID 2: Constructor with IP and port argument
-    ACC(std::string ip, std::string port);
+    ACC_ETH(std::string ip, std::string port);
 	// >>>> ID 3: Destructor
-	~ACC();
+	~ACC_ETH();
 
 	//------------------------------------------------------------------------------------//
 	//--------------------------------Local return functions------------------------------//

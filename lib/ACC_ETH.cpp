@@ -1,28 +1,28 @@
-#include "ACC.h" 
+#include "ACC_ETH.h" 
 
 // >>>> ID:0 Sigint handling
-std::atomic<bool> quitacc(false); 
-void ACC::got_signal(int){quitacc.store(true);}
+static std::atomic<bool> quitacc(false); 
+void ACC_ETH::got_signal(int){quitacc.store(true);}
 
 //------------------------------------------------------------------------------------//
 //--------------------------------Constructor/Deconstructor---------------------------//
 
 // >>>> ID:1 Constructor
-ACC::ACC()
+ACC_ETH::ACC_ETH()
 {
     eth = new Ethernet("127.0.0.1","5000");
     std:cout << "Connect to: " << "127.0.0.1" << ":" << "5000" << std::endl;
 }
 
 // >>>> ID:2 Constructor with IP and port arguments
-ACC::ACC(std::string ip, std::string port)
+ACC_ETH::ACC_ETH(std::string ip, std::string port)
 {
     eth = new Ethernet(ip,port);
     std:cout << "Connect to: " << ip << ":" << port << std::endl;
 }
 
 // >>>> ID:3 Destructor 
-ACC::~ACC()
+ACC_ETH::~ACC_ETH()
 {
 	eth->CloseInterface();
     delete eth;
@@ -34,7 +34,7 @@ ACC::~ACC()
 //---------------------------Setup functions for ACC/ACDC-----------------------------//
 
 // >>>> ID 4: Main init function that controls generalk setup as well as trigger settings
-int ACC::InitializeForDataReadout(unsigned int boardmask, int triggersource)
+int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
 {
     if(triggersource<0 || triggersource>9)
     {
@@ -103,7 +103,7 @@ int ACC::InitializeForDataReadout(unsigned int boardmask, int triggersource)
 }
 
 // >>>> ID 5: Set up the trigger source
-int ACC::SetTriggerSource(unsigned int boardmask, int triggersource)
+int ACC_ETH::SetTriggerSource(unsigned int boardmask, int triggersource)
 {	
     for(unsigned int i=0; i<MAX_NUM_BOARDS; i++)
     {
@@ -126,7 +126,7 @@ int ACC::SetTriggerSource(unsigned int boardmask, int triggersource)
 //---------------------------Read functions listening for data------------------------//
 
 /*ID 6: Main listen fuction for data readout. Runs for 5s before retuning a negative*/
-int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
+int ACC_ETH::listenForAcdcData(int trigMode, bool raw, string timestamp)
 {
 	// bool corruptBuffer;
 	// vector<int> boardsReadyForRead;
@@ -363,7 +363,7 @@ int ACC::listenForAcdcData(int trigMode, bool raw, string timestamp)
 //---------------------------Active functions for informations------------------------//
 
 // >>>> ID 7: Special function to check connected ACDCs for their firmware version 
-void ACC::VersionCheck()
+void ACC_ETH::VersionCheck()
 {
 
     //Get ACC Info
@@ -404,7 +404,7 @@ void ACC::VersionCheck()
 //-------------------------------------Help functions---------------------------------//
 
 // >>>> ID 8: Fires the software trigger
-void ACC::GenerateSoftwareTrigger()
+void ACC_ETH::GenerateSoftwareTrigger()
 {
     //Software trigger
 	command_address = CML.Generate_Software_Trigger;
@@ -418,7 +418,7 @@ void ACC::GenerateSoftwareTrigger()
 }
 
 // >>>> ID 9: Tells ACDCs to clear their buffer
-void ACC::DumpData(unsigned int boardmask)
+void ACC_ETH::DumpData(unsigned int boardmask)
 {
     command_address = CML.RX_Buffer_Reset_Request; 
     for(unsigned int i=0; i<MAX_NUM_BOARDS; i++)
@@ -437,7 +437,7 @@ void ACC::DumpData(unsigned int boardmask)
 }
 
 // >>>> ID 10: Resets the ACDCs
-void ACC::ResetACDC()
+void ACC_ETH::ResetACDC()
 {
 	command_address = CML.ACDC_Command;
     command_value = CML.Global_Reset | (0xff<<24) | 0x1 ;
@@ -450,7 +450,7 @@ void ACC::ResetACDC()
 }
 
 // >>>> ID 11: Resets the ACC
-void ACC::ResetACC()
+void ACC_ETH::ResetACC()
 {
 	command_address = CML.Global_Reset;
     command_value = 0x1;
@@ -463,7 +463,7 @@ void ACC::ResetACC()
 }
 
 // >>>> ID 12: Switch PPS input to SMA
-void ACC::PPStoSMA()
+void ACC_ETH::PPStoSMA()
 {
     command_address = CML.PPS_Input_Use_SMA;
     command_value = 0x1;
@@ -476,7 +476,7 @@ void ACC::PPStoSMA()
 }
 
 // >>>> ID 13: Switch PPS input to RJ45
-void ACC::PPStoRJ45()
+void ACC_ETH::PPStoRJ45()
 {
     command_address = CML.PPS_Input_Use_SMA;
     command_value = 0x0;
@@ -489,7 +489,7 @@ void ACC::PPStoRJ45()
 }
 
 // >>>> ID 14: Switch Beamgate input to SMA
-void ACC::BeamgatetoSMA()
+void ACC_ETH::BeamgatetoSMA()
 {
     command_address = CML.Beamgate_Trigger_Use_SMA;
     command_value = 0x1;
@@ -502,7 +502,7 @@ void ACC::BeamgatetoSMA()
 }
 
 // >>>> ID 15: Switch Beamgate input to RJ45
-void ACC::BeamgatetoRJ45()
+void ACC_ETH::BeamgatetoRJ45()
 {
     command_address = CML.Beamgate_Trigger_Use_SMA;
     command_value = 0x0;
@@ -515,7 +515,7 @@ void ACC::BeamgatetoRJ45()
 }
 
 // >>>> ID 16: Write function for the error log
-void ACC::WriteErrorLog(string errorMsg)
+void ACC_ETH::WriteErrorLog(string errorMsg)
 {
     string err = "errorlog.txt";
     cout << "------------------------------------------------------------" << endl;

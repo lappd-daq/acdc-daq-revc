@@ -14,21 +14,23 @@ include_directories(${source_dir}/local/include)
 
 add_compile_options(-o -Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector -Wno-unused-variable -Wformat=0) 
 
-add_library(ACC ${LIBRARY_SOURCE_DIR}/ACC.cpp)
+add_library(ACC_USB ${LIBRARY_SOURCE_DIR}/ACC_USB.cpp)
+add_library(ACC_ETH ${LIBRARY_SOURCE_DIR}/ACC_ETH.cpp)
 add_library(DataParser ${LIBRARY_SOURCE_DIR}/DataParser.cpp)
-add_library(myusb ${LIBRARY_SOURCE_DIR}/stdUSB.cpp)
+add_library(USB ${LIBRARY_SOURCE_DIR}/stdUSB.cpp)
 add_library(Ethernet ${LIBRARY_SOURCE_DIR}/Ethernet.cpp)
 
-target_link_libraries(ACC myusb DataParser Ethernet)
-target_link_libraries(myusb PUBLIC usb-1.0)
+target_link_libraries(ACC_ETH DataParser Ethernet)
+target_link_libraries(ACC_USB USB DataParser)
+target_link_libraries(USB PUBLIC usb-1.0)
 
 add_executable(TestConnection ${EXECUTABLE_SOURCE_DIR}/TestConnection.cpp)
 add_executable(Command ${EXECUTABLE_SOURCE_DIR}/Command.cpp)
-#add_executable(ConnectedBoards ${EXECUTABLE_SOURCE_DIR}/ConnectedBoards.cpp)
+add_executable(ConnectedBoards ${EXECUTABLE_SOURCE_DIR}/ConnectedBoards.cpp)
 
 target_link_libraries(TestConnection PUBLIC Ethernet)
 target_link_libraries(Command PUBLIC Ethernet)
-#target_link_libraries(ConnectedBoards PUBLIC Ethernet ACC)
+target_link_libraries(ConnectedBoards PUBLIC Ethernet USB ACC_USB ACC_ETH)
 
 
 
