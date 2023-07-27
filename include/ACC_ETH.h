@@ -45,6 +45,7 @@ public:
 	//--------------------------------Local return functions------------------------------//
 	vector<unsigned short> ReturnRawData(){return raw_data;}
 	vector<unsigned short> ReturnACCIF(){return acc_if;} 
+    vector<int> ReturnBoardIndices(){return boardid;}
 
 	//------------------------------------------------------------------------------------//
 	//-------------------------Local set functions for board setup------------------------//
@@ -59,19 +60,13 @@ public:
 	void SetTriggermode(int in){triggersource = in;} //sets the overall triggermode
 	void SetSign(int in, int source) //sets the sign (normal or inverted) for chosen source
 	{
-		if(source==2)
-		{
-			ACC_sign = in;
-		}else if(source==3)
-		{
-			ACDC_sign = in;
-		}else if(source==4)
-		{
-			SELF_sign = in;
-		}
+		if(source==2){ACC_sign = in;}
+        else if(source==3){ACDC_sign = in;}
+        else if(source==4){SELF_sign = in;}
 	}
 	void SetPPSRatio(unsigned int in){PPSRatio = in;} 
 	void SetPPSBeamMultiplexer(int in){PPSBeamMultiplexer = in;} 
+    void SetTimeoutInMs(int in){timeoutvalue = in;}
 
 	//------------------------------------------------------------------------------------//
 	//-------------------------Local set functions for board setup------------------------//
@@ -80,7 +75,7 @@ public:
 	//ID 5: Set up the software trigger//
 	int SetTriggerSource(unsigned int boardmask = 0xFF, int triggersource = 0); 
     //ID 6: Main listen fuction for data readout. Runs for 5s before retuning a negative//
-	int listenForAcdcData(int trigMode, bool raw = false, string timestamp="invalidTime"); 
+	int listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC); 
 	//ID 7: Special function to check connected ACDCs for their firmware version// 
 	void VersionCheck();
 	//ID 8: Fires the software trigger//
@@ -92,15 +87,11 @@ public:
     //ID 11
 	void ResetACC(); //resets the acdc boards 
     // >>>> ID 12: Switch PPS input to SMA
-    void PPStoSMA();
-    // >>>> ID 13: Switch PPS input to RJ45
-    void PPStoRJ45();
-    // >>>> ID 14: Switch Beamgate  input to SMA
-    void BeamgatetoSMA();
-    // >>>> ID 15: Switch Beamgate  input to RJ45
-    void BeamgatetoRJ45();
+    void SetSMA_Debug(unsigned int PPS, unsigned int Beamgate);
     //ID 16
     void WriteErrorLog(string errorMsg);
+    //ID17
+    void clearData(){raw_data.clear(); boardid.clear(); acc_if.clear();}
 
 private:
 	//------------------------------------------------------------------------------------//
@@ -116,6 +107,7 @@ private:
 	int SELF_sign; //var: self trigger sign (normal or inverted)
 	int SELF_coincidence_onoff; //var: flag to enable self trigger coincidence
 	int triggersource; //var: decides the triggermode
+    int timeoutvalue;
 	unsigned int SELF_number_channel_coincidence; //var: number of channels required in coincidence for the self trigger
 	unsigned int SELF_threshold; //var: threshold for the selftrigger
 	unsigned int validation_start; //var: validation start for some triggermodes
@@ -127,6 +119,7 @@ private:
 	vector<int> SELF_psec_chip_mask; //var: PSEC chips actove for self trigger
 	vector<unsigned short> raw_data; //var: raw data vector appended with (number of boards)*7795
 	vector<unsigned short> acc_if; //var: a vector containing different information about the ACC and ACDC
+    vector<int> boardid;
 
     // >>>> ID 0: Sigint handling
 	static void got_signal(int);

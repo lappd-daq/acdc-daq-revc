@@ -1,0 +1,62 @@
+verbose 1
+
+#LAPPD to ACC
+Port0 0
+Port1 1
+
+#Timeout for Readouts
+Timeout 500 #in ms
+
+#Reset
+ResetSwitchACC 0
+ResetSwitchACDC 0
+
+#SMA set
+SMA_PPS 0 #0 for RJ45 or 1 for SMA3 (pps)
+SMA_Beamgate 0 #0 for RJ45 or 1 for SMA4 (Beamgate)
+
+##Triggermode
+Triggermode 5 #fixed by firmware v3.01
+
+##ACC settings
+ACC_Sign 0 #normal(0) or inverted(1)
+
+##ACDC settings
+ACDC_Sign 0 #normal(0) or inverted(1)
+
+##Self trigger settings
+SELF_Sign 0 #normal(0) or inverted(1)
+SELF_Enable_Coincidence 0 #on(1) or off(0)
+SELF_Coincidence_Number 0 #number from 0 to 30
+SELF_threshold 1600 #adc counts from 0 to 4095
+
+#Masks
+##ACDC boards
+ACDC_mask 255
+
+##PSEC chips for self trigger
+PSEC_Chip_Mask_0 1 #on(1) or off(0)
+PSEC_Chip_Mask_1 0 #on(1) or off(0)
+PSEC_Chip_Mask_2 0 #on(1) or off(0)
+PSEC_Chip_Mask_3 0 #on(1) or off(0)
+PSEC_Chip_Mask_4 0 #on(1) or off(0)
+PSEC_Channel_Mask_0 32 #6 bit, each for a channel, from 0x00 to 0x3F
+PSEC_Channel_Mask_1 0 #6 bit, each for a channel, from 0x00 to 0x3F
+PSEC_Channel_Mask_2 0 #6 bit, each for a channel, from 0x00 to 0x3F
+PSEC_Channel_Mask_3 0 #6 bit, each for a channel, from 0x00 to 0x3F
+PSEC_Channel_Mask_4 0 #6 bit, each for a channel, from 0x00 to 0x3F
+
+#Validation time
+Validation_Start 325250 #value from 0 to 819us in 25ns steps
+Validation_Window 020000 #value from 0 to 819us in 25ns steps
+
+#Calibration mode
+Calibration_Mode 0 #on(1) or off(0)
+
+#Pedestal set value channel
+Pedestal_channel 2000 #pedestal value to be set 
+Pedestal_channel_mask 31 #5 bit representin psec chips
+
+#PPS
+PPSRatio 10
+PPSBeamMultiplexer 1

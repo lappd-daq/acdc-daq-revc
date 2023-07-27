@@ -126,7 +126,7 @@ int ACC_ETH::SetTriggerSource(unsigned int boardmask, int triggersource)
 //---------------------------Read functions listening for data------------------------//
 
 /*ID 6: Main listen fuction for data readout. Runs for 5s before retuning a negative*/
-int ACC_ETH::listenForAcdcData(int trigMode, bool raw, string timestamp)
+int ACC_ETH::listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 {
 	// bool corruptBuffer;
 	// vector<int> boardsReadyForRead;
@@ -462,56 +462,30 @@ void ACC_ETH::ResetACC()
     }
 }
 
-// >>>> ID 12: Switch PPS input to SMA
-void ACC_ETH::PPStoSMA()
+// >>>> ID 12: Sets SMA Debug settings
+void ACC_ETH::SetSMA_Debug(unsigned int PPS, unsigned int Beamgate)
 {
-    command_address = CML.PPS_Input_Use_SMA;
-    command_value = 0x1;
+	command_address = CML.PPS_Input_Use_SMA;
+    command_value = PPS;
 
     bool ret = eth->SendData(command_address,command_value,"w");
     if(!ret)
     {
         printf("Could not send command 0x%08llX with value %i to switch PPS to SMA!\n",command_address,command_value);
     }
-}
 
-// >>>> ID 13: Switch PPS input to RJ45
-void ACC_ETH::PPStoRJ45()
-{
-    command_address = CML.PPS_Input_Use_SMA;
-    command_value = 0x0;
+	usleep(1000000);
 
-    bool ret = eth->SendData(command_address,command_value,"w");
-    if(!ret)
-    {
-        printf("Could not send command 0x%08llX with value %i to switch PPS to RJ45!\n",command_address,command_value);
-    }
-}
-
-// >>>> ID 14: Switch Beamgate input to SMA
-void ACC_ETH::BeamgatetoSMA()
-{
     command_address = CML.Beamgate_Trigger_Use_SMA;
-    command_value = 0x1;
+    command_value = Beamgate;
 
-    bool ret = eth->SendData(command_address,command_value,"w");
-    if(!ret)
-    {
-        printf("Could not send command 0x%08llX with value %i to switch Beamgate to SMA!\n",command_address,command_value);
-    }
-}
-
-// >>>> ID 15: Switch Beamgate input to RJ45
-void ACC_ETH::BeamgatetoRJ45()
-{
-    command_address = CML.Beamgate_Trigger_Use_SMA;
-    command_value = 0x0;
-
-    bool ret = eth->SendData(command_address,command_value,"w");
+    ret = eth->SendData(command_address,command_value,"w");
     if(!ret)
     {
         printf("Could not send command 0x%08llX with value %i to switch Beamgate to RJ45!\n",command_address,command_value);
     }
+    
+	usleep(1000000);
 }
 
 // >>>> ID 16: Write function for the error log

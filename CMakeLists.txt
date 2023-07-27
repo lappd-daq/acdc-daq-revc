@@ -27,10 +27,12 @@ target_link_libraries(USB PUBLIC usb-1.0)
 add_executable(TestConnection ${EXECUTABLE_SOURCE_DIR}/TestConnection.cpp)
 add_executable(Command ${EXECUTABLE_SOURCE_DIR}/Command.cpp)
 add_executable(ConnectedBoards ${EXECUTABLE_SOURCE_DIR}/ConnectedBoards.cpp)
+add_executable(SpeedTest ${EXECUTABLE_SOURCE_DIR}/SpeedTest.cpp)
 
 target_link_libraries(TestConnection PUBLIC Ethernet)
 target_link_libraries(Command PUBLIC Ethernet)
 target_link_libraries(ConnectedBoards PUBLIC Ethernet USB ACC_USB ACC_ETH)
+target_link_libraries(SpeedTest PUBLIC Ethernet USB ACC_USB ACC_ETH)
 
 
 
