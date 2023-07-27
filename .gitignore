@@ -3,3 +3,8 @@ build
 *.sh
 
 ConnectedBoards
+Command
+TestConnection
+SpeedTest
+
+.vscode
