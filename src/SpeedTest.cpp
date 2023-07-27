@@ -6,14 +6,10 @@
 #include <iostream>
 #include <vector>
 #include <bitset>
-#include <unistd.h>
-#include <limits>
-#include <chrono> 
 #include <iomanip>
 #include <numeric>
 #include <ctime>
 #include <vector>
-#include <stdio.h>
 #include <fstream>
 #include <map>
 #include <chrono>
