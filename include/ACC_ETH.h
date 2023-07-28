@@ -20,6 +20,7 @@
 #include <iomanip>
 #include <numeric>
 #include <ctime>
+#include <map>
 
 using namespace std;
 
@@ -75,7 +76,7 @@ public:
 	//ID 5: Set up the software trigger//
 	int SetTriggerSource(unsigned int boardmask = 0xFF, int triggersource = 0); 
     //ID 6: Main listen fuction for data readout. Runs for 5s before retuning a negative//
-	int listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC); 
+	int ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC); 
 	//ID 7: Special function to check connected ACDCs for their firmware version// 
 	void VersionCheck();
 	//ID 8: Fires the software trigger//
@@ -91,7 +92,7 @@ public:
     //ID 16
     void WriteErrorLog(string errorMsg);
     //ID17
-    void clearData(){raw_data.clear(); boardid.clear(); acc_if.clear();}
+    void ClearData(){raw_data.clear(); boardid.clear(); acc_if.clear();}
 
 private:
 	//------------------------------------------------------------------------------------//
@@ -114,12 +115,13 @@ private:
 	unsigned int validation_window; //var: validation window for some triggermodes
 	unsigned int PPSRatio; //var: defines the multiplication of the PPS value 
 	int PPSBeamMultiplexer; //var: defines the multiplication of the PPS value 
-	vector<int> alignedAcdcIndices; //number relative to ACC index (RJ45 port) corresponds to the connected ACDC boards
+	vector<int> AcdcIndices; //number relative to ACC index (RJ45 port) corresponds to the connected ACDC boards
 	vector<unsigned int> SELF_psec_channel_mask; //var: PSEC channels active for self trigger
 	vector<int> SELF_psec_chip_mask; //var: PSEC chips actove for self trigger
 	vector<unsigned short> raw_data; //var: raw data vector appended with (number of boards)*7795
 	vector<unsigned short> acc_if; //var: a vector containing different information about the ACC and ACDC
     vector<int> boardid;
+    vector<unsigned short> LastACCBuffer;
 
     // >>>> ID 0: Sigint handling
 	static void got_signal(int);

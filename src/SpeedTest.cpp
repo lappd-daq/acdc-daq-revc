@@ -203,7 +203,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     acc_eth->SetSMA_Debug(std::stoi(Settings["SMA_PPS"]),std::stoi(Settings["SMA_Beamgate"]));
 
     int retval;
-	retval = acc_usb->initializeForDataReadout(std::stoi(Settings["Triggermode"]), std::stoul(Settings["ACDC_mask"],nullptr,10), std::stoi(Settings["Calibration_Mode"]));
+	retval = acc_eth->InitializeForDataReadout(std::stoi(Settings["Triggermode"]), std::stoul(Settings["ACDC_mask"],nullptr,10));
     if(retval!=0)
     {
         std::cout << "Setup went wrong!" << std::endl;
@@ -220,13 +220,13 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
         {
             acc_eth->GenerateSoftwareTrigger();
         }
-        read_back = acc_eth->listenForAcdcData(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
+        read_back = acc_eth->ListenForAcdcData(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
         if(read_back==0)
         {
             vector<unsigned short> data = acc_eth->ReturnRawData();
             vector<unsigned short> accif = acc_eth->ReturnACCIF();
             vector<int> bi = acc_eth->ReturnBoardIndices();
-            acc_eth->clearData();
+            acc_eth->ClearData();
             events++;
         }else
         {
@@ -236,7 +236,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
             }else
             {
                 std::cout << "A non-404 error happened: " << read_back << std::endl;
-                acc_eth->clearData();
+                acc_eth->ClearData();
                 acc_eth->DumpData(0xff);
             }
         }

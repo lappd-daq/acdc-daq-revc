@@ -39,27 +39,27 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
     if(triggersource<0 || triggersource>9)
     {
         std::cout << "Invalid trigger source chosen, please choose between and including 0 and 9" << std::endl;
-        return -1;
+        return -401;
     }
 
     //Get the connected ACDCs
-    command_address  = CML.ACDC_Board_Detect;
+    command_address = CML.ACDC_Board_Detect;
     command_value = 0;
 
     uint64_t DetectedBoards = eth->ReceiveDataSingle(command_address,command_value);
 
-    if(DetectedBoards==0){return -2;}
+    if(DetectedBoards==0){return -402;}
 
     for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
     {
         if(DetectedBoards & (1<<bi))
         {
-            alignedAcdcIndices.push_back(bi);
+            AcdcIndices.push_back(bi);
         }
     }
 
-    std::cout << "Connected boards: " << alignedAcdcIndices.size() << " at ACC-port | ";
-    for(int k: alignedAcdcIndices)
+    std::cout << "Connected boards: " << AcdcIndices.size() << " at ACC-port | ";
+    for(int k: AcdcIndices)
     {
         std::cout << k << " | ";
     }
@@ -126,235 +126,123 @@ int ACC_ETH::SetTriggerSource(unsigned int boardmask, int triggersource)
 //---------------------------Read functions listening for data------------------------//
 
 /*ID 6: Main listen fuction for data readout. Runs for 5s before retuning a negative*/
-int ACC_ETH::listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
+int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 {
-	// bool corruptBuffer;
-	// vector<int> boardsReadyForRead;
-	// map<int,int> readoutSize;
-	// unsigned int command; 
-	// bool clearCheck;
+	vector<int> BoardsReadyForRead;
+	map<int,int> ReadoutSize;
 
-	// //filename logistics
-	// string outfilename = "./Results/";
-	// string datafn;
-	// ofstream dataofs;
-
-	// //this function is simply readAcdcBuffers
-	// //if the trigMode is software
-	// //if(trigMode == 1)
-	// //{
-	// //	int retval = readAcdcBuffers(raw, timestamp);
-	// //	return retval;
-	// //}
-
-	// //setup a sigint capturer to safely
-	// //reset the boards if a ctrl-c signal is found
-	// struct sigaction sa;
-	// memset( &sa, 0, sizeof(sa) );
-	// sa.sa_handler = got_signal;
-	// sigfillset(&sa.sa_mask);
-	// sigaction(SIGINT,&sa,NULL);
-
-	// //Enables the transfer of data from ACDC to ACC
-   	// enableTransfer(1); 
+	//setup a sigint capturer to safely
+	//reset the boards if a ctrl-c signal is found
+	struct sigaction sa;
+	memset( &sa, 0, sizeof(sa) );
+	sa.sa_handler = got_signal;
+	sigfillset(&sa.sa_mask);
+	sigaction(SIGINT,&sa,NULL);
   	
-	// //duration variables
-	// auto start = chrono::steady_clock::now(); //start of the current event listening. 
-	// auto now = chrono::steady_clock::now(); //just for initialization 
-	// auto printDuration = chrono::seconds(2); //prints as it loops and listens
-	// auto lastPrint = chrono::steady_clock::now();
-	// auto timeoutDuration = chrono::seconds(20); // will exit and reinitialize
+	//duration variables
+	auto start = chrono::steady_clock::now(); //start of the current event listening. 
+	auto now = chrono::steady_clock::now(); //just for initialization 
+	auto printDuration = chrono::milliseconds(10000); //prints as it loops and listens
+	auto lastPrint = chrono::steady_clock::now();
+	auto timeoutDuration = chrono::milliseconds(timeoutvalue); // will exit and reinitialize
 
-	// while(true)
-	// { 
-	// 	//Clear the boards read vector
-	// 	boardsReadyForRead.clear(); 
-	// 	readoutSize.clear();
+	while(true)
+	{ 
+		//Clear the boards read vector
+		BoardsReadyForRead.clear(); 
+		ReadoutSize.clear();
 		
-	// 	//Time the listen fuction
-	// 	now = chrono::steady_clock::now();
-	// 	if(chrono::duration_cast<chrono::seconds>(now - lastPrint) > printDuration)
-	// 	{	
-	// 		string err_msg = "Have been waiting for a trigger for ";
-	// 		err_msg += to_string(chrono::duration_cast<chrono::seconds>(now - start).count());
-	// 		err_msg += " seconds";
-	// 		writeErrorLog(err_msg);
-	// 		for(int i=0; i<MAX_NUM_BOARDS; i++)
-	// 		{
-	// 			string err_msg = "Buffer for board ";
-	// 			err_msg += to_string(i);
-	// 			err_msg += " has ";
-	// 			err_msg += to_string(lastAccBuffer.at(16+i));
-	// 			err_msg += " words";
-	// 			writeErrorLog(err_msg);
-	// 		}
-	// 		lastPrint = chrono::steady_clock::now();
-	// 	}
-	// 	if(chrono::duration_cast<chrono::seconds>(now - start) > timeoutDuration)
-	// 	{
-	// 		return 2;
-	// 	}
+		//Time the listen fuction
+		now = chrono::steady_clock::now();
+		if(chrono::duration_cast<chrono::milliseconds>(now - lastPrint) > printDuration)
+		{	
+			string err_msg = "Have been waiting for a trigger for ";
+			err_msg += to_string(chrono::duration_cast<chrono::milliseconds>(now - start).count());
+			err_msg += " seconds";
+			WriteErrorLog(err_msg);
+			for(int i=0; i<MAX_NUM_BOARDS; i++)
+			{
+				string err_msg = "Buffer for board ";
+				err_msg += to_string(i);
+				err_msg += " has ";
+				err_msg += to_string(LastACCBuffer.at(16+i));
+				err_msg += " words";
+				WriteErrorLog(err_msg);
+			}
+			lastPrint = chrono::steady_clock::now();
+		}
+		if(chrono::duration_cast<chrono::milliseconds>(now - start) > timeoutDuration)
+		{
+			return -601;
+		}
 
-	// 	//If sigint happens, return value of 3
-	// 	if(quitacc.load())
-	// 	{
-	// 		return 3;
-	// 	}
+		//If sigint happens, return value of 3
+		if(quitacc.load())
+		{
+			return -602;
+		}
 
-	// 	//Request the ACC info frame to check buffers
-	// 	command = 0x00200000;
-	// 	usbcheck=usb->sendData(command);
-	// 	if(usbcheck==false)
-	// 	{
-	// 		writeErrorLog("Send Error");
-	// 		clearCheck = emptyUsbLine();
-	// 		if(clearCheck==false)
-	// 		{
-	// 			writeErrorLog("After failed send, emptying the USB lines failed as well");
-	// 		}
-	// 	}
+        //Determine buffers and create info frame
 		
-	// 	lastAccBuffer = usb->safeReadData(ACCFRAME);
-		
-	// 	if(lastAccBuffer.size()==0)
-	// 	{
-	// 		std::cout << "ACCFRAME came up with " << lastAccBuffer.size() << std::endl;
-	// 		continue;
-	// 	}
+		if(LastACCBuffer.size()==0)
+		{
+			std::cout << "ACCFRAME came up with " << LastACCBuffer.size() << std::endl;
+			continue;
+		}
 
-	// 	//go through all boards on the acc info frame and if 7795 words were transfered note that board
-	// 	for(int k=0; k<MAX_NUM_BOARDS; k++)
-	// 	{
-	// 		if(lastAccBuffer.at(14) & (1 << k))
-	// 		{
-	// 			if(lastAccBuffer.at(16+k)==PSECFRAME)
-	// 			{
-	// 				boardsReadyForRead.push_back(k);
-	// 				readoutSize[k] = PSECFRAME;
-	// 			}else if(lastAccBuffer.at(16+k)==PPSFRAME)
-	// 			{
-	// 				boardsReadyForRead.push_back(k);
-	// 				readoutSize[k] = PPSFRAME;
-	// 			}
-	// 		}
-	// 	}
+		//go through all boards on the acc info frame and if 7795 words were transfered note that board
+		for(int k: LAPPD_on_ACC)
+		{
 
-	// 	//old trigger
-	// 	if(boardsReadyForRead==alignedAcdcIndices)
-	// 	{
-	// 		break;
-	// 	}
+		}
 
-	// 	/*new trigger
-	// 	std::sort(boardsReadyForRead.begin(), boardsReadyForRead.end());
-	// 	bool control = false;
-	// 	if(boardsReadyForRead.size()%2==0)
-	// 	{
-	// 		for(int m=0; m<boardsReadyForRead.size(); m+=2)
-	// 		{
-	// 			if({boardsReadyForRead[m],boardsReadyForRead[m+1]}=={0,1})
-	// 			{
-	// 				control = true;
-	// 			}else if({boardsReadyForRead[m],boardsReadyForRead[m+1]}=={2,3})
-	// 			{
-	// 				control = true;
-	// 			}else if({boardsReadyForRead[m],boardsReadyForRead[m+1]}=={4,5})
-	// 			{
-	// 				control = true;
-	// 			}else if({boardsReadyForRead[m],boardsReadyForRead[m+1]}=={6,7})
-	// 			{
-	// 				control = true;
-	// 			}else
-	// 			{
-	// 				control = false;
-	// 			}
-	// 		}
-	// 		if(control==true)
-	// 		{
-	// 			break;
-	// 		}
-	// 	}*/
-	// }
+		//old trigger
+		if(BoardsReadyForRead==LAPPD_on_ACC)
+		{
+			break;
+		}
+	}
 
-	// //each ACDC needs to be queried individually
-	// //by the ACC for its buffer. 
-	// for(int bi: boardsReadyForRead)
-	// {
-	// 	//base command for set readmode and which board bi to read
-	// 	unsigned int command = 0x00210000; 
-	// 	command = command | (unsigned int)(bi); 
-	// 	usbcheck=usb->sendData(command); if(usbcheck==false){writeErrorLog("Send Error");}	
-
-	// 	//Tranfser the data to a receive vector
-	// 	vector<unsigned short> acdc_buffer = usb->safeReadData(readoutSize[bi]);
-
-	// 	//Handles buffers =/= 7795 words
-	// 	if((int)acdc_buffer.size() != readoutSize[bi])
-	// 	{
-	// 		string err_msg = "Couldn't read 7795 words as expected! Tryingto fix it! Size was: ";
-	// 		err_msg += to_string(acdc_buffer.size());
-	// 		writeErrorLog(err_msg);
-	// 		return 1;
-	// 	}
+    //check for mixed buffersizes
+    if(ReadoutSize[LAPPD_on_ACC[0]]!=ReadoutSize[LAPPD_on_ACC[1]])
+    {
+        std::string err_msg = "ERR: Read buffer sizes did not match: " + to_string(ReadoutSize[LAPPD_on_ACC[0]]) + " vs " + to_string(ReadoutSize[LAPPD_on_ACC[1]]);
+        WriteErrorLog(err_msg);
+        return -603;       
+    }
 
 
-	// 	//save this buffer a private member of ACDC
-	// 	//by looping through our acdc vector
-	// 	//and checking each index 
-	// 	for(ACDC* a: acdcs)
-	// 	{
-	// 		if(a->getBoardIndex() == bi)
-	// 		{
-	// 			int retval;
+	//each ACDC needs to be queried individually
+	//by the ACC for its buffer. 
+	for(int bi: BoardsReadyForRead)
+	{
+	    vector<unsigned short> acdc_buffer;
 
-	// 			//If raw data is requested save and return 0
-	// 			if(raw==true)
-	// 			{
-	// 				vbuffer = acdc_buffer;
-	// 				string rawfn = outfilename + "Raw_" + timestamp + "_b" + to_string(bi) + ".txt";
-	// 				writeRawDataToFile(acdc_buffer, rawfn);
-	// 				break;
-	// 			}else
-	// 			{
-	// 				//parśe raw data to channel data and metadata
-	// 				retval = a->parseDataFromBuffer(acdc_buffer);
-	// 				map_data[bi] = a->returnData();	
-	// 				if(retval == -3)
-	// 				{
-	// 					break;
-	// 				}else if(retval == 0)
-	// 				{
-	// 					if(metaSwitch == 1)
-	// 					{
-	// 						retval = meta.parseBuffer(acdc_buffer,bi);
-	// 						if(retval != 0)
-	// 						{
-	// 							writeErrorLog("Metadata error not parsed correctly");
-	// 							return 1;						
-	// 						}else
-	// 						{
-	// 							map_meta[bi] = meta.getMetadata();
-	// 						}
-	// 					}else
-	// 					{
-	// 						map_meta[bi] = {0};
-	// 					}
-	// 				}else
-	// 				{
-	// 					writeErrorLog("Data parsing went wrong");
-	// 					return 1;
-	// 				}				
-	// 			}
-	// 		}
-	// 	}
-	// }
-	// if(raw==false)
-	// {
-	// 	datafn = outfilename + "Data_" + timestamp + ".txt";
-	// 	dataofs.open(datafn.c_str(), ios::app); 
-	// 	writePsecData(dataofs, boardsReadyForRead);
-	// }
+        //Here should be the read...
+        command_address = CML.Read_ACDC_Data_Buffer;
+        command_value = bi;
+        acdc_buffer = eth->ReceiveDataVector(command_address,command_value,ReadoutSize[bi]);
 
+		//Handles buffers =/= 7795 words
+		if((int)acdc_buffer.size() != ReadoutSize[bi])
+		{
+			std::string err_msg = "Couldn't read " + to_string(ReadoutSize[bi]) + " words as expected! Tryingto fix it! Size was: " + to_string(acdc_buffer.size());
+			WriteErrorLog(err_msg);
+			return -604;
+		}
+
+		if(acdc_buffer[0] != 0x1234)
+		{
+			acdc_buffer.clear();
+            return -604;
+		}
+
+		raw_data.insert(raw_data.end(), acdc_buffer.begin(), acdc_buffer.end());
+	}
+
+	boardid = BoardsReadyForRead;
+    BoardsReadyForRead.clear();
+    
 	return 0;
 }
 
