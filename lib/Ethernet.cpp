@@ -128,7 +128,7 @@ std::vector<unsigned short> Ethernet::ReceiveDataVector(uint32_t addr, uint64_t 
         size = 16000;
     }
 
-    std::vector<long> return_buffer;
+    std::vector<uint64_t> return_buffer;
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
@@ -147,8 +147,18 @@ std::vector<unsigned short> Ethernet::ReceiveDataVector(uint32_t addr, uint64_t 
             return_buffer.push_back(data);
         }   
     }
-	
-    return return_buffer;
+
+    if(size==7795)
+    {
+        return_buffer.erase(return_buffer.begin());
+    }
+
+    std::vector<unsigned short> converted_buffer;
+    for(const uint64_t conv_data : return_buffer) 
+    {
+        converted_buffer.push_back(static_cast<unsigned short>(conv_data));
+    }
+    return converted_buffer;
 }
 
 uint64_t Ethernet::ReceiveDataSingle(uint32_t addr, uint64_t value) 
