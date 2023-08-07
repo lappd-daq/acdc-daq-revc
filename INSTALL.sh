@@ -5,6 +5,54 @@ TEXT='\033[0;32m'
 NC='\033[0m'
 VALUES='\033[1;33m'
 CODE='\033[0;36m'
+BLUE='\033[0;34m'
+YELLOW='\033[0;33m'
+
+FOX_ASCII=$(cat << "EOF"
+   /\   /\   
+  //\\_//\\     ____
+  \_     _/    /   /
+   / * * \    /^^^]
+   \_\O/_/    [   ]            _/_/      _/_/_/    _/_/_/   
+    /   \_    [   /         _/    _/  _/        _/          
+    \     \_  /  /         _/_/_/_/  _/        _/      
+     [ [ /  \/ _/         _/    _/  _/        _/       
+    _[ [ \  /_/          _/    _/    _/_/_/    _/_/_/   
+EOF
+)
+
+ANNIE_ASCII=$(cat << "EOF"
+             ,@@              
+            /@@@@,            
+           gM ]@@@y ,&$&&&W,  
+          @C   ^@@k&@@@%%@@@& 
+         @`      @$&@H@@@@@@&L
+       ,@         B&@@@@H@@@& 
+ ,m@@md@           ]&&@@@@&M            _/_/      _/_/_/    _/_/_/ 
+#HHHHHH[            ]kkk[            _/    _/  _/        _/ 
+]HHHHHHM             @@@@           _/_/_/_/  _/        _/  
+ `*MMH[             ]@@@@          _/    _/  _/        _/  
+     ]@,           ,@@@@C         _/    _/    _/_/_/    _/_/_/ 
+      ^@@w       ,@@@@@"      
+        *%@@@@@@@@@@%"        
+            "****"                                   
+EOF
+)
+
+display_fox() {
+    echo "$FOX_ASCII"
+}
+
+display_annie() {
+    echo "$ANNIE_ASCII"
+}
+
+echo ""
+
+display_fox
+#display_annie
+
+echo ""
 
 #Check and install prerequisites
 echo -e ">>>> ${TEXT}Checking prerequisites... ${NC}"
