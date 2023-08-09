@@ -63,10 +63,27 @@ is_package_installed() {
 }
 
 # Install libusb-1.0 if not already installed
+if ! is_package_installed g++; then
+    echo "g++ is not installed. Installing..."
+    sudo apt-get update
+    sudo apt-get install -y g++
+    echo "g++ has been installed."
+else
+    echo "g++ is already installed."
+fi
+if ! is_package_installed cmake; then
+    echo "cmake is not installed. Installing..."
+    sudo apt-get update
+    sudo apt-get install -y cmake
+    echo "cmake has been installed."
+else
+    echo "cmake is already installed."
+fi
 if ! is_package_installed libusb-1.0-0; then
     echo "libusb-1.0 is not installed. Installing..."
     sudo apt-get update
     sudo apt-get install -y libusb-1.0-0
+    sudo apt-get install -y libusb-1.0-0-dev
     echo "libusb-1.0 has been installed."
 else
     echo "libusb-1.0 is already installed."

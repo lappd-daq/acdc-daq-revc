@@ -12,7 +12,7 @@ include_directories(${CMAKE_SOURCE_DIR}/include)
 include_directories(${source_dir}/include)
 include_directories(${source_dir}/local/include)
 
-add_compile_options(-o -Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector -Wno-unused-variable -Wformat=0) 
+add_compile_options(-Wall -Wextra -Wpedantic -Wno-psabi -fstack-protector -Wno-unused-variable -Wunused-parameter -Wformat=0)
 
 add_library(ACC_USB ${LIBRARY_SOURCE_DIR}/ACC_USB.cpp)
 add_library(ACC_ETH ${LIBRARY_SOURCE_DIR}/ACC_ETH.cpp)

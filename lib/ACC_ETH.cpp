@@ -11,14 +11,14 @@ void ACC_ETH::got_signal(int){quitacc.store(true);}
 ACC_ETH::ACC_ETH()
 {
     eth = new Ethernet("127.0.0.1","5000");
-    std:cout << "Connect to: " << "127.0.0.1" << ":" << "5000" << std::endl;
+    std::cout << "Connect to: " << "127.0.0.1" << ":" << "5000" << std::endl;
 }
 
 // >>>> ID:2 Constructor with IP and port arguments
 ACC_ETH::ACC_ETH(std::string ip, std::string port)
 {
     eth = new Ethernet(ip,port);
-    std:cout << "Connect to: " << ip << ":" << port << std::endl;
+    std::cout << "Connect to: " << ip << ":" << port << std::endl;
 }
 
 // >>>> ID:3 Destructor 

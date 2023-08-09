@@ -65,7 +65,7 @@ int main(int argc, char *argv[])
     uint32_t c_addr = strtoul(command.c_str(), NULL, 16);
     uint64_t c_value = strtoull(value.c_str(), NULL, 16);
 
-    std:cout << "Connect to: " << ip << ":" << port << std::endl;
+    std::cout << "Connect to: " << ip << ":" << port << std::endl;
     Ethernet *eth = new Ethernet(ip,port);
 
     if(rw=="rv" || rw=="rs")

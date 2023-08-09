@@ -555,7 +555,7 @@ void ACC_USB::versionCheck()
 	lastAccBuffer = usb->safeReadData(SAFE_BUFFERSIZE);
 	if(lastAccBuffer.size()==ACCFRAME)
 	{
-		if(lastAccBuffer.at(1)=0xaaaa)
+		if(lastAccBuffer.at(1)==0xaaaa)
 		{
 			std::cout << "ACC got the firmware version: " << std::hex << lastAccBuffer.at(2) << std::dec;
 			std::cout << " from " << std::hex << lastAccBuffer.at(4) << std::dec << "/" << std::hex << lastAccBuffer.at(3) << std::dec << std::endl;
@@ -591,7 +591,7 @@ void ACC_USB::versionCheck()
 		lastAccBuffer = usb->safeReadData(SAFE_BUFFERSIZE);
 		if(lastAccBuffer.size()==ACDCFRAME)
 		{
-			if(lastAccBuffer.at(1)=0xbbbb)
+			if(lastAccBuffer.at(1)==0xbbbb)
 			{
 				std::cout << "Board " << i << " got the firmware version: " << std::hex << lastAccBuffer.at(2) << std::dec;
 				std::cout << " from " << std::hex << lastAccBuffer.at(4) << std::dec << "/" << std::hex << lastAccBuffer.at(3) << std::dec << std::endl;
