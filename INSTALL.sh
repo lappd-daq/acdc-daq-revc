@@ -82,8 +82,7 @@ fi
 if ! is_package_installed libusb-1.0-0; then
     echo "libusb-1.0 is not installed. Installing..."
     sudo apt-get update
-    sudo apt-get install -y libusb-1.0-0
-    sudo apt-get install -y libusb-1.0-0-dev
+    sudo apt-get install -y libusb-1.0-0-dev libusb-1.0-0
     echo "libusb-1.0 has been installed."
 else
     echo "libusb-1.0 is already installed."
