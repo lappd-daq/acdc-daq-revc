@@ -5,6 +5,39 @@
 
 using namespace std;
 
+std::map<std::string,std::string> LoadFile()
+{
+    std::map<std::string,std::string> Settings;
+
+    std::string line;
+    std::fstream infile("./ConnectionSettings", std::ios_base::in);
+    if(!infile.is_open())
+    {
+        std::cout<<"File was not found! Please check for file ConnectionSettings!"<<std::endl;
+    }
+
+    std::string token;
+    std::vector<std::string> tokens;
+    while(getline(infile, line))
+    {
+        if(line.empty() || line[0] == '#')
+        {
+            continue;
+        }
+
+        std::stringstream ss(line);
+        tokens.clear();
+        while(ss >> token) 
+        {
+            tokens.push_back((std::string)token);
+        }
+        Settings.insert(std::pair<std::string,std::string>(tokens[0],tokens[1]));
+    }
+
+    infile.close();
+    return Settings;
+}
+
 int main(int argc, char *argv[])
 {   
     if (argc <= 1)
@@ -14,6 +47,11 @@ int main(int argc, char *argv[])
         return 0;
     }
 
+    std::map<std::string,std::string> Settings = LoadFile();
+
+    std::string ip = Settings["IP"];
+    std::string port = Settings["Port"];
+
     ACC_ETH* acc_eth = nullptr;
     ACC_USB* acc_usb = nullptr;
 
@@ -22,7 +60,7 @@ int main(int argc, char *argv[])
         acc_usb = new ACC_USB();
     }else if(strcmp(argv[1], "ETH") == 0)
     {
-        acc_eth = new ACC_ETH("192.168.133.1","0");
+        acc_eth = new ACC_ETH(ip,port);
     }else
     {
         std::cout << "Please enter a valid connection option" << std::endl;
