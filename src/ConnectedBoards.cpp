@@ -22,7 +22,7 @@ int main(int argc, char *argv[])
         acc_usb = new ACC_USB();
     }else if(strcmp(argv[1], "ETH") == 0)
     {
-        acc_eth = new ACC_ETH();
+        acc_eth = new ACC_ETH("192.168.133.1","0");
     }else
     {
         std::cout << "Please enter a valid connection option" << std::endl;

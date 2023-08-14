@@ -49,8 +49,8 @@ display_annie() {
 
 echo ""
 
-display_fox
-#display_annie
+#display_fox
+display_annie
 
 echo ""
 
