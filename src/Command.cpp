@@ -79,8 +79,8 @@ int main(int argc, char *argv[])
             }
         }else
         {
-            unsigned int returndata = eth->ReceiveDataSingle(c_addr,c_value);
-            std::cout << std::hex << returndata << std::dec << std::endl;
+            uint64_t returndata = eth->ReceiveDataSingle(c_addr,c_value);
+            printf("Received: 0x%016llx\n",returndata);
         }
     }else if(rw=="w")
     {

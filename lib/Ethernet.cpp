@@ -40,11 +40,11 @@ bool Ethernet::OpenInterface(std::string ipaddr, std::string port)
         m_socket = socket(list_of_addresses->ai_family, list_of_addresses->ai_socktype, list_of_addresses->ai_protocol);
         if(m_socket == -1){continue;}
 
-        if(connect(m_socket, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen)!=-1)
-        {
+        //if(coonnect(m_socket, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen)!=-1)
+        //{
             break;
-        }
-        close(m_socket);
+        //}
+        //close(m_socket);
     }
 
     if(list_of_addresses == NULL || m_socket==-1)
@@ -52,6 +52,10 @@ bool Ethernet::OpenInterface(std::string ipaddr, std::string port)
 	    fprintf(stderr, "Failed to create socket\n");
         return false;
     }
+    
+    
+    FD_ZERO(&rfds_);
+    FD_SET(m_socket, &rfds_);
 
     return true;
 }
@@ -169,6 +173,8 @@ uint64_t Ethernet::ReceiveDataSingle(uint32_t addr, uint64_t value)
         return {};
     }
 
+    int rec_bytes = -1;
+	
     if(!SendData(addr,value,"r"))
     {
         std::cout << "Could not send read command" << std::endl;
@@ -177,8 +183,39 @@ uint64_t Ethernet::ReceiveDataSingle(uint32_t addr, uint64_t value)
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
+    
+    tv_ = {0, 250000};  // 0 seconds and 250000 useconds
+    int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
-    int rec_bytes = recvfrom(m_socket,buffer,sizeof(buffer)-1,0,(struct sockaddr*)&their_addr,&addr_len);
+    if(retval > 0)
+    {
+        if((rec_bytes = recvfrom(m_socket,
+                                buffer,
+                                MAXBUFLEN_ - 1,
+                                0,
+                                (struct sockaddr*)&their_addr,
+                                &addr_len)) == -1)
+        {
+            //perror("recvfrom");
+            return 406;
+        }
+
+        if(packetID_ >= 0 && (packetID_ + 1)%256 != buffer[1]) printf("Missing packet? We jumped from packet id %d to %d\n", packetID_,buffer[1]);
+        packetID_ = buffer[1];
+
+    }
+    else if(retval == 0)
+    {
+        printf("Read Timeout\n");
+        return 405;
+    }
+    else
+    {
+        perror("select()");
+        return 404;
+    }
+
+    
     uint64_t data;
     if(rec_bytes<0)
     {

@@ -31,6 +31,9 @@ class Ethernet
         int m_socket;
         struct addrinfo *servinfo, *list_of_addresses;
         unsigned char buffer[MAXBUFLEN_];
+        fd_set rfds_;
+    	struct timeval tv_;
+    	int packetID_;
 
     public:
         Ethernet(std::string ipaddr, std::string port);
