@@ -98,6 +98,7 @@ private:
 	//------------------------------------------------------------------------------------//
 	//---------------------------------Load neccessary classes----------------------------//
     Ethernet* eth;
+    Ethernet* eth_burst;
     CommandLibrary CML;
 
 	//----------all neccessary global variables

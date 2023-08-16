@@ -42,6 +42,9 @@ class Ethernet
         bool OpenInterface(std::string ipaddr, std::string port);
         void CloseInterface();
 
+        void SwitchToBurst();
+        void SetBurstState(bool state);
+
         std::vector<uint64_t> ReceiveDataVector(uint32_t addr, uint64_t value, int size=-1);
         uint64_t ReceiveDataSingle(uint64_t addr, uint64_t value);
         bool SendData(uint64_t addr, uint64_t value, std::string read_or_write="w");

@@ -40,15 +40,7 @@ bool Ethernet::OpenInterface(std::string ipaddr, std::string port)
         m_socket = socket(list_of_addresses->ai_family, list_of_addresses->ai_socktype, list_of_addresses->ai_protocol);
         if(m_socket == -1){continue;}
 
-<<<<<<< HEAD
-        //if(connect(m_socket, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen)!=-1)
-=======
-        //if(coonnect(m_socket, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen)!=-1)
->>>>>>> 9c4ed7dfdcad78df8077f315971deb73618008be
-        //{
-            break;
-        //}
-        //close(m_socket);
+        break;
     }
 
     if(list_of_addresses == NULL || m_socket==-1)
@@ -72,6 +64,39 @@ void Ethernet::CloseInterface()
         close(m_socket);
         m_socket = 0;
         std::cout << "Disconnected from ACC" << std::endl;
+    }
+}
+
+void Ethernet::SwitchToBurst()
+{
+    int numbytes;
+        
+    buffer[0] = 2; // 2 = burst
+    int packetSz = 1;
+
+    if((numbytes = sendto(m_socket, buffer, packetSz, 0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen)) == -1)
+    {
+        perror("sw: sendto");
+        exit(1);
+    }
+}
+
+void Ethernet::SetBurstState(bool state)
+{
+    int numbytes;
+        
+    buffer[0] = 1;          
+    buffer[1] = 1;                
+    uint64_t addr = 0x0000000100000009;  // data enable
+    memcpy((void*)&buffer[RX_ADDR_OFFSET_], (void*)&addr, 8);
+    memset((void*)&buffer[RX_DATA_OFFSET_], state?1:0, 1);
+    memset((void*)&buffer[RX_DATA_OFFSET_ + 1], 0, 7);
+    int packetSz = RX_DATA_OFFSET_ + buffer[1] * 8;
+
+    if((numbytes = sendto(m_socket, buffer, packetSz, 0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen)) == -1)
+    {
+        perror("sw: sendto");
+        exit(1);
     }
 }
 
@@ -140,20 +165,37 @@ std::vector<uint64_t> Ethernet::ReceiveDataVector(uint32_t addr, uint64_t value,
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
+    
+    tv_ = {0, 250000};  // 0 seconds and 250000 useconds
+    int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
     int rec_bytes=-1;
     while((int)return_buffer.size()!=size)
     {
-        rec_bytes = recvfrom(m_socket,buffer,sizeof(buffer)-1,0,(struct sockaddr*)&their_addr,&addr_len);
-        if(rec_bytes<0)
+        if(retval > 0)
         {
-            std::cout << "Could not receive data! Got " << rec_bytes << " bytes" << std::endl;
-        }else
+            if((rec_bytes = recvfrom(m_socket,
+                                    buffer,
+                                    MAXBUFLEN_ - 1,
+                                    0,
+                                    (struct sockaddr*)&their_addr,
+                                    &addr_len)) == -1)
+            {
+                perror("recvfrom");
+                return {406};
+            }
+
+        }
+        else if(retval == 0)
         {
-            uint64_t data;
-            memcpy((void*)&data, (void*)&buffer[TX_DATA_OFFSET_], 8);
-            return_buffer.push_back(data);
-        }   
+            printf("Read Timeout\n");
+            return {405};
+        }
+        else
+        {
+            perror("select()");
+            return {404};
+        }
     }
 
     if(size==7795)
@@ -183,11 +225,7 @@ uint64_t Ethernet::ReceiveDataSingle(uint64_t addr, uint64_t value)
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
     
-<<<<<<< HEAD
-    tv_ = {1, 250000};  // 0 seconds and 250000 useconds
-=======
     tv_ = {0, 250000};  // 0 seconds and 250000 useconds
->>>>>>> 9c4ed7dfdcad78df8077f315971deb73618008be
     int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
     if(retval > 0)
@@ -203,12 +241,6 @@ uint64_t Ethernet::ReceiveDataSingle(uint64_t addr, uint64_t value)
             return 406;
         }
 
-<<<<<<< HEAD
-=======
-        if(packetID_ >= 0 && (packetID_ + 1)%256 != buffer[1]) printf("Missing packet? We jumped from packet id %d to %d\n", packetID_,buffer[1]);
-        packetID_ = buffer[1];
-
->>>>>>> 9c4ed7dfdcad78df8077f315971deb73618008be
     }
     else if(retval == 0)
     {
@@ -262,7 +294,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                                     &addr_len)) == -1)
             {
                 perror("recvfrom");
-                exit(1);
+                return {406};
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
@@ -283,12 +315,12 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         else if(retval == 0)
         {
             printf("Burst Read Timeout\n");
-            exit(1);
+            return {405};
         }
         else
         {
             perror("select()");
-            exit(1);
+            return {404};
         }
     }
 

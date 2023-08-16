@@ -97,8 +97,4 @@ int main(int argc, char *argv[])
     	std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
     }
     return 1;
-<<<<<<< HEAD
 }
-=======
-}
->>>>>>> 9c4ed7dfdcad78df8077f315971deb73618008be

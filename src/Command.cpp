@@ -65,8 +65,11 @@ int main(int argc, char *argv[])
     uint64_t c_addr = strtoull(command.c_str(), NULL, 16);
     uint64_t c_value = strtoull(value.c_str(), NULL, 16);
 
-    std::cout << "Connect to: " << ip << ":" << port << std::endl;
     Ethernet *eth = new Ethernet(ip,port);
+    std::cout << "Connect to: " << ip << ":" << port << std::endl;
+    std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
+    Ethernet *eth_burst = new Ethernet(ip,port_burst);
+    std::cout << "Burst connect to: " << ip << ":" << port_burst << std::endl;
 
     if(rw=="rv" || rw=="rs" || rw=="rb")
     {
@@ -83,16 +86,13 @@ int main(int argc, char *argv[])
             printf("Received: 0x%016llx\n",returndata);
         }else
         {
-<<<<<<< HEAD
-            std::vector<uint64_t> returndata = eth->RecieveBurst(7795);
+            eth_burst->SwitchToBurst();
+            eth_burst->SetBurstState(true);
+            std::vector<uint64_t> returndata = eth_burst->RecieveBurst(1400);
             for(uint64_t k: returndata)
             {
                 std::cout << std::hex << k << std::dec << std::endl;
             }  
-=======
-            uint64_t returndata = eth->ReceiveDataSingle(c_addr,c_value);
-            printf("Received: 0x%016llx\n",returndata);
->>>>>>> 9c4ed7dfdcad78df8077f315971deb73618008be
         }
     }else if(rw=="w")
     {

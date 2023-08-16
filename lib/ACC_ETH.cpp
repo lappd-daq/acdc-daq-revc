@@ -12,6 +12,8 @@ ACC_ETH::ACC_ETH()
 {
     eth = new Ethernet("127.0.0.1","5000");
     std::cout << "Connect to: " << "127.0.0.1" << ":" << "5000" << std::endl;
+    eth_burst = new Ethernet("127.0.0.1","5001");
+    std::cout << "Burst connect to: " << "127.0.0.1" << ":" << "5001" << std::endl;
 }
 
 // >>>> ID:2 Constructor with IP and port arguments
@@ -19,6 +21,9 @@ ACC_ETH::ACC_ETH(std::string ip, std::string port)
 {
     eth = new Ethernet(ip,port);
     std::cout << "Connect to: " << ip << ":" << port << std::endl;
+    std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
+    eth_burst = new Ethernet(ip,port_burst);
+    std::cout << "Burst connect to: " << ip << ":" << port_burst << std::endl;
 }
 
 // >>>> ID:3 Destructor 
@@ -27,6 +32,11 @@ ACC_ETH::~ACC_ETH()
 	eth->CloseInterface();
     delete eth;
     eth = 0;
+
+    eth_burst->CloseInterface();
+    delete eth_burst;
+    eth_burst = 0;
+    
     std::cout << "ACC destructed" << std::endl;
 }
 
