@@ -20,7 +20,7 @@
 
 using namespace std;
 
-#define RX_DATA_OFFSET_ 6
+#define RX_DATA_OFFSET_ 10
 #define RX_ADDR_OFFSET_ 2
 #define TX_DATA_OFFSET_ 2
 #define MAXBUFLEN_ 1500
@@ -31,6 +31,9 @@ class Ethernet
         int m_socket;
         struct addrinfo *servinfo, *list_of_addresses;
         unsigned char buffer[MAXBUFLEN_];
+        fd_set rfds_;
+    	struct timeval tv_;
+    	int packetID_;
 
     public:
         Ethernet(std::string ipaddr, std::string port);
@@ -39,9 +42,11 @@ class Ethernet
         bool OpenInterface(std::string ipaddr, std::string port);
         void CloseInterface();
 
-        std::vector<unsigned short> ReceiveDataVector(uint32_t addr, uint64_t value, int size=-1);
-        uint64_t ReceiveDataSingle(uint32_t addr, uint64_t value);
-        bool SendData(uint32_t addr, uint64_t value, std::string read_or_write="w");
+        std::vector<uint64_t> ReceiveDataVector(uint32_t addr, uint64_t value, int size=-1);
+        uint64_t ReceiveDataSingle(uint64_t addr, uint64_t value);
+        bool SendData(uint64_t addr, uint64_t value, std::string read_or_write="w");
+        std::vector<uint64_t> RecieveBurst(int numwords, int timeout_sec = 65, int timeout_us = 0);
+
 
 };
 

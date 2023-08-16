@@ -216,7 +216,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	//by the ACC for its buffer. 
 	for(int bi: BoardsReadyForRead)
 	{
-	    vector<unsigned short> acdc_buffer;
+	    vector<uint64_t> acdc_buffer;
 
         //Here should be the read...
         command_address = CML.Read_ACDC_Data_Buffer;
@@ -237,7 +237,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
             return -604;
 		}
 
-		raw_data.insert(raw_data.end(), acdc_buffer.begin(), acdc_buffer.end());
+		//raw_data.insert(raw_data.end(), acdc_buffer.begin(), acdc_buffer.end());
 	}
 
 	boardid = BoardsReadyForRead;
@@ -255,10 +255,14 @@ void ACC_ETH::VersionCheck()
 {
 
     //Get ACC Info
-    uint64_t acc_fw_version = eth->ReceiveDataSingle(CML.Firmware_Version_Readback,0);
-    uint64_t acc_fw_date = eth->ReceiveDataSingle(CML.Firmware_Date_Readback,0);
-    unsigned int acc_fw_year = (acc_fw_date & 0xffff<<16);
-    unsigned int acc_fw_month = (acc_fw_date & 0xff<<8);
+    uint64_t acc_fw_version = eth->ReceiveDataSingle(CML.Firmware_Version_Readback,0x1);
+    //printf("V: 0x%016llx\n",acc_fw_version);
+    
+    uint64_t acc_fw_date = eth->ReceiveDataSingle(CML.Firmware_Date_Readback,0x1);
+    //printf("D: 0x%016llx\n",acc_fw_date);
+    
+    unsigned int acc_fw_year = (acc_fw_date & 0xffff<<16)>>16;
+    unsigned int acc_fw_month = (acc_fw_date & 0xff<<8)>>8;
     unsigned int acc_fw_day = (acc_fw_date & 0xff);
 
     std::cout << "ACC got the firmware version: " << std::hex << acc_fw_version << std::dec;
@@ -279,8 +283,8 @@ void ACC_ETH::VersionCheck()
 
         command_value = CML.Firmware_Date_Readback | ((1<<bi)<<24);
         uint64_t acdc_fw_date = eth->ReceiveDataSingle(command_address,command_value);
-        unsigned int acdc_fw_year = (acdc_fw_date & 0xffff<<16);
-        unsigned int acdc_fw_month = (acdc_fw_date & 0xff<<8);
+        unsigned int acdc_fw_year = (acdc_fw_date & 0xffff<<16)>>16;
+        unsigned int acdc_fw_month = (acdc_fw_date & 0xff<<8)>>8;
         unsigned int acdc_fw_day = (acdc_fw_date & 0xff);
 
         std::cout << "Board " << bi << " got the firmware version: " << std::hex << acdc_fw_version << std::dec;
