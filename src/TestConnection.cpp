@@ -134,22 +134,31 @@ int main(int argc, char *argv[])
         
         for(int bi=0; bi<8;bi++)
         {
-        	uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
+        	uint64_t retval = eth->RecieveDataSingle(0x2010 | (1<<bi), 0x1);usleep(100000);
         	printf("ACDC %i gave 0x%016llx\n",bi,retval);
-	}
+	    }
 	
-	for(int bi=0;bi<8;bi++)
-	{	
-		uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
-		
-		if(retval!=0)
-		{
-			eth->SendData(0x20,bi,"w");
-			vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,10,0);
-			std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
-            if(ret_vec.size()>0){printf("Word is 0x%016llx\n",ret_vec.at(0));}
+        for(int bi=0;bi<8;bi++)
+        {	
+            uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
+            
+            if(retval!=0)
+            {
+                if(bi==0){eth->SendData(0x20,bi,"w");}
+                else{eth->SendData(0x20,(1<<bi),"w");}
+                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,10,0);
+                std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
+                if(ret_vec.size()>0)
+                {
+                    printf("Word is 0x%016llx\n",ret_vec.at(0));
+                    if(ret_vec.size()>1)
+                    {
+                        printf("Word is 0x%016llx\n",ret_vec.at(1)); 
+                    }    
+                }
+                
+            }
         }
-	}
 		
         //delete eth;
         
