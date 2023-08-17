@@ -55,12 +55,14 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
     }
 
     //Get the connected ACDCs
-    command_address = CML.ACDC_Board_Detect;
+    command_address = CML_ACC.ACDC_Board_Detect;
     command_value = 0;
+
+    bool ack = eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xFF,"w");
 
     uint64_t DetectedBoards = eth->RecieveDataSingle(command_address,command_value);
 
-    if(DetectedBoards==0){return -402;}
+    if((DetectedBoards>>16) == 0xeeee ){return -402;}
 
     for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
     {
@@ -81,32 +83,32 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
     bool ret;
     SetTriggerSource(boardmask,triggersource);
 
-    command_address = CML.SMA_Polarity_Select;
+    command_address = CML_ACC.SMA_Polarity_Select;
     command_value = ACC_sign;
     ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to set ACC SMA sign!\n",command_address,command_value);}
 
-    command_address = CML.ACDC_Command;
-    command_value = CML.SMA_Polarity_Select | (boardmask<<24) | ACDC_sign; //????
+    command_address = CML_ACC.ACDC_Command;
+    command_value = CML_ACC.SMA_Polarity_Select | (boardmask<<24) | ACDC_sign; //????
     ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to set ACDC SMA sign!\n",command_address,command_value);}
 
-    command_address = CML.Beamgate_Window_Start;
+    command_address = CML_ACC.Beamgate_Window_Start;
     command_value = validation_start;
     ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to set Beamgate window start!\n",command_address,command_value);}
 
-    command_address = CML.Beamgate_Window_Length;
+    command_address = CML_ACC.Beamgate_Window_Length;
     command_value = validation_window;
     ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to set Beamgate window length!\n",command_address,command_value);}
 
-    command_address = CML.PPS_Beamgate_Multiplex;
+    command_address = CML_ACC.PPS_Beamgate_Multiplex;
     command_value = PPSBeamMultiplexer;
     ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to set Beamgate/PPS Multiplexer!\n",command_address,command_value);}
 
-    command_address = CML.PPS_Divide_Ratio;
+    command_address = CML_ACC.PPS_Divide_Ratio;
     command_value = PPSRatio;
     ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to set PPS Multiplier!\n",command_address,command_value);}
@@ -121,7 +123,7 @@ int ACC_ETH::SetTriggerSource(unsigned int boardmask, int triggersource)
     {
         if(boardmask & (1<<i))
         {
-            command_address = CML.Trigger_Mode_Select | i; 
+            command_address = CML_ACC.Trigger_Mode_Select | i; 
         }else
         {
             continue;
@@ -130,6 +132,8 @@ int ACC_ETH::SetTriggerSource(unsigned int boardmask, int triggersource)
 
         bool ret = eth->SendData(command_address,command_value,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to set trigger source!\n",command_address,command_value);}
+
+        command_address = CML_ACC.ACDC
     }
     return 0;
 }
@@ -231,7 +235,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	    vector<uint64_t> acdc_buffer;
 
         //Here should be the read...
-        command_address = CML.Read_ACDC_Data_Buffer;
+        command_address = CML_ACC.Read_ACDC_Data_Buffer;
         command_value = bi;
         acdc_buffer = eth->RecieveDataVector(command_address,command_value,ReadoutSize[bi]);
 
@@ -267,10 +271,10 @@ void ACC_ETH::VersionCheck()
 {
 
     //Get ACC Info
-    uint64_t acc_fw_version = eth->RecieveDataSingle(CML.Firmware_Version_Readback,0x1);
+    uint64_t acc_fw_version = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x1);
     //printf("V: 0x%016llx\n",acc_fw_version);
     
-    uint64_t acc_fw_date = eth->RecieveDataSingle(CML.Firmware_Date_Readback,0x1);
+    uint64_t acc_fw_date = eth->RecieveDataSingle(CML_ACC.Firmware_Date_Readback,0x1);
     //printf("D: 0x%016llx\n",acc_fw_date);
     
     unsigned int acc_fw_year = (acc_fw_date & 0xffff<<16)>>16;
@@ -280,13 +284,13 @@ void ACC_ETH::VersionCheck()
     std::cout << "ACC got the firmware version: " << std::hex << acc_fw_version << std::dec;
     std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
     
-    uint64_t acdcs_detected = eth->RecieveDataSingle(CML.ACDC_Board_Detect,0x0);    
+    uint64_t acdcs_detected = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);    
 
-    eth->SendData(CML.ACDC_Command,0xFFB54000,"w");
+    eth->SendData(CML_ACC.ACDC_Command,0xFFB54000,"w");
     usleep(100000);
-    eth->SendData(CML.RX_Buffer_Reset_Request,0xFF,"w");
-    usleep(100000);
-    eth->SendData(CML.ACDC_Command,0xFFD00000,"w");
+    eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xFF,"w");
+    usleep(1000);
+    eth->SendData(CML_ACC.ACDC_Command,0xFFD00000,"w");
 
     //Sets up the burst mode
     eth_burst->SwitchToBurst();
@@ -329,7 +333,7 @@ void ACC_ETH::VersionCheck()
 void ACC_ETH::GenerateSoftwareTrigger()
 {
     //Software trigger
-	command_address = CML.Generate_Software_Trigger;
+	command_address = CML_ACC.Generate_Software_Trigger;
     command_value = 1;
 
     bool ret = eth->SendData(command_address,command_value,"w");
@@ -342,7 +346,7 @@ void ACC_ETH::GenerateSoftwareTrigger()
 // >>>> ID 9: Tells ACDCs to clear their buffer
 void ACC_ETH::DumpData(unsigned int boardmask)
 {
-    command_address = CML.RX_Buffer_Reset_Request; 
+    command_address = CML_ACC.RX_Buffer_Reset_Request; 
     for(unsigned int i=0; i<MAX_NUM_BOARDS; i++)
     {
         if(boardmask & (1<<i))
@@ -361,8 +365,8 @@ void ACC_ETH::DumpData(unsigned int boardmask)
 // >>>> ID 10: Resets the ACDCs
 void ACC_ETH::ResetACDC()
 {
-	command_address = CML.ACDC_Command;
-    command_value = CML.Global_Reset | (0xff<<24) | 0x1 ;
+	command_address = CML_ACC.ACDC_Command;
+    command_value = CML_ACC.Global_Reset | (0xff<<24) | 0x1 ;
 
     bool ret = eth->SendData(command_address,command_value,"w");
     if(!ret)
@@ -374,7 +378,7 @@ void ACC_ETH::ResetACDC()
 // >>>> ID 11: Resets the ACC
 void ACC_ETH::ResetACC()
 {
-	command_address = CML.Global_Reset;
+	command_address = CML_ACC.Global_Reset;
     command_value = 0x1;
 
     bool ret = eth->SendData(command_address,command_value,"w");
@@ -387,7 +391,7 @@ void ACC_ETH::ResetACC()
 // >>>> ID 12: Sets SMA Debug settings
 void ACC_ETH::SetSMA_Debug(unsigned int PPS, unsigned int Beamgate)
 {
-	command_address = CML.PPS_Input_Use_SMA;
+	command_address = CML_ACC.PPS_Input_Use_SMA;
     command_value = PPS;
 
     bool ret = eth->SendData(command_address,command_value,"w");
@@ -398,7 +402,7 @@ void ACC_ETH::SetSMA_Debug(unsigned int PPS, unsigned int Beamgate)
 
 	usleep(1000000);
 
-    command_address = CML.Beamgate_Trigger_Use_SMA;
+    command_address = CML_ACC.Beamgate_Trigger_Use_SMA;
     command_value = Beamgate;
 
     ret = eth->SendData(command_address,command_value,"w");

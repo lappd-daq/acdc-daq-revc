@@ -224,7 +224,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
     if(m_socket<=0) 
     {
         std::cerr << "Socket not open." << std::endl;
-        return {};
+        return 0xeeeeaa01;
     }
 
     int rec_bytes = -1;
@@ -232,7 +232,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
     if(!SendData(addr,value,"r"))
     {
         std::cout << "Could not send read command" << std::endl;
-        return {};
+        return 0xeeeeaa02;
     }
 
     struct sockaddr_storage their_addr;
@@ -251,19 +251,19 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
                                 &addr_len)) == -1)
         {
             perror("recvfrom");
-            return 406;
+            return 0xeeeeaa03;
         }
 
     }
     else if(retval == 0)
     {
         printf("Read Timeout\n");
-        return 405;
+        return 0xeeeeaa04;
     }
     else
     {
         perror("select()");
-        return 404;
+        return 0xeeeeaa05;
     }
 
     

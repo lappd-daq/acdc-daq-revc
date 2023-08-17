@@ -99,7 +99,8 @@ private:
 	//---------------------------------Load neccessary classes----------------------------//
     Ethernet* eth;
     Ethernet* eth_burst;
-    CommandLibrary CML;
+    CommandLibrary_ACC CML_ACC;
+    CommandLibrary_ACDC CML_ACDC;
 
 	//----------all neccessary global variables
 	unsigned int command_address; //var: contain command address for ethernet communication
