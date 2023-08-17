@@ -100,10 +100,12 @@ int main(int argc, char *argv[])
         std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
         Ethernet *eth_burst = new Ethernet(ip,port_burst);
         eth_burst->SwitchToBurst();
+        usleep(10000);
         eth_burst->SetBurstState(true);
 
-        vector<uint64_t> ret_vec = eth_burst->RecieveBurst(10,10,0);
+        vector<uint64_t> ret_vec = eth_burst->RecieveBurst(1,10,0);
         std::cout<<"Got "<<ret_vec.size()<<" words"<<std::endl;
+        if(ret_vec.size()==1){printf("Word is 0x%016llx\n",ret_vec.at(0));}
     }
     return 1;
 }
