@@ -314,18 +314,11 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
-            if(firstread)
-            {
-                memcpy((void*)(data.data()), (void*)&buffer[TX_DATA_OFFSET_], 8);
-                data.clear();
-                firstread=false;
-            }
-
-            for (int i = 0; i < (numbytes-2)/8; ++i)
+            for (int i = 0; i < (numbytes-2)/2; ++i)
             {
                 if(i+wordsRead < numwords)
                 {
-                    memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + 8*i], 8);
+                    memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + 2*i], 2);
                 }else
                 {
                     break;
