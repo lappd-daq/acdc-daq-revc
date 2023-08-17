@@ -146,7 +146,7 @@ int main(int argc, char *argv[])
             {
                 if(bi==0){eth->SendData(0x20,bi,"w");}
                 else{eth->SendData(0x20,(1<<bi),"w");}
-                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(1949,10,0);
+                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,10,0);
                 std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
                 if(ret_vec.size()>0)
                 {
