@@ -62,7 +62,7 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
 
     uint64_t DetectedBoards = eth->RecieveDataSingle(command_address,command_value);
 
-    if((DetectedBoards>>16) == 0xeeee ){return -402;}
+    if((DetectedBoards>>16) == 0xeeee){return -402;}
 
     for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
     {
@@ -133,7 +133,10 @@ int ACC_ETH::SetTriggerSource(unsigned int boardmask, int triggersource)
         bool ret = eth->SendData(command_address,command_value,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to set trigger source!\n",command_address,command_value);}
 
-        command_address = CML_ACC.ACDC
+        command_address = CML_ACC.ACDC_Command;
+        command_value = CML_ACDC.Set_Triggermode | (boardmask<<24) | triggersource;
+        bool ret = eth->SendData(command_address,command_value,"w");
+        if(!ret){printf("Could not send command 0x%08llX with value %i to set trigger source on acdc!\n",command_address,command_value);}
     }
     return 0;
 }
