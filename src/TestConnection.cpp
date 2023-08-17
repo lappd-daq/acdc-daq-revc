@@ -137,6 +137,7 @@ int main(int argc, char *argv[])
         	uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);usleep(100000);
         	printf("ACDC %i gave 0x%016llx\n",bi,retval);
 	    }
+        std::cout<<"-----------------"<<std::cout;
 	
         for(int bi=0;bi<8;bi++)
         {	
@@ -145,18 +146,12 @@ int main(int argc, char *argv[])
             if(retval!=0)
             {
                 if(bi==0){eth->SendData(0x20,bi,"w");}
-                else{eth->SendData(0x20,(1<<bi),"w");}
-                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,10,0);
+                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(10000,10,0);
                 std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
-                if(ret_vec.size()>0)
-                {
-                    printf("Word is 0x%016llx\n",ret_vec.at(0));
-                    if(ret_vec.size()>10)
-                    {
-                        for(int i=1; i<10; i++){printf("Word %i is 0x%016llx\n",i,ret_vec.at(i));} 
-                    }    
-                }
-                
+                std::string name = "./Buffer" + to_string(bi) + ".txt";
+                ofstream file(name.c_str(),ios::out);
+                for(auto k: ret_vec){file<<k<<endl;}
+                close(file);
             }
         }
 		
