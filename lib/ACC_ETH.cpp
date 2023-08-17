@@ -11,19 +11,21 @@ void ACC_ETH::got_signal(int){quitacc.store(true);}
 ACC_ETH::ACC_ETH()
 {
     eth = new Ethernet("127.0.0.1","5000");
-    std::cout << "Connect to: " << "127.0.0.1" << ":" << "5000" << std::endl;
+    std::cout << "Normal connected to: " << "127.0.0.1" << ":" << "5000" << std::endl;
     eth_burst = new Ethernet("127.0.0.1","5001");
-    std::cout << "Burst connect to: " << "127.0.0.1" << ":" << "5001" << std::endl;
+    std::cout << "Burst connected to: " << "127.0.0.1" << ":" << "5001" << std::endl;
+    std::cout << "----------" << std::endl;
 }
 
 // >>>> ID:2 Constructor with IP and port arguments
 ACC_ETH::ACC_ETH(std::string ip, std::string port)
 {
     eth = new Ethernet(ip,port);
-    std::cout << "Connect to: " << ip << ":" << port << std::endl;
+    std::cout << "Normal connected to: " << ip << ":" << port << std::endl;
     std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
     eth_burst = new Ethernet(ip,port_burst);
-    std::cout << "Burst connect to: " << ip << ":" << port_burst << std::endl;
+    std::cout << "Burst connected to: " << ip << ":" << port_burst << std::endl;
+    std::cout << "----------" << std::endl;
 }
 
 // >>>> ID:3 Destructor 
@@ -56,7 +58,7 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
     command_address = CML.ACDC_Board_Detect;
     command_value = 0;
 
-    uint64_t DetectedBoards = eth->ReceiveDataSingle(command_address,command_value);
+    uint64_t DetectedBoards = eth->RecieveDataSingle(command_address,command_value);
 
     if(DetectedBoards==0){return -402;}
 
@@ -231,7 +233,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         //Here should be the read...
         command_address = CML.Read_ACDC_Data_Buffer;
         command_value = bi;
-        acdc_buffer = eth->ReceiveDataVector(command_address,command_value,ReadoutSize[bi]);
+        acdc_buffer = eth->RecieveDataVector(command_address,command_value,ReadoutSize[bi]);
 
 		//Handles buffers =/= 7795 words
 		if((int)acdc_buffer.size() != ReadoutSize[bi])
@@ -265,10 +267,10 @@ void ACC_ETH::VersionCheck()
 {
 
     //Get ACC Info
-    uint64_t acc_fw_version = eth->ReceiveDataSingle(CML.Firmware_Version_Readback,0x1);
+    uint64_t acc_fw_version = eth->RecieveDataSingle(CML.Firmware_Version_Readback,0x1);
     //printf("V: 0x%016llx\n",acc_fw_version);
     
-    uint64_t acc_fw_date = eth->ReceiveDataSingle(CML.Firmware_Date_Readback,0x1);
+    uint64_t acc_fw_date = eth->RecieveDataSingle(CML.Firmware_Date_Readback,0x1);
     //printf("D: 0x%016llx\n",acc_fw_date);
     
     unsigned int acc_fw_year = (acc_fw_date & 0xffff<<16)>>16;
@@ -277,28 +279,37 @@ void ACC_ETH::VersionCheck()
 
     std::cout << "ACC got the firmware version: " << std::hex << acc_fw_version << std::dec;
     std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
+    
+    uint64_t acdcs_detected = eth->RecieveDataSingle(CML.ACDC_Board_Detect,0x0);    
+
+    eth->SendData(CML.ACDC_Command,0xFFB54000,"w");
+    usleep(100000);
+    eth->SendData(CML.RX_Buffer_Reset_Request,0xFF,"w");
+    usleep(1000);
+    eth->SendData(CML.ACDC_Command,0xFFD00000,"w");
 
     //Get ACDC Info
     for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
     {
-        command_address = CML.ACDC_Command;
-        command_value = CML.Firmware_Version_Readback | ((1<<bi)<<24);
-        uint64_t acdc_fw_version = eth->ReceiveDataSingle(command_address,command_value);
-
-        if(acdc_fw_version==0)
-        {
-            std::cout << "Board " << bi << " is not connected" << std::endl;
-            continue;
-        }
-
-        command_value = CML.Firmware_Date_Readback | ((1<<bi)<<24);
-        uint64_t acdc_fw_date = eth->ReceiveDataSingle(command_address,command_value);
-        unsigned int acdc_fw_year = (acdc_fw_date & 0xffff<<16)>>16;
-        unsigned int acdc_fw_month = (acdc_fw_date & 0xff<<8)>>8;
-        unsigned int acdc_fw_day = (acdc_fw_date & 0xff);
-
-        std::cout << "Board " << bi << " got the firmware version: " << std::hex << acdc_fw_version << std::dec;
-	    std::cout << " from " << std::hex << acdc_fw_year << std::dec << "/" << std::hex << acdc_fw_month << std::dec << "/" << std::hex << acdc_fw_day << std::dec << std::endl;
+    	if(acdcs_detected & (1<<bi))
+    	{
+		vector<uint64_t> return_vector = eth->RecieveDataVector(CML.Read_ACDC_Data_Buffer,(0x1<<bi),32, Ethernet::NO_ADDR_INC);
+		//for(auto k: return_vector){cout<<k<<endl;}
+		if(return_vector.size()==32)
+		{
+			if(return_vector.at(1)==0xbbbb)
+			{
+				std::cout << "Board " << bi << " got the firmware version: " << std::hex << return_vector.at(2) << std::dec;
+				std::cout << " from " << std::hex << return_vector.at(4) << std::dec << "/" << std::hex << return_vector.at(3) << std::dec << std::endl;
+			}else
+			{
+				std::cout << "Board " << bi << " got the wrong info frame" << std::endl;
+			}
+		}
+	}else
+	{
+		std::cout << "ACDC boards " << bi << " was not detected" << endl;
+	}
     }
 }
 

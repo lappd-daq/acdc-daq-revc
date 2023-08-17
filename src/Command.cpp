@@ -75,16 +75,16 @@ int main(int argc, char *argv[])
     {
         if(rw=="rv")
         {
-            std::vector<uint64_t> returndata = eth->ReceiveDataVector(c_addr,c_value,-1);
+            std::vector<uint64_t> returndata = eth->RecieveDataVector(c_addr,c_value,-1);
             for(uint64_t k: returndata)
             {
                 std::cout << std::hex << k << std::dec << std::endl;
             }
         }else if(rw=="rs")
         {
-            uint64_t returndata = eth->ReceiveDataSingle(c_addr,c_value);
-            printf("Received: 0x%016llx\n",returndata);
-        }else
+            uint64_t returndata = eth->RecieveDataSingle(c_addr,c_value);
+            printf("Recieved: 0x%016llx\n",returndata);
+        }else if(rw=="rb")
         {
             eth_burst->SwitchToBurst();
             eth_burst->SetBurstState(true);

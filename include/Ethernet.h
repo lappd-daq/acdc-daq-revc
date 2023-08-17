@@ -39,14 +39,21 @@ class Ethernet
         Ethernet(std::string ipaddr, std::string port);
         ~Ethernet();
 
+    enum
+    {
+        DO_NOT_RETURN = 0x02,
+        REQUEST_ACK   = 0x04,
+        NO_ADDR_INC   = 0x08
+    };
+
         bool OpenInterface(std::string ipaddr, std::string port);
         void CloseInterface();
 
         void SwitchToBurst();
         void SetBurstState(bool state);
 
-        std::vector<uint64_t> ReceiveDataVector(uint32_t addr, uint64_t value, int size=-1);
-        uint64_t ReceiveDataSingle(uint64_t addr, uint64_t value);
+        std::vector<uint64_t> RecieveDataVector(uint32_t addr, uint64_t value, int size=-1, uint8_t flags = 0);
+        uint64_t RecieveDataSingle(uint64_t addr, uint64_t value);
         bool SendData(uint64_t addr, uint64_t value, std::string read_or_write="w");
         std::vector<uint64_t> RecieveBurst(int numwords, int timeout_sec = 65, int timeout_us = 0);
 

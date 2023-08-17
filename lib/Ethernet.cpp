@@ -10,7 +10,7 @@ Ethernet::Ethernet(std::string ipaddr, std::string port) : m_socket(-1), servinf
         exit(EXIT_FAILURE);
     }else
     {
-        std::cout << "Connected to the ACC" << std::endl;
+        //std::cout << "Connected to the ACC" << std::endl;
     }
 }
 
@@ -139,10 +139,11 @@ bool Ethernet::SendData(uint64_t addr, uint64_t value, std::string read_or_write
         //printf("Data was sucessfully sent, sent was 0x%16llx to 0x%16llx with %i bytes\n",value,addr,returnval);
     }
 
+    memset(buffer, 0, sizeof buffer);
     return true;
 }
 
-std::vector<uint64_t> Ethernet::ReceiveDataVector(uint32_t addr, uint64_t value, int size) 
+std::vector<uint64_t> Ethernet::RecieveDataVector(uint32_t addr, uint64_t value, int size, uint8_t flags) 
 {
     if(m_socket<=0) 
     {
@@ -150,18 +151,27 @@ std::vector<uint64_t> Ethernet::ReceiveDataVector(uint32_t addr, uint64_t value,
         return {};
     }
 
-    if(!SendData(addr,value,"r"))
+    buffer[0] = (flags & NO_ADDR_INC)?0x08:0x00;
+    buffer[1] = size;
+
+    //Make command from in
+    memcpy(&buffer[RX_ADDR_OFFSET_], &addr, 8);
+    memcpy(&buffer[RX_DATA_OFFSET_], &value, 8);
+
+    int packet_size = RX_DATA_OFFSET_ + 8;
+
+    int returnval = sendto(m_socket,buffer,packet_size,0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen);
+    if(returnval==-1)
     {
-        std::cout << "Could not send read command" << std::endl;
-        return {};
+        std::cout << "Error data not send, tried to send " << buffer << std::endl; 
     }
+
+    memset(buffer, 0, sizeof buffer);
 
     if(size==-1)
     {
         size = 16000;
     }
-
-    std::vector<uint64_t> return_buffer;
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
@@ -169,44 +179,47 @@ std::vector<uint64_t> Ethernet::ReceiveDataVector(uint32_t addr, uint64_t value,
     tv_ = {0, 250000};  // 0 seconds and 250000 useconds
     int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
+while(true){
     int rec_bytes=-1;
-    while((int)return_buffer.size()!=size)
-    {
-        if(retval > 0)
-        {
-            if((rec_bytes = recvfrom(m_socket,
-                                    buffer,
-                                    MAXBUFLEN_ - 1,
-                                    0,
-                                    (struct sockaddr*)&their_addr,
-                                    &addr_len)) == -1)
-            {
-                perror("recvfrom");
-                return {406};
-            }
+	if(retval > 0)
+	{
+	    if((rec_bytes = recvfrom(m_socket,
+		                    buffer,
+		                    MAXBUFLEN_ - 1,
+		                    0,
+		                    (struct sockaddr*)&their_addr,
+		                    &addr_len)) == -1)
+	    {
+		perror("recvfrom");
+		return {406};
+	    }
+	}
+	else if(retval == 0)
+	{
+	    printf("Read Timeout\n");
+	    return {405};
+	}
+	else
+	{
+	    perror("select()");
+	    return {404};
+	}
+	
 
-        }
-        else if(retval == 0)
-        {
-            printf("Read Timeout\n");
-            return {405};
-        }
-        else
-        {
-            perror("select()");
-            return {404};
-        }
+    std::vector<uint64_t> data((rec_bytes-2)/8);
+    memcpy((void*)data.data(), (void*)&buffer[TX_DATA_OFFSET_], rec_bytes - 2);
+
+    cout<<"Data size: "<<data.size()<<" words"<<endl;
+    memset(buffer, 0, sizeof buffer);
+    if(data.size()==size){
+    return data;
     }
-
-    if(size==7795)
-    {
-        return_buffer.erase(return_buffer.begin());
-    }
-
-    return return_buffer;
+}
+	vector<uint64_t> data;
+    return data;
 }
 
-uint64_t Ethernet::ReceiveDataSingle(uint64_t addr, uint64_t value) 
+uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value) 
 {
     if(m_socket<=0) 
     {
@@ -225,7 +238,7 @@ uint64_t Ethernet::ReceiveDataSingle(uint64_t addr, uint64_t value)
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
     
-    tv_ = {0, 250000};  // 0 seconds and 250000 useconds
+    tv_ = {1, 250000};  // 0 seconds and 250000 useconds
     int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
     if(retval > 0)

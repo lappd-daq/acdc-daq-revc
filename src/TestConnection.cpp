@@ -70,7 +70,7 @@ int main(int argc, char *argv[])
 		port = to_string(n_port).c_str();
 	    	Ethernet *eth = new Ethernet(ip,port);
 
-	    	uint64_t ret = eth->ReceiveDataSingle(0x00001000, 0x0);
+	    	uint64_t ret = eth->RecieveDataSingle(0x00001000, 0x0);
 		if(ret!=404 && ret !=405 && ret!=406)
 		{
 			std::cout << cgreen << ">>>> SUCCESS" << cnormal << std::endl;
@@ -88,7 +88,7 @@ int main(int argc, char *argv[])
     {
 	Ethernet *eth = new Ethernet(ip,port);
 
-    	uint64_t ret = eth->ReceiveDataSingle(0x00001001, 0x0);
+    	uint64_t ret = eth->RecieveDataSingle(0x00001001, 0x0);
     	if(ret==404 || ret==405 || ret==406){return 0;}
     	printf("Data: 0x%016llx\n",ret);
         unsigned int acc_fw_year = (ret & 0xffff<<16)>>16;
