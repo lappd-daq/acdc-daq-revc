@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
         
         for(int bi=0; bi<8;bi++)
         {
-        	uint64_t retval = eth->RecieveDataSingle(0x2010 | (1<<bi), 0x1);usleep(100000);
+        	uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);usleep(100000);
         	printf("ACDC %i gave 0x%016llx\n",bi,retval);
 	    }
 	
@@ -151,9 +151,9 @@ int main(int argc, char *argv[])
                 if(ret_vec.size()>0)
                 {
                     printf("Word is 0x%016llx\n",ret_vec.at(0));
-                    if(ret_vec.size()>1)
+                    if(ret_vec.size()>10)
                     {
-                        printf("Word is 0x%016llx\n",ret_vec.at(1)); 
+                        for(int i=1; i<10; i++){printf("Word %i is 0x%016llx\n",i,ret_vec.at(i));} 
                     }    
                 }
                 
