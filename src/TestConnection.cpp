@@ -95,6 +95,15 @@ int main(int argc, char *argv[])
 	unsigned int acc_fw_month = (ret & 0xff<<8)>>8;
     	unsigned int acc_fw_day = (ret & 0xff);
     	std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
+    }else if(mode==3)
+    {
+        std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
+        Ethernet *eth_burst = new Ethernet(ip,port_burst);
+        eth_burst->SwitchToBurst();
+        eth_burst->SetBurstState(true);
+
+        vector<uint64_t> ret_vec = eth_burst->RecieveBurst(10,10,0);
+        std::cout<<"Got "<<ret_vec.size()<<" words"<<std::endl;
     }
     return 1;
 }
