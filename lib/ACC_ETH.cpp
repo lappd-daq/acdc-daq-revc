@@ -22,7 +22,7 @@ ACC_ETH::ACC_ETH(std::string ip, std::string port)
 {
     eth = new Ethernet(ip,port);
     std::cout << "Normal connected to: " << ip << ":" << port << std::endl;
-    std::string port_burst = std::to_string(std::stoi(port)+0).c_str();
+    std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
     eth_burst = new Ethernet(ip,port_burst);
     std::cout << "Burst connected to: " << ip << ":" << port_burst << std::endl;
     std::cout << "----------" << std::endl;
