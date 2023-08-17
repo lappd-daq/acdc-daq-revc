@@ -135,7 +135,7 @@ int ACC_ETH::SetTriggerSource(unsigned int boardmask, int triggersource)
 
         command_address = CML_ACC.ACDC_Command;
         command_value = CML_ACDC.Set_Triggermode | (boardmask<<24) | triggersource;
-        bool ret = eth->SendData(command_address,command_value,"w");
+        ret = eth->SendData(command_address,command_value,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to set trigger source on acdc!\n",command_address,command_value);}
     }
     return 0;
@@ -307,7 +307,7 @@ void ACC_ETH::VersionCheck()
     	{
     		uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);
     		printf("Board %i got 0x%016llx\n",retval);
-    		bool ret = eth->SendData(CML.Read_ACDC_Data_Buffer,bi);
+    		bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
     		
             vector<uint64_t> return_vector = eth_burst->RecieveBurst(32,10,0);
             for(auto k: return_vector){cout<<k<<endl;}
@@ -428,7 +428,7 @@ void ACC_ETH::WriteErrorLog(string errorMsg)
     auto now = std::chrono::system_clock::now();
     auto in_time_t = std::chrono::system_clock::to_time_t(now);
     std::stringstream ss;
-    ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
+    //ss << std::put_time(std::localtime(&in_time_t), "%m-%d-%Y %X");
     os_err << "------------------------------------------------------------" << endl;
     os_err << ss.str() << endl;
     os_err << errorMsg << endl;
