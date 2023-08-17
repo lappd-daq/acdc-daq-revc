@@ -147,8 +147,8 @@ int main(int argc, char *argv[])
 			eth->SendData(0x20,bi,"w");
 			vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,10,0);
 			std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
-        		if(ret_vec.size()>0){printf("Word is 0x%016llx\n",ret_vec.at(0));}
-        	}
+            if(ret_vec.size()>0){printf("Word is 0x%016llx\n",ret_vec.at(0));}
+        }
 	}
 		
         //delete eth;

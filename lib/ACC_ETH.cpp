@@ -306,23 +306,23 @@ void ACC_ETH::VersionCheck()
     		printf("Board %i got 0x%016llx\n",retval);
     		bool ret = eth->SendData(CML.Read_ACDC_Data_Buffer,bi);
     		
-		vector<uint64_t> return_vector = eth_burst->RecieveBurst(32,10,0);
-		for(auto k: return_vector){cout<<k<<endl;}
-		if(return_vector.size()==32)
-		{
-			if(return_vector.at(1)==0xbbbb)
-			{
-				std::cout << "Board " << bi << " got the firmware version: " << std::hex << return_vector.at(2) << std::dec;
-				std::cout << " from " << std::hex << return_vector.at(4) << std::dec << "/" << std::hex << return_vector.at(3) << std::dec << std::endl;
-			}else
-			{
-				std::cout << "Board " << bi << " got the wrong info frame" << std::endl;
-			}
-		}
-	}else
-	{
-		std::cout << "ACDC boards " << bi << " was not detected" << endl;
-	}
+            vector<uint64_t> return_vector = eth_burst->RecieveBurst(32,10,0);
+            for(auto k: return_vector){cout<<k<<endl;}
+            if(return_vector.size()==32)
+            {
+                if(return_vector.at(1)==0xbbbb)
+                {
+                    std::cout << "Board " << bi << " got the firmware version: " << std::hex << return_vector.at(2) << std::dec;
+                    std::cout << " from " << std::hex << return_vector.at(4) << std::dec << "/" << std::hex << return_vector.at(3) << std::dec << std::endl;
+                }else
+                {
+                    std::cout << "Board " << bi << " got the wrong info frame" << std::endl;
+                }
+		    }
+        }else
+        {
+            std::cout << "ACDC boards " << bi << " was not detected" << endl;
+        }
     }
 }
 
