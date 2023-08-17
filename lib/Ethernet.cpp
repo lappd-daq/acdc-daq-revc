@@ -238,7 +238,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
     
-    tv_ = {1, 250000};  // 0 seconds and 250000 useconds
+    tv_ = {0, 250000};  // 0 seconds and 250000 useconds
     int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
     if(retval > 0)
@@ -250,7 +250,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
                                 (struct sockaddr*)&their_addr,
                                 &addr_len)) == -1)
         {
-            //perror("recvfrom");
+            perror("recvfrom");
             return 406;
         }
 
@@ -285,7 +285,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     int numbytes;
     
     std::vector<uint64_t> data(numwords);
-    
+
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
 
@@ -316,26 +316,24 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 if(i+wordsRead < numwords)
                 {
                     memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + 8*i], 8);
-                }
-                else
+                }else
                 {
                     break;
                 }
             }
         
             wordsRead += (numbytes-2)/8;
-        }
-        else if(retval == 0)
+        }else if(retval == 0)
         {
             printf("Burst Read Timeout\n");
             return {405};
-        }
-        else
+        }else
         {
             perror("select()");
             return {404};
         }
     }
 
+    memset(buffer, 0, sizeof buffer);
     return data;
 }

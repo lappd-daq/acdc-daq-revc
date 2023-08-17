@@ -99,6 +99,7 @@ int main(int argc, char *argv[])
     {
         std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
         Ethernet *eth_burst = new Ethernet(ip,port_burst);
+        std::cout<<"Connected to "<<ip<<":"<<port_burst<<endl;
         eth_burst->SwitchToBurst();
         usleep(10000);
         eth_burst->SetBurstState(true);
@@ -106,6 +107,52 @@ int main(int argc, char *argv[])
         vector<uint64_t> ret_vec = eth_burst->RecieveBurst(1,10,0);
         std::cout<<"Got "<<ret_vec.size()<<" words"<<std::endl;
         if(ret_vec.size()==1){printf("Word is 0x%016llx\n",ret_vec.at(0));}
+    }else if(mode==4)
+    {
+    	Ethernet *eth = new Ethernet(ip,port);
+    	std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
+    	Ethernet *eth_burst = new Ethernet(ip,port_burst);
+    	eth->SendData(0x0,0x1,"w"); //Global reset
+    	usleep(1000000);
+    	eth->SendData(0x100,0xffff0000,"w");
+    	usleep(1000000);
+        eth->SendData(0x2,0xff,"w"); //Reset all buffers
+        usleep(100000);
+        for(int bi=0;bi<8;bi++){eth->SendData((0x30 | bi), 0x1, "w");usleep(100000);} //Set each channel to sw trigger
+        eth->SendData(0x100,0xffb00001,"w"); //Set all ACDCs to sw trigger
+        usleep(100000);
+        eth->SendData(0x2,0xff,"w"); //Reset all buffers
+        usleep(100000);
+        eth->SendData(0x100,0xffb50000); //Enable Transfer
+        usleep(100000);
+        eth->SendData(0x10,0x1,"w"); //Sw trigger
+        usleep(100000);
+        
+        eth_burst->SwitchToBurst();
+        usleep(10000);
+        eth_burst->SetBurstState(true);
+        
+        for(int bi=0; bi<8;bi++)
+        {
+        	uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
+        	printf("ACDC %i gave 0x%016llx\n",bi,retval);
+	}
+	
+	for(int bi=0;bi<8;bi++)
+	{	
+		uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
+		
+		if(retval!=0)
+		{
+			eth->SendData(0x20,bi,"w");
+			vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,10,0);
+			std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
+        		if(ret_vec.size()>0){printf("Word is 0x%016llx\n",ret_vec.at(0));}
+        	}
+	}
+		
+        //delete eth;
+        
     }
     return 1;
 }

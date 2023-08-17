@@ -22,7 +22,7 @@ ACC_ETH::ACC_ETH(std::string ip, std::string port)
 {
     eth = new Ethernet(ip,port);
     std::cout << "Normal connected to: " << ip << ":" << port << std::endl;
-    std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
+    std::string port_burst = std::to_string(std::stoi(port)+0).c_str();
     eth_burst = new Ethernet(ip,port_burst);
     std::cout << "Burst connected to: " << ip << ":" << port_burst << std::endl;
     std::cout << "----------" << std::endl;
@@ -285,16 +285,25 @@ void ACC_ETH::VersionCheck()
     eth->SendData(CML.ACDC_Command,0xFFB54000,"w");
     usleep(100000);
     eth->SendData(CML.RX_Buffer_Reset_Request,0xFF,"w");
-    usleep(1000);
+    usleep(100000);
     eth->SendData(CML.ACDC_Command,0xFFD00000,"w");
+
+    //Sets up the burst mode
+    eth_burst->SwitchToBurst();
+    usleep(100000);
+    eth_burst->SetBurstState(true);
 
     //Get ACDC Info
     for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
     {
     	if(acdcs_detected & (1<<bi))
     	{
-		vector<uint64_t> return_vector = eth->RecieveDataVector(CML.Read_ACDC_Data_Buffer,(0x1<<bi),32, Ethernet::NO_ADDR_INC);
-		//for(auto k: return_vector){cout<<k<<endl;}
+    		uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);
+    		printf("Board %i got 0x%016llx\n",retval);
+    		bool ret = eth->SendData(CML.Read_ACDC_Data_Buffer,bi);
+    		
+		vector<uint64_t> return_vector = eth_burst->RecieveBurst(32,10,0);
+		for(auto k: return_vector){cout<<k<<endl;}
 		if(return_vector.size()==32)
 		{
 			if(return_vector.at(1)==0xbbbb)
