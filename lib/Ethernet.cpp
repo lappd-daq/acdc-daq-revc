@@ -283,7 +283,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int timeout_us)
 {
     int numbytes;
-    int functionreturn = {0xeeeebb01};
+    uint64_t functionreturn = 0xeeeebb01;
     
     std::vector<uint64_t> data(numwords);
 
@@ -308,7 +308,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                                     &addr_len)) == -1)
             {
                 perror("recvfrom");
-                functionreturn = {0xeeeebb02};
+                functionreturn = 0xeeeebb02;
                 break;
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
@@ -328,12 +328,12 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         }else if(retval == 0)
         {
             printf("Burst Read Timeout\n");
-            functionreturn = {0xeeeebb03};
+            functionreturn = 0xeeeebb03;
             break;
         }else
         {
             perror("select()");
-            functionreturn  = {0xeeeebb04};
+            functionreturn = 0xeeeebb04;
             break;
         }
     }
@@ -342,7 +342,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
 
     if(data.size()==0)
     {
-        data = functionreturn;
+        data.push_back(functionreturn);
     }
 
     return data;
