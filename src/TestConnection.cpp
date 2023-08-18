@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
         std::cout << "ACC got the firmware version: " << std::hex << acc_fw_version << std::dec;
         std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
         
-        uint64_t acdcs_detected = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);    
+        uint64_t acdcs_detected = eth->RecieveDataSingle(0x00001003,0x0);    
 
         eth->SendData(0x00000100,0xFFB54000,"w");
         usleep(100000);
