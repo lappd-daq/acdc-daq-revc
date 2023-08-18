@@ -158,6 +158,69 @@ int main(int argc, char *argv[])
 		
         //delete eth;
         
+    }else if(mode==5)
+    {
+     	Ethernet *eth = new Ethernet(ip,port);
+    	std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
+    	Ethernet *eth_burst = new Ethernet(ip,port_burst);       
+
+        eth->SendData(0x0,0x1,"w"); //Global reset
+    	usleep(1000000);
+    	eth->SendData(0x100,0xffff0000,"w");
+    	usleep(1000000);
+        eth->SendData(0x2,0xff,"w"); //Reset all buffers
+        usleep(100000);
+
+        //Get ACC Info
+        uint64_t acc_fw_version = eth->RecieveDataSingle(0x00001000,0x1);
+        //printf("V: 0x%016llx\n",acc_fw_version);
+        
+        uint64_t acc_fw_date = eth->RecieveDataSingle(0x00001001,0x1);
+        //printf("D: 0x%016llx\n",acc_fw_date);
+    
+        unsigned int acc_fw_year = (acc_fw_date & 0xffff<<16)>>16;
+        unsigned int acc_fw_month = (acc_fw_date & 0xff<<8)>>8;
+        unsigned int acc_fw_day = (acc_fw_date & 0xff);
+
+        std::cout << "ACC got the firmware version: " << std::hex << acc_fw_version << std::dec;
+        std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
+        
+        uint64_t acdcs_detected = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);    
+
+        eth->SendData(0x00000100,0xFFB54000,"w");
+        usleep(100000);
+        eth->SendData(0x2,0xff,"w");
+        usleep(100000);
+        eth->SendData(0x00000100,0xFFD00000,"w");
+
+        //Sets up the burst mode
+        eth_burst->SwitchToBurst();
+        usleep(100000);
+        eth_burst->SetBurstState(true);
+
+        for(int bi=0; bi<8;bi++)
+        {
+        	uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);usleep(100000);
+        	printf("ACDC %i gave 0x%016llx\n",bi,retval);
+	    }
+        std::cout<<"-----------------"<<std::endl;
+	
+        for(int bi=0;bi<8;bi++)
+        {	
+            uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
+            
+            if(retval!=0)
+            {
+                eth->SendData(0x20,bi,"w");
+                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(8,1,0);
+                std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
+		        for(int j=0; j<8; j++){printf("Word %i is 0x%016llx\n",j,ret_vec.at(j));}
+                std::string name = "./ACDCFRAME" + to_string(bi) + ".txt";
+                ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
+                for(int i=0;i<ret_vec.size();i++){file<<i<<" "<<std::hex<<ret_vec.at(i)<<std::dec<<endl;}
+                file.close();
+            }
+        }
     }
     return 1;
 }
