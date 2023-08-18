@@ -293,6 +293,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
 
     int wordsRead = 0;
     buffer[0] = 0;
+    int bytesize = 8;
     
     while(wordsRead < numwords)
     {
@@ -314,18 +315,18 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
-            for (int i = 0; i < (numbytes-2)/2; ++i)
+            for (int i = 0; i < (numbytes-2)/bytesize; ++i)
             {
                 if(i+wordsRead < numwords)
                 {
-                    memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + 2*i], 2);
+                    memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + bytesize*i], bytesize);
                 }else
                 {
                     break;
                 }
             }
         
-            wordsRead += (numbytes-2)/2;
+            wordsRead += (numbytes-2)/bytesize;
         }else if(retval == 0)
         {
             printf("Burst Read Timeout\n");
@@ -348,3 +349,4 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
 
     return data;
 }
+

@@ -309,9 +309,9 @@ void ACC_ETH::VersionCheck()
     		printf("Board %i got 0x%016llx\n",retval);
     		bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
     		
-            vector<uint64_t> return_vector = eth_burst->RecieveBurst(32,10,0);
+            vector<uint64_t> return_vector = eth_burst->RecieveBurst(8,1,0);
             for(auto k: return_vector){cout<<k<<endl;}
-            if(return_vector.size()==32)
+            if(return_vector.size()==8)
             {
                 if(return_vector.at(1)==0xbbbb)
                 {
