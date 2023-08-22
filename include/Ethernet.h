@@ -36,7 +36,7 @@ class Ethernet
     	int packetID_;
 
     public:
-        Ethernet(std::string ipaddr, std::string port);
+        Ethernet(std::string ipaddr, std::string port, int verbose=0);
         ~Ethernet();
 
         enum
@@ -46,7 +46,7 @@ class Ethernet
             NO_ADDR_INC   = 0x08
         };
 
-        bool OpenInterface(std::string ipaddr, std::string port, int verbose=0);
+        bool OpenInterface(std::string ipaddr, std::string port);
         void CloseInterface();
 
         void SwitchToBurst();
