@@ -46,7 +46,7 @@ public:
 	//------------------------------------------------------------------------------------//
 	//--------------------------------Local return functions------------------------------//
 	vector<unsigned short> ReturnRawData(){return out_raw_data;}
-	vector<unsigned short> ReturnACCIF(){return out_acc_if;} 
+	vector<uint64_t> ReturnACCIF(){return out_acc_if;} 
     vector<int> ReturnBoardIndices(){return out_boardid;}
 
 	//------------------------------------------------------------------------------------//

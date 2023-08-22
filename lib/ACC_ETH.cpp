@@ -86,7 +86,6 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
     switch(triggersource)
 	{ 	
 		case 0: //OFF
-			errorcode.push_back(0xAC17EE02);	
 			break;
 		case 1: //Software trigger
 			break;
@@ -186,7 +185,6 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
 		case 9: 
 			break;
 		default: // ERROR case
-			if(usbcheck==false){errorcode.push_back(0xAC17EE21);}	
 			break;
 		selfsetup:
  			command_address = CML_ACC.ACDC_Command;
@@ -205,7 +203,7 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
                                                 };
 			for(int i=0; i<(int)SELF_psec_chip_mask.size(); i++)
 			{		
-                printf("For Chip %i with command 0x%08x tha mask is 0x%08x\n",i,CommandMask[i],SELF_psec_channel_mask[i])
+                printf("For Chip %i with command 0x%08x tha mask is 0x%08x\n",i,CommandMask[i],SELF_psec_channel_mask[i]);
 				command_value = (CommandMask[i] | (boardmask << 24)) | SELF_psec_channel_mask[i]; 
                 ret = eth->SendData(command_address,command_value,"w");
                 if(!ret){printf("Could not send command 0x%08llX with value %i to set !\n",command_address,command_value);}
@@ -417,7 +415,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         int strip = 4;
         if(acdc_buffer.size()>strip)
         {
-            acdc_buffer.erase(numbers.begin(), numbers.begin() + strip);
+            acdc_buffer.erase(acdc_buffer.begin(), acdc_buffer.begin() + strip);
         }else
         {
             std::cout << "ACDC buffer is too small afet read" <<  std::endl;
@@ -520,7 +518,7 @@ void ACC_ETH::VersionCheck()
                 {
                     std::cout << "Size matches but redback vector does not" << std::endl;
                 }
-            else
+            }else
             {
                 std::cout << "The ACDC ID buffer has not 32 words but " << retval << std::endl;
             }
