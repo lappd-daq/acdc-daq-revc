@@ -599,7 +599,7 @@ bool ACC_ETH::SetPedestals(unsigned int boardmask, unsigned int chipmask, unsign
 {
     command_address = CML_ACC.ACDC_Command;
 	command_value = (CML_ACDC.Set_Pedestal_Offset | (boardmask << 24)) | (chipmask << 12) | adc;
-    ret = eth->SendData(command_address,command_value,"w");
+    bool ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to set pedestal!\n",command_address,command_value);}
 	return true;
 }
