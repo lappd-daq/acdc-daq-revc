@@ -27,6 +27,7 @@ using namespace std;
 #define NUM_CH 30 //maximum number of channels for one ACDC board
 #define MAX_NUM_BOARDS 8 // maxiumum number of ACDC boards connectable to one ACC 
 #define ACCFRAME 32
+#define ACDCFRAME 32 
 #define PPSFRAME 16
 #define PSECFRAME 7795
 
@@ -44,9 +45,9 @@ public:
 
 	//------------------------------------------------------------------------------------//
 	//--------------------------------Local return functions------------------------------//
-	vector<unsigned short> ReturnRawData(){return raw_data;}
-	vector<unsigned short> ReturnACCIF(){return acc_if;} 
-    vector<int> ReturnBoardIndices(){return boardid;}
+	vector<unsigned short> ReturnRawData(){return out_raw_data;}
+	vector<unsigned short> ReturnACCIF(){return out_acc_if;} 
+    vector<int> ReturnBoardIndices(){return out_boardid;}
 
 	//------------------------------------------------------------------------------------//
 	//-------------------------Local set functions for board setup------------------------//
@@ -92,7 +93,7 @@ public:
     //ID 16
     void WriteErrorLog(string errorMsg);
     //ID17
-    void ClearData(){raw_data.clear(); boardid.clear(); acc_if.clear();}
+    void ClearData(){out_raw_data.clear(); out_boardid.clear(); out_acc_if.clear();}
 
 private:
 	//------------------------------------------------------------------------------------//
@@ -120,10 +121,10 @@ private:
 	vector<int> AcdcIndices; //number relative to ACC index (RJ45 port) corresponds to the connected ACDC boards
 	vector<unsigned int> SELF_psec_channel_mask; //var: PSEC channels active for self trigger
 	vector<int> SELF_psec_chip_mask; //var: PSEC chips actove for self trigger
-	vector<unsigned short> raw_data; //var: raw data vector appended with (number of boards)*7795
-	vector<unsigned short> acc_if; //var: a vector containing different information about the ACC and ACDC
-    vector<int> boardid;
-    vector<unsigned short> LastACCBuffer;
+	vector<unsigned short> out_raw_data; //var: raw data vector appended with (number of boards)*7795
+	vector<uint64_t> out_acc_if; //var: a vector containing different information about the ACC and ACDC
+    vector<int> out_boardid;
+    vector<uint64_t> LastACCBuffer;
 
     // >>>> ID 0: Sigint handling
 	static void got_signal(int);

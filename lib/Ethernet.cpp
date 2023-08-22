@@ -1,6 +1,6 @@
 #include "Ethernet.h"
 
-Ethernet::Ethernet(std::string ipaddr, std::string port) : m_socket(-1), servinfo(NULL)
+Ethernet::Ethernet(std::string ipaddr, std::string port, int verbose) : m_socket(-1), servinfo(NULL)
 {
     bool ret = OpenInterface(ipaddr, port);
     if(ret==false)
@@ -9,15 +9,20 @@ Ethernet::Ethernet(std::string ipaddr, std::string port) : m_socket(-1), servinf
         CloseInterface();
         exit(EXIT_FAILURE);
     }else
-    {
-        //std::cout << "Connected to the ACC" << std::endl;
+    {   
+        if(verbose>0)
+        {
+            std::cout << "Connected to the ACC with " << ipaddr << ":" << port << std::endl;
+        }
     }
 }
+
 
 Ethernet::~Ethernet()
 {
     CloseInterface();
 }
+
 
 bool Ethernet::OpenInterface(std::string ipaddr, std::string port)
 {
@@ -56,6 +61,7 @@ bool Ethernet::OpenInterface(std::string ipaddr, std::string port)
     return true;
 }
 
+
 void Ethernet::CloseInterface()
 {
     if(m_socket>0) 
@@ -66,6 +72,7 @@ void Ethernet::CloseInterface()
         std::cout << "Disconnected from ACC" << std::endl;
     }
 }
+
 
 void Ethernet::SwitchToBurst()
 {
@@ -81,12 +88,13 @@ void Ethernet::SwitchToBurst()
     }
 }
 
+
 void Ethernet::SetBurstState(bool state)
 {
     int numbytes;
         
-    buffer[0] = 1;          
-    buffer[1] = 1;                
+    buffer[0] = 1; //Send without back     
+    buffer[1] = 1; //Number of words        
     uint64_t addr = 0x0000000100000009;  // data enable
     memcpy((void*)&buffer[RX_ADDR_OFFSET_], (void*)&addr, 8);
     memset((void*)&buffer[RX_DATA_OFFSET_], state?1:0, 1);
@@ -99,6 +107,7 @@ void Ethernet::SetBurstState(bool state)
         exit(1);
     }
 }
+
 
 bool Ethernet::SendData(uint64_t addr, uint64_t value, std::string read_or_write) 
 {
@@ -121,7 +130,7 @@ bool Ethernet::SendData(uint64_t addr, uint64_t value, std::string read_or_write
     }
 
 
-    buffer[0] = rw;
+    buffer[0] = rw; //0 is write with readback, 1 is just write
     buffer[1] = 1;
 
     //Make command from in
@@ -134,90 +143,12 @@ bool Ethernet::SendData(uint64_t addr, uint64_t value, std::string read_or_write
     if(returnval==-1)
     {
         std::cout << "Error data not send, tried to send " << buffer << std::endl; 
-    }else
-    {
-        //printf("Data was sucessfully sent, sent was 0x%16llx to 0x%16llx with %i bytes\n",value,addr,returnval);
     }
 
     memset(buffer, 0, sizeof buffer);
     return true;
 }
 
-std::vector<uint64_t> Ethernet::RecieveDataVector(uint32_t addr, uint64_t value, int size, uint8_t flags) 
-{
-    if(m_socket<=0) 
-    {
-        std::cerr << "Socket not open." << std::endl;
-        return {};
-    }
-
-    buffer[0] = (flags & NO_ADDR_INC)?0x08:0x00;
-    buffer[1] = size;
-
-    //Make command from in
-    memcpy(&buffer[RX_ADDR_OFFSET_], &addr, 8);
-    memcpy(&buffer[RX_DATA_OFFSET_], &value, 8);
-
-    int packet_size = RX_DATA_OFFSET_ + 8;
-
-    int returnval = sendto(m_socket,buffer,packet_size,0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen);
-    if(returnval==-1)
-    {
-        std::cout << "Error data not send, tried to send " << buffer << std::endl; 
-    }
-
-    memset(buffer, 0, sizeof buffer);
-
-    if(size==-1)
-    {
-        size = 16000;
-    }
-
-    struct sockaddr_storage their_addr;
-    socklen_t addr_len = sizeof(their_addr);
-    
-    tv_ = {0, 250000};  // 0 seconds and 250000 useconds
-    int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
-
-while(true){
-    int rec_bytes=-1;
-	if(retval > 0)
-	{
-	    if((rec_bytes = recvfrom(m_socket,
-		                    buffer,
-		                    MAXBUFLEN_ - 1,
-		                    0,
-		                    (struct sockaddr*)&their_addr,
-		                    &addr_len)) == -1)
-	    {
-		perror("recvfrom");
-		return {406};
-	    }
-	}
-	else if(retval == 0)
-	{
-	    printf("Read Timeout\n");
-	    return {405};
-	}
-	else
-	{
-	    perror("select()");
-	    return {404};
-	}
-	
-
-    std::vector<uint64_t> data((rec_bytes-2)/8);
-    memcpy((void*)data.data(), (void*)&buffer[TX_DATA_OFFSET_], rec_bytes - 2);
-
-    cout<<"Data size: "<<data.size()<<" words"<<endl;
-    memset(buffer, 0, sizeof buffer);
-    if(data.size()==size){
-    return data;
-    }
-}
-	vector<uint64_t> data;
-    return data;
-}
 
 uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value) 
 {
@@ -243,30 +174,21 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 
     if(retval > 0)
     {
-        if((rec_bytes = recvfrom(m_socket,
-                                buffer,
-                                MAXBUFLEN_ - 1,
-                                0,
-                                (struct sockaddr*)&their_addr,
-                                &addr_len)) == -1)
+        if((rec_bytes = recvfrom(m_socket,buffer,MAXBUFLEN_ - 1,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
         {
             perror("recvfrom");
             return 0xeeeeaa03;
         }
-
-    }
-    else if(retval == 0)
+    }else if(retval == 0)
     {
         printf("Read Timeout\n");
         return 0xeeeeaa04;
-    }
-    else
+    }else
     {
         perror("select()");
         return 0xeeeeaa05;
     }
 
-    
     uint64_t data;
     if(rec_bytes<0)
     {
@@ -276,6 +198,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
         memcpy((void*)&data, (void*)&buffer[TX_DATA_OFFSET_], 8);
     }   
     
+    memset(buffer, 0, sizeof buffer);
     return data;
 }
 
@@ -302,12 +225,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
         if(retval > 0)
         {
-            if((numbytes = recvfrom(m_socket,
-                                    buffer,
-                                    MAXBUFLEN_ - 1,
-                                    0,
-                                    (struct sockaddr*)&their_addr,
-                                    &addr_len)) == -1)
+            if((numbytes = recvfrom(m_socket,buffer,MAXBUFLEN_ - 1,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
             {
                 perror("recvfrom");
                 functionreturn = 0xeeeebb02;
@@ -315,17 +233,16 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
-            for (int i = 0; i < (numbytes-2)/bytesize; ++i)
+            for(int i = 0; i < (numbytes-2)/bytesize; ++i)
             {
                 if(i+wordsRead < numwords)
                 {
-                    memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + bytesize*i], bytesize);
+                    memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + bytesize*i], bytesize);                   
                 }else
                 {
                     break;
                 }
             }
-        
             wordsRead += (numbytes-2)/bytesize;
         }else if(retval == 0)
         {
@@ -340,13 +257,82 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         }
     }
 
-    memset(buffer, 0, sizeof buffer);
-
     if(data.size()==0)
     {
         data.push_back(functionreturn);
     }
 
+    memset(buffer, 0, sizeof buffer);
+
     return data;
 }
 
+
+std::vector<uint64_t> Ethernet::RecieveDataVector(uint32_t addr, uint64_t value, int size, uint8_t flags) 
+{
+    if(m_socket<=0) 
+    {
+        std::cerr << "Socket not open." << std::endl;
+        return {};
+    }
+
+    buffer[0] = (flags & NO_ADDR_INC)?0x08:0x00;
+    buffer[1] = size;
+
+    //Make command from in
+    memcpy(&buffer[RX_ADDR_OFFSET_], &addr, 8);
+    memcpy(&buffer[RX_DATA_OFFSET_], &value, 8);
+
+    int packet_size = RX_DATA_OFFSET_ + 8;
+
+    int returnval = sendto(m_socket,buffer,packet_size,0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen);
+    if(returnval==-1)
+    {
+        std::cout << "Error data not send, tried to send " << buffer << std::endl; 
+    }
+
+    if(size==-1)
+    {
+        size = 16000;
+    }
+
+    struct sockaddr_storage their_addr;
+    socklen_t addr_len = sizeof(their_addr);
+    
+    tv_ = {0, 250000};  // 0 seconds and 250000 useconds
+    int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
+
+    while(true){
+        int rec_bytes=-1;
+        if(retval > 0)
+        {
+            if((rec_bytes = recvfrom(m_socket,buffer,MAXBUFLEN_ - 1,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
+            {
+                perror("recvfrom");
+                return {406};
+            }
+	    }else if(retval == 0)
+        {
+            printf("Read Timeout\n");
+            return {405};
+        }else
+        {
+            perror("select()");
+            return {404};
+        }
+
+        std::vector<uint64_t> data((rec_bytes-2)/8);
+        memcpy((void*)data.data(), (void*)&buffer[TX_DATA_OFFSET_], rec_bytes - 2);
+
+        cout<<"Data size: "<<data.size()<<" words"<<endl;
+        memset(buffer, 0, sizeof buffer);
+        if(data.size()==size)
+        {
+            return data;
+        }
+    }
+
+	vector<uint64_t> data;
+
+    return data;
+}

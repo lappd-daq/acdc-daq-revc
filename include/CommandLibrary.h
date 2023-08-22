@@ -35,6 +35,7 @@ class CommandLibrary_ACC
         uint64_t Firmware_Date_Readback = 0x00001001;
         uint64_t PLL_Lock_Readback = 0x00001002;
         uint64_t ACDC_Board_Detect = 0x00001003;
+        uint64_t External_CLock_Lock_Readback = 0x00001004;
         uint64_t Data_Frame_Receive = 0x00002000;
         uint64_t RX_Buffer_Empty_Readback = 0x00002001;
         uint64_t RX_Buffer_Size_Readback = 0x00002010;
