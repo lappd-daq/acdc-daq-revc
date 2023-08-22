@@ -91,7 +91,7 @@ public:
     //ID 12: Switch PPS input to SMA
     void SetSMA_Debug(unsigned int PPS, unsigned int Beamgate);
     //ID 13: Set Pedestal values
-    void SetPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc);
+    bool SetPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc);
     //ID 16
     void WriteErrorLog(string errorMsg);
     //ID17
