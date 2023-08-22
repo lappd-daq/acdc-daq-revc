@@ -191,7 +191,7 @@ int ACC_ETH::InitializeForDataReadout(unsigned int boardmask, int triggersource)
 
 			if(SELF_psec_chip_mask.size()!=SELF_psec_channel_mask.size())
 			{
-				errorcode.push_back(0xAC17EE22);	
+				std::cout << "Selftrigger mask mismatch" << std::endl;
 			}
 			
             std::vector<uint64_t> CommandMask = {
