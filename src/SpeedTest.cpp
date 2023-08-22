@@ -224,7 +224,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
         if(read_back==0)
         {
             vector<unsigned short> data = acc_eth->ReturnRawData();
-            vector<unsigned short> accif = acc_eth->ReturnACCIF();
+            vector<uint64_t> accif = acc_eth->ReturnACCIF();
             vector<int> bi = acc_eth->ReturnBoardIndices();
             acc_eth->ClearData();
             events++;

@@ -88,8 +88,10 @@ public:
 	void ResetACDC(); //resets the acdc boards
     //ID 11
 	void ResetACC(); //resets the acdc boards 
-    // >>>> ID 12: Switch PPS input to SMA
+    //ID 12: Switch PPS input to SMA
     void SetSMA_Debug(unsigned int PPS, unsigned int Beamgate);
+    //ID 13: Set Pedestal values
+    void SetPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc);
     //ID 16
     void WriteErrorLog(string errorMsg);
     //ID17

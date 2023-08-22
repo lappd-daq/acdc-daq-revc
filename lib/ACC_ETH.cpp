@@ -593,6 +593,17 @@ void ACC_ETH::SetSMA_Debug(unsigned int PPS, unsigned int Beamgate)
 	usleep(1000000);
 }
 
+
+// >>>> ID 13: Pedestal setting procedure.*/
+bool ACC_ETH::SetPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc)
+{
+    command_address = CML_ACC.ACDC_Command;
+	command_value = (CML_ACDC.Set_Pedestal_Offset | (boardmask << 24)) | (chipmask << 12) | adc;
+    ret = eth->SendData(command_address,command_value,"w");
+    if(!ret){printf("Could not send command 0x%08llX with value %i to set pedestal!\n",command_address,command_value);}
+	return true;
+}
+
 // >>>> ID 16: Write function for the error log
 void ACC_ETH::WriteErrorLog(string errorMsg)
 {
