@@ -188,6 +188,8 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
             perror("recvfrom");
             return 0xeeeeaa03;
         }
+        if(packetID_ >= 0 && (packetID_ + 1)%256 != buff_[1]) printf("Missing packet? We jumped from packet id %d to %d\n", packetID_, buff_[1]);
+        packetID_ = buff_[1];
     }else if(retval == 0)
     {
         printf("Read Timeout\n");
@@ -199,14 +201,8 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
     }
 
     uint64_t data;
-    if(rec_bytes<0)
-    {
-        std::cout << "Could not receive data! Got " << rec_bytes << " bytes" << std::endl;
-    }else
-    {
-        memcpy((void*)&data, (void*)&buffer[TX_DATA_OFFSET_], 8);
-    }   
-    
+    memcpy((void*)&data, (void*)&buffer[TX_DATA_OFFSET_], 8);
+  
     memset(buffer, 0, sizeof buffer);
     return data;
 }
