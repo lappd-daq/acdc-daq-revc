@@ -408,9 +408,10 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	    vector<uint64_t> acdc_buffer;
 
         //Here should be the read...
-        command_address = CML_ACC.Read_ACDC_Data_Buffer;
-        command_value = bi;
-        acdc_buffer = eth->RecieveDataVector(command_address,command_value,ReadoutSize[bi]);
+        ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
+        if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
+
+        acdc_buffer = eth_burst->RecieveBurst(ReadoutSize[bi],1,0);
 
 		//Handles buffers =/= 7795 words
 		if((int)acdc_buffer.size() != ReadoutSize[bi])
