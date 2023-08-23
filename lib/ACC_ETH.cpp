@@ -479,6 +479,7 @@ void ACC_ETH::VersionCheck()
     eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xff,"w");
     usleep(100000);
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.ID_Frame_Request | (0xff<<24),"w");
+    usleep(100000);
 
     uint64_t buffer = eth->RecieveDataSingle(0x2019, 0x0);
     printf("Buffer got 0x%016llx\n",buffer);
