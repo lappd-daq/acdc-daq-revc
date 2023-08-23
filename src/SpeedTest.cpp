@@ -221,11 +221,13 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     {
         if(Settings["Triggermode"]=="1")
         {
+            std::cout<<"Software trigger" <<std::endl;
             acc_eth->GenerateSoftwareTrigger();
         }
         read_back = acc_eth->ListenForAcdcData(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
         if(read_back==0)
         {
+            std::cout<<"Got good data "<<std::endl;
             vector<unsigned short> data = acc_eth->ReturnRawData();
             vector<uint64_t> accif = acc_eth->ReturnACCIF();
             vector<int> bi = acc_eth->ReturnBoardIndices();

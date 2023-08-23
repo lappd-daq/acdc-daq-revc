@@ -289,7 +289,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	sigaction(SIGINT,&sa,NULL);
 
     //Enalble Data Transfer
-    bool ret = eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Enable_Transfer,"w");
+    bool ret = eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Enable_Transfer | (0xff<<24) ,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}
   	
 	//duration variables
