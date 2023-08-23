@@ -454,9 +454,9 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 void ACC_ETH::VersionCheck()
 {
     //Sets up the burst mode
-    // eth_burst->SwitchToBurst();
-    // usleep(100);
-    // eth_burst->SetBurstState(true);
+    eth_burst->SwitchToBurst();
+    usleep(100);
+    eth_burst->SetBurstState(true);
 
     //Get ACC Info
     uint64_t acc_fw_version = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x1);
