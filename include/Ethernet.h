@@ -54,7 +54,7 @@ class Ethernet
 
         bool SendData(uint64_t addr, uint64_t value, std::string read_or_write="w");
 
-        uint64_t RecieveDataSingle(uint64_t addr, uint64_t value);
+        uint64_t RecieveDataSingle(uint64_t addr, uint64_t value=0x0);
         std::vector<uint64_t> RecieveBurst(int numwords, int timeout_sec = 65, int timeout_us = 0);
 
         std::vector<uint64_t> RecieveDataVector(uint32_t addr, uint64_t value, int size=-1, uint8_t flags = 0);

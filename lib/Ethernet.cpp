@@ -165,9 +165,8 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 
     //Make command from in
     memcpy(&buffer[RX_ADDR_OFFSET_], &addr, 8);
-    memcpy(&buffer[RX_DATA_OFFSET_], &value, 8);
 
-    int packet_size = RX_DATA_OFFSET_ + 8;
+    int packet_size = RX_DATA_OFFSET_;
 
     int returnval = sendto(m_socket,buffer,packet_size,0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen);
     if(returnval==-1)
