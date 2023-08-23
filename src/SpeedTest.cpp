@@ -19,12 +19,12 @@ using namespace std;
 ACC_ETH* acc_eth = nullptr;
 ACC_USB* acc_usb = nullptr;
 
-std::map<std::string,std::string> LoadSettings()
+std::map<std::string,std::string> LoadSettings(std::string file)
 {
     std::map<std::string,std::string> Settings;
 
     std::string line;
-    std::fstream infile("./ACC_Settings", std::ios_base::in);
+    std::fstream infile(file.c_str(), std::ios_base::in);
     if(!infile.is_open())
     {
         std::cout<<"File was not found! Please check for file ACC_Settings!"<<std::endl;
@@ -62,7 +62,7 @@ void PrintSettings(std::map<std::string,std::string> Settings)
     printf("ACDC boardmask: 0x%02X\n",std::stoul(Settings["ACDC_mask"],nullptr,10));
     printf("Calibration Mode: %i\n",std::stoi(Settings["Calibration_Mode"]));
     printf("SMA_PPS: %u\n",std::stoi(Settings["SMA_PPS"]));
-    printf("SMA_Beamgate: %ui\n",std::stoi(Settings["SMA_Beamgate"]));
+    printf("SMA_Beamgate: %u\n",std::stoi(Settings["SMA_Beamgate"]));
     std::cout << "------------------Trigger settings------------------" << std::endl;
     printf("Triggermode: %i\n",std::stoi(Settings["Triggermode"]));
     printf("ACC trigger Sign: %i\n", std::stoi(Settings["ACC_Sign"]));
@@ -207,6 +207,9 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     if(retval!=0)
     {
         std::cout << "Setup went wrong!" << std::endl;
+    }else
+    {
+        std::cout << "Setup went well!" << std::endl;
     }
 
     int events = 0;
@@ -251,8 +254,14 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
 int main(int argc, char *argv[])
 {
     //Load All ACC Settings
-    std::map<std::string,std::string> Settings = LoadSettings();
+    std::map<std::string,std::string> Settings = LoadSettings("./ACC_Settings");
     PrintSettings(Settings);
+
+    std::map<std::string,std::string> Settings_Connection = LoadFile();
+
+    std::string ip = Settings_Connection["IP"];
+    std::string port = Settings_Connection["Port"];
+
     std::string choice_yn;
     while(true)
     {
@@ -280,7 +289,7 @@ int main(int argc, char *argv[])
         acc_usb = new ACC_USB();
     }else if(strcmp(argv[1], "ETH") == 0)
     {
-        acc_eth = new ACC_ETH();
+        acc_eth = new ACC_ETH(ip,port);
     }else
     {
         std::cout << "Please enter a valid connection option" << std::endl;

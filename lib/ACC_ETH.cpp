@@ -487,7 +487,7 @@ void ACC_ETH::VersionCheck()
     	if(acdcs_detected & (1<<bi))
     	{
     		uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x0);
-    		printf("Board %i got 0x%016llx\n",bi,retval);
+    		//printf("Board %i got 0x%016llx\n",bi,retval);
 
             if(retval==32)
             {
