@@ -356,7 +356,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
             if(datadetect & (1<<k))
             {
                 //Data is seen
-                if((allbuffers & (0xffff << k*4)) == PSECFRAME)
+                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME)
                 {
                     //Data matches
                     BoardsReadyForRead.push_back(k);
@@ -368,13 +368,13 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     std::stringstream stream;
                     stream << "0x" << std::hex << std::uppercase << allbuffers;
                     std::string HexString = stream.str();
-                    std::string err_msg = "Seen data  bit but there was no matching buffer: " + HexString;
+                    std::string err_msg = "Seen data bit but there was no matching buffer: " + HexString;
                     WriteErrorLog(err_msg);
                 }
             }else
             {
                 //Else is seen
-                if((allbuffers & (0xffff << k*4)) == PPSFRAME)
+                if(((allbuffers>>k*16) & 0xffff) == PPSFRAME)
                 {
                     //PPS matches
                     BoardsReadyForRead.push_back(k);
