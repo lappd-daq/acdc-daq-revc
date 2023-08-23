@@ -145,7 +145,7 @@ bool Ethernet::SendData(uint64_t addr, uint64_t value, std::string read_or_write
         std::cout << "Error data not send, tried to send " << buffer << std::endl; 
     }
 
-    //memset(buffer, 0, sizeof buffer);
+    memset(buffer, 0, sizeof buffer);
     return true;
 }
 
@@ -169,7 +169,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
     
-    tv_ = {0, 500000};  // 0 seconds and 250000 useconds
+    tv_ = {5, 500000};  // 0 seconds and 250000 useconds
     int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
     if(retval > 0)
