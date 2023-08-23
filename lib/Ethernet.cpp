@@ -244,9 +244,9 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                     for (int j = 0; j < 4; ++j)
                     {
                         uint16_t block = (originalValue >> (16 * j)) & 0xFFFF;
-                        reversedValue |= (static_cast<uint64_t>(block) << (48 - j * 16));
+                        reversedValue |= (static_cast<uint64_t>(block) << (j * 16));
                     }
-                    data[i + wordsRead] = reversedValue;            
+                    data[numwords - 1 - (i + wordsRead)] = reversedValue;
                 }else
                 {
                     break;
