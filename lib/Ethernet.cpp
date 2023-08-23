@@ -209,6 +209,8 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     uint64_t functionreturn = 0xeeeebb01;
     bool firstread = true;
     
+    numwords = numwords + 4;
+
     std::vector<uint64_t> data(numwords);
 
     struct sockaddr_storage their_addr;
@@ -217,8 +219,6 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     int wordsRead = 0;
     buffer[0] = 0;
     int bytesize = 2;
-
-    numwords = numwords + 4;
     
     while(wordsRead < numwords)
     {
