@@ -63,32 +63,32 @@ is_package_installed() {
 }
 
 # Install libusb-1.0 if not already installed
-rpm -q "gcc-c++" >/dev/null 2>&1
-if [ $? -eq 0 ]; then
-    echo "g++ is not installed. Installing..."
-    sudo yum install gcc-c++
-    echo "g++ has been installed."
-else
-    echo "g++ is already installed."
-fi
-rpm -q "cmake3" >/dev/null 2>&1
-if [ $? -eq 0 ]; then
-    echo "cmake is not installed. Installing..."
-    sudo yum install cmake3
-    echo "cmake has been installed."
-else
-    echo "cmake is already installed."
-fi
-rpm -q "" >/dev/null 2>&1
-if [ $? -eq 0 ]; then
-    echo "libusb-1.0 is not installed. Installing..."
-    sudo yum install libusbx-devel
-    sudo yum install libusb-devel
-    echo "libusb-1.0 has been installed."
-else
-    echo "libusb-1.0 is already installed."
-fi
-echo ""
+# rpm -q "gcc-c++" >/dev/null 2>&1
+# if [ $? -eq 0 ]; then
+#     echo "g++ is not installed. Installing..."
+#     sudo yum install gcc-c++
+#     echo "g++ has been installed."
+# else
+#     echo "g++ is already installed."
+# fi
+# rpm -q "cmake3" >/dev/null 2>&1
+# if [ $? -eq 0 ]; then
+#     echo "cmake is not installed. Installing..."
+#     sudo yum install cmake3
+#     echo "cmake has been installed."
+# else
+#     echo "cmake is already installed."
+# fi
+# rpm -q "" >/dev/null 2>&1
+# if [ $? -eq 0 ]; then
+#     echo "libusb-1.0 is not installed. Installing..."
+#     sudo yum install libusbx-devel
+#     sudo yum install libusb-devel
+#     echo "libusb-1.0 has been installed."
+# else
+#     echo "libusb-1.0 is already installed."
+# fi
+# echo ""
 
 #Get the amount of cpus available for compiling
 num_cpu=$(grep -c ^processor /proc/cpuinfo)
