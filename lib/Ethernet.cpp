@@ -271,9 +271,19 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         data.push_back(functionreturn);
     }
 
+    vector<uint64_t> reversed_data;
+    for(i_data=0;i_data<data.size()/4;i_data+=4)
+    {
+        reversed_data.push_back(data[i_data+3]);
+        reversed_data.push_back(data[i_data+2]);
+        reversed_data.push_back(data[i_data+1]);
+        reversed_data.push_back(data[i_data+0]);
+    }
+
+    memset(data, 0, sizeof data);
     memset(buffer, 0, sizeof buffer);
 
-    return data;
+    return reversed_data;
 }
 
 
