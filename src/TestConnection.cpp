@@ -164,12 +164,12 @@ int main(int argc, char *argv[])
     	std::string port_burst = std::to_string(std::stoi(port)+1).c_str();
     	Ethernet *eth_burst = new Ethernet(ip,port_burst);       
 
-        eth->SendData(0x0,0x1,"w"); //Global reset
-    	usleep(1000000);
-    	eth->SendData(0x100,0xffff0000,"w");
-    	usleep(1000000);
+        // eth->SendData(0x0,0x1,"w"); //Global reset
+    	// usleep(1000000);
+    	// eth->SendData(0x100,0xffff0000,"w");
+    	// usleep(1000000);
         eth->SendData(0x2,0xff,"w"); //Reset all buffers
-        usleep(100000);
+        usleep(1000);
 
         //Get ACC Info
         uint64_t acc_fw_version = eth->RecieveDataSingle(0x00001000,0x1);

@@ -470,11 +470,11 @@ void ACC_ETH::VersionCheck()
     
     uint64_t acdcs_detected = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);    
 
-    eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Disable_Transfer,"w");
+    eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Disable_Transfer | (0xff<<24),"w");
     usleep(100000);
-    eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xFF,"w");
+    eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xff,"w");
     usleep(1000);
-    eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.ID_Frame_Request,"w");
+    eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.ID_Frame_Request | (0xff<<24),"w");
 
     //Sets up the burst mode
     eth_burst->SwitchToBurst();
