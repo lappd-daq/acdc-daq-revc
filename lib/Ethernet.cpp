@@ -239,7 +239,8 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
             {
                 if(i+wordsRead < numwords)
                 {
-                    memcpy((void*)(data.data()+i+wordsRead), (void*)&buffer[TX_DATA_OFFSET_ + bytesize*i], bytesize);                   
+                    int reversedIndex = (numbytes - 2) / bytesize - i - 1;
+                    memcpy((void *)(data.data() + i + wordsRead), (void *)&buffer[TX_DATA_OFFSET_ + bytesize * reversedIndex], bytesize);                
                 }else
                 {
                     break;
