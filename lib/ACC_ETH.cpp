@@ -361,14 +361,13 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     //Data matches
                     BoardsReadyForRead.push_back(k);
 					ReadoutSize[k] = PSECFRAME;
-
                 }else
                 {
                     //No data matches
                     std::stringstream stream;
-                    stream << "0x" << std::hex << std::uppercase << allbuffers;
+                    stream << "0x" << std::hex << std::uppercase << ((allbuffers>>k*16) & 0xffff) ;
                     std::string HexString = stream.str();
-                    std::string err_msg = "Seen data bit but there was no matching buffer: " + HexString;
+                    std::string err_msg = "Seen data bit for " + std::to_string(k) + " but there was no matching buffer: " + HexString;
                     WriteErrorLog(err_msg);
                 }
             }else
