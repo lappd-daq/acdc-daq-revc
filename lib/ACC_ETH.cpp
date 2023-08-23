@@ -412,15 +412,15 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         command_value = bi;
         acdc_buffer = eth->RecieveDataVector(command_address,command_value,ReadoutSize[bi]);
 
-        int strip = 4;
-        if(acdc_buffer.size()>strip)
-        {
-            acdc_buffer.erase(acdc_buffer.begin(), acdc_buffer.begin() + strip);
-        }else
-        {
-            std::cout << "ACDC buffer is too small afet read" <<  std::endl;
-            return -604;
-        }
+        // int strip = 4;
+        // if(acdc_buffer.size()>strip)
+        // {
+        //     acdc_buffer.erase(acdc_buffer.begin(), acdc_buffer.begin() + strip);
+        // }else
+        // {
+        //     std::cout << "ACDC buffer is too small afet read" <<  std::endl;
+        //     return -604;
+        // }
 
 		//Handles buffers =/= 7795 words
 		if((int)acdc_buffer.size() != ReadoutSize[bi])
