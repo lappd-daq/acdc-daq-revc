@@ -160,7 +160,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 
     int rec_bytes = -1;
 	
-    buffer[0] = 0 //0 is write with readback, 1 is just write
+    buffer[0] = 0; //0 is write with readback, 1 is just write
     buffer[1] = 1;
 
     //Make command from in
