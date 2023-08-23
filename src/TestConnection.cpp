@@ -135,10 +135,10 @@ int main(int argc, char *argv[])
         for(int bi=0;bi<8;bi++)
         {	
             uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
-            printf("ACDC %i gave 0x%016llx\n",bi,retval);
-            
+
             if(retval!=0)
             {
+                printf("ACDC %i gave 0x%016llx\n",bi,retval);
                 eth->SendData(0x20,bi,"w");
                 vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,1,0);
                 std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
