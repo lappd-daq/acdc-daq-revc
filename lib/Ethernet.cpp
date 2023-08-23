@@ -188,8 +188,8 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
             perror("recvfrom");
             return 0xeeeeaa03;
         }
-        if(packetID_ >= 0 && (packetID_ + 1)%256 != buff_[1]) printf("Missing packet? We jumped from packet id %d to %d\n", packetID_, buff_[1]);
-        packetID_ = buff_[1];
+        if(packetID_ >= 0 && (packetID_ + 1)%256 != buffer[1]) printf("Missing packet? We jumped from packet id %d to %d\n", packetID_, buffer[1]);
+        packetID_ = buffer[1];
     }else if(retval == 0)
     {
         printf("Read Timeout\n");
