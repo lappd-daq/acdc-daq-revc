@@ -209,7 +209,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     uint64_t functionreturn = 0xeeeebb01;
     bool firstread = true;
     
-    numwords = numwords + 10;
+    numwords = numwords + 4;
 
     std::vector<uint64_t> data(numwords);
 
