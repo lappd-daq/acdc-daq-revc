@@ -453,6 +453,10 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 // >>>> ID 7: Special function to check connected ACDCs for their firmware version 
 void ACC_ETH::VersionCheck()
 {
+    //Sets up the burst mode
+    eth_burst->SwitchToBurst();
+    usleep(100);
+    eth_burst->SetBurstState(true);
 
     //Get ACC Info
     uint64_t acc_fw_version = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x1);
@@ -475,11 +479,6 @@ void ACC_ETH::VersionCheck()
     eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xff,"w");
     usleep(100000);
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.ID_Frame_Request | (0xff<<24),"w");
-
-    //Sets up the burst mode
-    eth_burst->SwitchToBurst();
-    usleep(100);
-    eth_burst->SetBurstState(true);
 
     uint64_t buffer = eth->RecieveDataSingle(0x2019, 0x0);
     printf("Buffer got 0x%016llx\n",buffer);
