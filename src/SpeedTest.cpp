@@ -195,7 +195,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     acc_eth->SetValidationStart((unsigned int)std::stoi(Settings["Validation_Start"])/25); 
     acc_eth->SetValidationWindow((unsigned int)std::stoi(Settings["Validation_Window"])/25);
 
-    //acc_eth->SetPedestals(std::stoul(Settings["ACDC_mask"],nullptr,10),std::stoul(Settings["Pedestal_channel_mask"],nullptr,10),std::stoi(Settings["Pedestal_channel"]));
+    acc_eth->SetPedestals(std::stoul(Settings["ACDC_mask"],nullptr,10),std::stoul(Settings["Pedestal_channel_mask"],nullptr,10),std::stoi(Settings["Pedestal_channel"]));
 
     acc_eth->SetPPSRatio(std::stoi(Settings["PPSRatio"]));
     acc_eth->SetPPSBeamMultiplexer(std::stoi(Settings["PPSBeamMultiplexer"]));
@@ -203,7 +203,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     acc_eth->SetSMA_Debug(std::stoi(Settings["SMA_PPS"]),std::stoi(Settings["SMA_Beamgate"]));
 
     int retval;
-	retval = acc_eth->InitializeForDataReadout(std::stoi(Settings["Triggermode"]), std::stoul(Settings["ACDC_mask"],nullptr,10));
+	retval = acc_eth->InitializeForDataReadout(std::stoul(Settings["ACDC_mask"],nullptr,10), std::stoi(Settings["Triggermode"]));
     if(retval!=0)
     {
         std::cout << "Setup went wrong!" << std::endl;
