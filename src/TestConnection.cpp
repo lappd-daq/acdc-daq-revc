@@ -146,9 +146,9 @@ int main(int argc, char *argv[])
             if(retval!=0)
             {
                 eth->SendData(0x20,bi,"w");
-                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(1960,1,0);
+                vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,1,0);
                 std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;
-		for(int j=0; j<10; j++){printf("Word %i is 0x%016llx\n",j,ret_vec.at(j));}
+		        for(int j=0; j<10; j++){printf("Word %i is 0x%016llx\n",j,ret_vec.at(j));}
                 std::string name = "./Buffer" + to_string(bi) + ".txt";
                 ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
                 for(int i=0;i<ret_vec.size();i++){file<<i<<" "<<std::hex<<ret_vec.at(i)<<std::dec<<endl;}
