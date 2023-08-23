@@ -131,17 +131,11 @@ int main(int argc, char *argv[])
         eth_burst->SwitchToBurst();
         usleep(10000);
         eth_burst->SetBurstState(true);
-        
-        for(int bi=0; bi<8;bi++)
-        {
-        	uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);usleep(100000);
-        	printf("ACDC %i gave 0x%016llx\n",bi,retval);
-	    }
-        std::cout<<"-----------------"<<std::endl;
 	
         for(int bi=0;bi<8;bi++)
         {	
             uint64_t retval = eth->RecieveDataSingle(0x2010 |bi, 0x1);usleep(100000);
+            printf("ACDC %i gave 0x%016llx\n",bi,retval);
             
             if(retval!=0)
             {
