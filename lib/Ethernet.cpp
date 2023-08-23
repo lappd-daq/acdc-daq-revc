@@ -145,7 +145,7 @@ bool Ethernet::SendData(uint64_t addr, uint64_t value, std::string read_or_write
         std::cout << "Error data not send, tried to send " << buffer << std::endl; 
     }
 
-    memset(buffer, 0, sizeof buffer);
+    //memset(buffer, 0, sizeof buffer);
     return true;
 }
 

@@ -484,6 +484,8 @@ void ACC_ETH::VersionCheck()
     uint64_t buffer = eth->RecieveDataSingle(0x2019, 0x0);
     printf("Buffer got 0x%016llx\n",buffer);
 
+    usleep(100000);
+
     //Get ACDC Info
     for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
     {
