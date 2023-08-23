@@ -233,9 +233,12 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
             events++;
         }else
         {
-            if(read_back==404)
+            if(read_back==-601)
             {
                 //pass  
+            }else if(read_back==-602)
+            {
+                exit(1);
             }else
             {
                 std::cout << "A non-404 error happened: " << read_back << std::endl;
@@ -277,7 +280,7 @@ int main(int argc, char *argv[])
     }
 
     //Load ACC 
-    if(argc <= 1)
+    if(argc <= 2)
     {
         std::cout << "Please enter an option for the connection as well:" << std::endl;
         std::cout << "./SpeedTest [USB or ETH] [Number of Events]" << std::endl;
