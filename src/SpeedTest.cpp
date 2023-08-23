@@ -257,7 +257,7 @@ int main(int argc, char *argv[])
     std::map<std::string,std::string> Settings = LoadSettings("./ACC_Settings");
     PrintSettings(Settings);
 
-    std::map<std::string,std::string> Settings_Connection = LoadFile("./ConnectionSettings");
+    std::map<std::string,std::string> Settings_Connection = LoadSettings("./ConnectionSettings");
 
     std::string ip = Settings_Connection["IP"];
     std::string port = Settings_Connection["Port"];
