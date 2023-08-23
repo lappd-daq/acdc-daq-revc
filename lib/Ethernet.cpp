@@ -160,10 +160,19 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 
     int rec_bytes = -1;
 	
-    if(!SendData(addr,value,"r"))
+    buffer[0] = 0 //0 is write with readback, 1 is just write
+    buffer[1] = 1;
+
+    //Make command from in
+    memcpy(&buffer[RX_ADDR_OFFSET_], &addr, 8);
+    memcpy(&buffer[RX_DATA_OFFSET_], &value, 8);
+
+    int packet_size = RX_DATA_OFFSET_ + 8;
+
+    int returnval = sendto(m_socket,buffer,packet_size,0, list_of_addresses->ai_addr, list_of_addresses->ai_addrlen);
+    if(returnval==-1)
     {
-        std::cout << "Could not send read command" << std::endl;
-        return 0xeeeeaa02;
+        std::cout << "Error data not send, tried to send " << buffer << std::endl; 
     }
 
     struct sockaddr_storage their_addr;
