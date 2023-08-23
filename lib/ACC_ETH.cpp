@@ -473,12 +473,12 @@ void ACC_ETH::VersionCheck()
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Disable_Transfer | (0xff<<24),"w");
     usleep(100000);
     eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xff,"w");
-    usleep(1000);
+    usleep(10000);
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.ID_Frame_Request | (0xff<<24),"w");
 
     //Sets up the burst mode
     eth_burst->SwitchToBurst();
-    usleep(100000);
+    usleep(100);
     eth_burst->SetBurstState(true);
 
     //Get ACDC Info
