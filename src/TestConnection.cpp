@@ -138,7 +138,7 @@ int main(int argc, char *argv[])
 
             if(retval!=0)
             {
-                printf("ACDC %i gave 0x%016llx\n",bi,retval);
+                printf(">>>> ACDC %i gave 0x%016llx\n",bi,retval);
                 eth->SendData(0x20,bi,"w");
                 vector<uint64_t> ret_vec = eth_burst->RecieveBurst(7795,1,0);
                 std::cout<<bi<<" got "<<ret_vec.size()<<" words"<<std::endl;

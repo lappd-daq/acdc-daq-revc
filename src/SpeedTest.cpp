@@ -219,7 +219,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     auto t0 = std::chrono::high_resolution_clock::now();
     while(events<NumOfEvents)
     {
-        if(Settings["Triggermode"]=="1")
+        if(Settings["Triggermode"]=="1" && read_back!=-601)
         {
             std::cout<<"Software trigger" <<std::endl;
             acc_eth->GenerateSoftwareTrigger();
