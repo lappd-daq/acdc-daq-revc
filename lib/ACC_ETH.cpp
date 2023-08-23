@@ -473,7 +473,7 @@ void ACC_ETH::VersionCheck()
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Disable_Transfer | (0xff<<24),"w");
     usleep(100000);
     eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xff,"w");
-    usleep(10000);
+    usleep(100000);
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.ID_Frame_Request | (0xff<<24),"w");
 
     //Sets up the burst mode
@@ -489,29 +489,29 @@ void ACC_ETH::VersionCheck()
     		uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);
     		printf("Board %i got 0x%016llx\n",retval);
 
-            if(retval==32)
-            {
-    		    bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
+            // if(retval==32)
+            // {
+    		//     bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
     		
-                vector<uint64_t> return_vector = eth_burst->RecieveBurst(ACDCFRAME,1,0);
-                if(return_vector.size()==32)
-                {
-                    if(return_vector.at(1)==0xbbbb)
-                    {
-                        std::cout << "Board " << bi << " got the firmware version: " << std::hex << return_vector.at(2) << std::dec;
-                        std::cout << " from " << std::hex << return_vector.at(4) << std::dec << "/" << std::hex << return_vector.at(3) << std::dec << std::endl;
-                    }else
-                    {
-                        std::cout << "Board " << bi << " got the wrong info frame" << std::endl;
-                    }
-		        }else
-                {
-                    std::cout << "Size matches but redback vector does not" << std::endl;
-                }
-            }else
-            {
-                std::cout << "The ACDC ID buffer has not 32 words but " << retval << std::endl;
-            }
+            //     vector<uint64_t> return_vector = eth_burst->RecieveBurst(ACDCFRAME,1,0);
+            //     if(return_vector.size()==32)
+            //     {
+            //         if(return_vector.at(1)==0xbbbb)
+            //         {
+            //             std::cout << "Board " << bi << " got the firmware version: " << std::hex << return_vector.at(2) << std::dec;
+            //             std::cout << " from " << std::hex << return_vector.at(4) << std::dec << "/" << std::hex << return_vector.at(3) << std::dec << std::endl;
+            //         }else
+            //         {
+            //             std::cout << "Board " << bi << " got the wrong info frame" << std::endl;
+            //         }
+		    //     }else
+            //     {
+            //         std::cout << "Size matches but redback vector does not" << std::endl;
+            //     }
+            // }else
+            // {
+            //     std::cout << "The ACDC ID buffer has not 32 words but " << retval << std::endl;
+            // }
         }else
         {
             std::cout << "ACDC boards " << bi << " was not detected" << endl;
