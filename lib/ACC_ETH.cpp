@@ -418,7 +418,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 			std::string err_msg = "Couldn't read " + to_string(ReadoutSize[bi]) + " words as expected! Tryingto fix it! Size was: " + to_string(acdc_buffer.size());
 			WriteErrorLog(err_msg);
             ofstream corpt_file("./corrupt_buffer",ios_base::out | ios_base::trunc);
-            for(auto l: acdc_buffer){corpt_file<<std::hex<<l<<std::dec<<std::endl;}
+            for(int l=0; l<acdc_buffer.size();l++){corpt_file<<l<<" "<<std::hex<<acdc_buffer.at(l)<<std::dec<<std::endl;}
             corpt_file.close();
 			return -605;
 		}
