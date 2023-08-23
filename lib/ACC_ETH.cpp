@@ -481,12 +481,15 @@ void ACC_ETH::VersionCheck()
     usleep(100);
     eth_burst->SetBurstState(true);
 
+    uint64_t buffer = eth->RecieveDataSingle(0x2019, 0x0);
+    printf("Buffer got 0x%016llx\n",buffer);
+
     //Get ACDC Info
     for(int bi=0; bi<MAX_NUM_BOARDS; bi++)
     {
     	if(acdcs_detected & (1<<bi))
     	{
-    		uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x1);
+    		uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x0);
     		printf("Board %i got 0x%016llx\n",bi,retval);
 
             // if(retval==32)
