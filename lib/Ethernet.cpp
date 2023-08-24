@@ -219,6 +219,14 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     int wordsRead = 0;
     buffer[0] = 0;
     int bytesize = 2;
+    int how_much_to_read = 0;
+    if(numwords>1456)
+    {
+        how_much_to_read = 1456;
+    }else
+    {
+        how_much_to_read = numwords;
+    }
     
     while(wordsRead < numwords)
     {
@@ -227,7 +235,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
         if(retval > 0)
         {
-            if((numbytes = recvfrom(m_socket,buffer,MAXBUFLEN_ - 1,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
+            if((numbytes = recvfrom(m_socket,buffer,how_much_to_read,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
             {
                 perror("recvfrom");
                 functionreturn = 0xeeeebb02;
@@ -246,6 +254,10 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 }
             }
             wordsRead += (numbytes-2)/bytesize;
+            if(numwords-wordsRead<1456)
+            {
+                how_much_to_read = numwords - wordsRead;
+            }
         }else if(retval == 0)
         {
             printf("Burst Read Timeout\n");
