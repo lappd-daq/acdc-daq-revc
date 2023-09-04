@@ -299,6 +299,11 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	auto lastPrint = chrono::steady_clock::now();
 	auto timeoutDuration = chrono::milliseconds(timeoutvalue); // will exit and reinitialize
 
+    uint64_t acdcboads = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);
+    uint64_t plllock = eth->RecieveDataSingle(CML_ACC.PLL_Lock_Readback,0x0);
+    uint64_t firmwareversion = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x0);
+    uint64_t external_clock = eth->RecieveDataSingle(CML_ACC.External_CLock_Lock_Readback,0x0);
+
 	while(true)
 	{ 
 		//Clear the boards read vector
@@ -341,10 +346,6 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffers_0123 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch0123_Readback,0x0);
         uint64_t buffers_4567 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch4567_Readback,0x0);
         uint64_t datadetect = eth->RecieveDataSingle(CML_ACC.Data_Frame_Receive,0x0);
-        uint64_t acdcboads = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);
-        uint64_t plllock = eth->RecieveDataSingle(CML_ACC.PLL_Lock_Readback,0x0);
-        uint64_t firmwareversion = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x0);
-        uint64_t external_clock = eth->RecieveDataSingle(CML_ACC.External_CLock_Lock_Readback,0x0);
 
         LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffers_0123,buffers_4567};
 
@@ -361,7 +362,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     //Data matches
                     BoardsReadyForRead.push_back(k);
 					ReadoutSize[k] = PSECFRAME;
-                }else
+                }else if(((allbuffers>>k*16) & 0xffff) < PSECFRAME)
                 {
                     //No data matches
                     std::stringstream stream;
@@ -369,6 +370,9 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     std::string HexString = stream.str();
                     std::string err_msg = "Seen data bit for " + std::to_string(k) + " but there was no matching buffer: " + HexString;
                     WriteErrorLog(err_msg);
+                }else
+                {
+                    return -607;
                 }
             }else
             {
