@@ -372,6 +372,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     // WriteErrorLog(err_msg);
                 }else
                 {
+                    printf("1-4: 0x%016llx | 5-8: 0x%016llx\n",buffers_0123,buffers_4567);
                     return -607;
                 }
             }else
