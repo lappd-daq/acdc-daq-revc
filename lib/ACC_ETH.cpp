@@ -616,3 +616,26 @@ void ACC_ETH::WriteErrorLog(string errorMsg)
     os_err.close();
 }
 
+// >>>> ID 17: Correct the order of the input vector and cast it to short
+std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint_64> input_data)
+{
+    std::vector<unsigned short> corrected_data;
+
+    if(input_data.size()==0)
+    {
+        for(int i_sort=0; i_sort<input_data.size(); i_sort+=4)
+        {
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-0)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-1)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-2)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-3)));
+        }
+    }else
+    {
+        
+    }
+
+    return corrected_data;
+}
+
+
