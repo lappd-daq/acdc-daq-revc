@@ -496,7 +496,7 @@ void ACC_ETH::VersionCheck()
             {
     		    bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
     		
-                vector<uint64_t> return_vector = eth_burst->RecieveBurst(ACDCFRAME,1,0);
+                vector<unsigned short> return_vector = CorrectData(eth_burst->RecieveBurst(ACDCFRAME,1,0));
                 for(auto k: return_vector)
                 {
                     printf("%016llx\n",k);
@@ -621,18 +621,33 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
 {
     std::vector<unsigned short> corrected_data;
 
-    if(input_data.size()==0)
+    if(input_data.size()==32 || input_data.size()==16)
     {
         for(int i_sort=0; i_sort<input_data.size(); i_sort+=4)
         {
-            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-0)));
-            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-1)));
-            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-2)));
-            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i-3)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-0)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-1)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-2)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-3)));
         }
-    }else
-    {
-
+    }else if(input_data.size()==7795)
+    { 
+        int i_sort;
+        for(i_sort=0; i_sort<input_data.size(); i_sort+=4)
+        {
+            if(input_data.size()-i_sort<4)
+            {
+                int how_much_is_left = input_data.size() - i_sort; 
+                for(int i_sort2=how_much_is_left; i_sort2>0; i_sort2--)
+                {
+                    corrected_data.push_back(static_cast<unsigned short>(input_data.at(i_sort+i_sort2-1)));
+                }
+            }
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-0)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-1)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-2)));
+            corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-3)));
+        }  
     }
 
     return corrected_data;
