@@ -617,7 +617,7 @@ void ACC_ETH::WriteErrorLog(string errorMsg)
 }
 
 // >>>> ID 17: Correct the order of the input vector and cast it to short
-std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint_64> input_data)
+std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_data)
 {
     std::vector<unsigned short> corrected_data;
 
@@ -632,7 +632,7 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint_64> input_data
         }
     }else
     {
-        
+
     }
 
     return corrected_data;
