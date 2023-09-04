@@ -94,7 +94,9 @@ public:
     bool SetPedestals(unsigned int boardmask, unsigned int chipmask, unsigned int adc);
     //ID 16
     void WriteErrorLog(string errorMsg);
-    //ID17
+    //ID 17
+    std::vector<unsigned short> CorrectData(std::vector<uint_64> input_data);
+    //ID 18
     void ClearData(){out_raw_data.clear(); out_boardid.clear(); out_acc_if.clear();}
 
 private:
