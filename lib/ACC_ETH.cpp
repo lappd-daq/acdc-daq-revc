@@ -644,6 +644,7 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
                     {
                         corrected_data.push_back(static_cast<unsigned short>(input_data.at(i_sort+i_sort2-1)));
                     }
+                    break;
                 }
                 corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-0)));
                 corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-1)));
