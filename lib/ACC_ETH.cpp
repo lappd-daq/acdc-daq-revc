@@ -365,11 +365,11 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                 }else if(((allbuffers>>k*16) & 0xffff) < PSECFRAME)
                 {
                     //No data matches
-                    std::stringstream stream;
-                    stream << "0x" << std::hex << std::uppercase << ((allbuffers>>k*16) & 0xffff) ;
-                    std::string HexString = stream.str();
-                    std::string err_msg = "Seen data bit for " + std::to_string(k) + " but there was no matching buffer: " + HexString;
-                    WriteErrorLog(err_msg);
+                    // std::stringstream stream;
+                    // stream << "0x" << std::hex << std::uppercase << ((allbuffers>>k*16) & 0xffff) ;
+                    // std::string HexString = stream.str();
+                    // std::string err_msg = "Seen data bit for " + std::to_string(k) + " but there was no matching buffer: " + HexString;
+                    // WriteErrorLog(err_msg);
                 }else
                 {
                     return -607;
