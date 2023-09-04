@@ -205,29 +205,27 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 
 std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int timeout_us)
 {
-    int numbytes;
-    uint64_t functionreturn = 0xeeeebb01;
+    int numbytes = 0;
+    int wordsRead = 0;
+    int how_much_to_read = 0;
     bool firstread = true;
-    
-    numwords = numwords + 4;
-
-    std::vector<uint64_t> data(numwords);
+    uint64_t functionreturn = 0xeeeebb01;
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
 
-    int wordsRead = 0;
     buffer[0] = 0;
-    int bytesize = 8;
-    int how_much_to_read = 0;
-    if(numwords>1456)
+
+    int bytesize = 2;
+    if(2*numwords>1456)
     {
         how_much_to_read = 1456;
     }else
     {
         how_much_to_read = 2*numwords;
     }
-    
+
+    std::vector<uint64_t> data(numwords);
     while(wordsRead < numwords)
     {
         // read response ///////////////////////////////////////////////////////////
