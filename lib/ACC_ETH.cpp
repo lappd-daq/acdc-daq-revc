@@ -497,6 +497,10 @@ void ACC_ETH::VersionCheck()
     		    bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
     		
                 vector<uint64_t> return_vector = eth_burst->RecieveBurst(ACDCFRAME,1,0);
+                for(auto k: return_vector)
+                {
+                    printf("%016llx\n",k);
+                }
                 if(return_vector.size()==32)
                 {
                     if(return_vector.at(1)==0xbbbb)
