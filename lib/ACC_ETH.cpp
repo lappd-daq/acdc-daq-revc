@@ -543,11 +543,13 @@ void ACC_ETH::GenerateSoftwareTrigger()
 // >>>> ID 9: Tells ACDCs to clear their buffer
 void ACC_ETH::DumpData(unsigned int boardmask)
 {
+    std::cout << "Dumping all data" << std::endl;
     command_address = CML_ACC.RX_Buffer_Reset_Request; 
     command_value = boardmask;
 
     bool ret = eth->SendData(command_address,command_value,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to clear RX buffer!\n",command_address,command_value);}
+    usleep(100);
 }
 
 // >>>> ID 10: Resets the ACDCs
