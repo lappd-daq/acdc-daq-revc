@@ -252,7 +252,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     auto t1 = std::chrono::high_resolution_clock::now();
 	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
 	cout << "It took "<< dt <<" second(s)."<< endl;
-    cout << "The mean rate was thus "<< 1/dt <<" Hz."<< endl;
+    cout << "The mean rate was thus "<< NumOfEvents/dt <<" Hz."<< endl;
 }
 
 
