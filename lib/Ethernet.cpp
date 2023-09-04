@@ -218,7 +218,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
 
     int wordsRead = 0;
     buffer[0] = 0;
-    int bytesize = 2;
+    int bytesize = 8;
     int how_much_to_read = 0;
     if(numwords>1456)
     {
