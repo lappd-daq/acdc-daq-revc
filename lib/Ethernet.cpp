@@ -223,7 +223,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         how_much_to_read = 1458;
     }else
     {
-        how_much_to_read = 2*numwords;
+        how_much_to_read = 2*numwords + 2;
     }
 
     std::vector<uint64_t> data(numwords);
@@ -253,13 +253,12 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 }
             }
             wordsRead += (numbytes-2)/bytesize;
-            std::cout<< "Words read are " << wordsRead << std::endl;
-            if(2*(numwords-wordsRead)<1456 && numwords-wordsRead!=0)
+            if(2*(numwords-wordsRead)<1458 && numwords-wordsRead!=0)
             {
                 how_much_to_read = (numwords - wordsRead)*2 + 2;
             }else if(numwords-wordsRead==0)
             {
-                printf("Data successfull %i\n",wordsRead);
+                //printf("Data successfull %i\n",wordsRead);
                 break;
             }
         }else if(retval == 0)
