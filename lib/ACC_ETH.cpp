@@ -404,7 +404,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	//by the ACC for its buffer. 
 	for(int bi: BoardsReadyForRead)
 	{
-	    vector<uint64_t> acdc_buffer;
+	    vector<unsigned short> acdc_buffer;
 
         //Here should be the read...
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
