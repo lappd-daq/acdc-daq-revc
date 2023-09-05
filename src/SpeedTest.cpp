@@ -285,6 +285,9 @@ int main(int argc, char *argv[])
         if(strcmp(argv[2], "-y") == 0)
         {
             break;
+        }else
+        {
+            std::cout << argv[2] << std::endl;
         }
         std::cout << "Are you ok with these settings (y/n)?   ";
         std::cin >> choice_yn;

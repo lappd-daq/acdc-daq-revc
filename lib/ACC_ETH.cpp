@@ -377,7 +377,10 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, k,"w");
                     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
+                    printf("Reading %i with %i\n",k,((allbuffers>>k*16) & 0xffff));
                     vector<unsigned short> acdc_buffer = CorrectData(eth_burst->RecieveBurst(((allbuffers>>k*16) & 0xffff),1,0));
+                    printf("Got %i words back\n",acdc_buffer.size());
+
                     std::string name = "./OneOffBuffer" + to_string(k) + ".txt";
                     ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
                     for(int i=0;i<acdc_buffer.size();i++){file<<i<<" "<<std::hex<<acdc_buffer.at(i)<<std::dec<<endl;}
