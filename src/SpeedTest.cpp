@@ -262,6 +262,14 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
 
 int main(int argc, char *argv[])
 {
+    //Load ACC 
+    if(argc <= 2)
+    {
+        std::cout << "Please enter an option for the connection as well:" << std::endl;
+        std::cout << "./SpeedTest [USB or ETH] [Number of Events] [*options]" << std::endl;
+        return 0;
+    }
+
     //Load All ACC Settings
     std::map<std::string,std::string> Settings = LoadSettings("./ACC_Settings");
     PrintSettings(Settings);
@@ -274,6 +282,10 @@ int main(int argc, char *argv[])
     std::string choice_yn;
     while(true)
     {
+        if(strcmp(argv[1], "-y") == 0)
+        {
+            break;
+        }
         std::cout << "Are you ok with these settings (y/n)?   ";
         std::cin >> choice_yn;
         if(choice_yn=="y")
@@ -283,14 +295,6 @@ int main(int argc, char *argv[])
         {
             return 0;
         }
-    }
-
-    //Load ACC 
-    if(argc <= 2)
-    {
-        std::cout << "Please enter an option for the connection as well:" << std::endl;
-        std::cout << "./SpeedTest [USB or ETH] [Number of Events]" << std::endl;
-        return 0;
     }
 
     if(strcmp(argv[1], "USB") == 0)
