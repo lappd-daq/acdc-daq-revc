@@ -373,6 +373,14 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                 }else
                 {
                     printf("1-4: 0x%016llx | 5-8: 0x%016llx\n",buffers_0123,buffers_4567);
+                    ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
+                    if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
+                    vector<unsigned short> acdc_buffer = CorrectData(eth_burst->RecieveBurst(((allbuffers>>k*16) & 0xffff),1,0));
+                    std::string name = "./OneOfBuffer" + to_string(k) + ".txt";
+                    ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
+                    for(int i=0;i<acdc_buffer.size();i++){file<<i<<" "<<std::hex<<acdc_buffer.at(i)<<std::dec<<endl;}
+                    file.close();
+
                     return -607;
                 }
             }else
