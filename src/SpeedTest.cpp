@@ -282,7 +282,7 @@ int main(int argc, char *argv[])
     std::string choice_yn;
     while(true)
     {
-        if(strcmp(argv[1], "-y") == 0)
+        if(strcmp(argv[2], "-y") == 0)
         {
             break;
         }
