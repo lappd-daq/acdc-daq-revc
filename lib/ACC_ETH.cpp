@@ -410,12 +410,12 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	}
 
     //check for mixed buffersizes
-    if(ReadoutSize[LAPPD_on_ACC[0]]!=ReadoutSize[LAPPD_on_ACC[1]])
-    {
-        std::string err_msg = "ERR: Read buffer sizes did not match: " + to_string(ReadoutSize[LAPPD_on_ACC[0]]) + " vs " + to_string(ReadoutSize[LAPPD_on_ACC[1]]);
-        WriteErrorLog(err_msg);
-        return -603;       
-    }
+    // if(ReadoutSize[LAPPD_on_ACC[0]]!=ReadoutSize[LAPPD_on_ACC[1]])
+    // {
+    //     std::string err_msg = "ERR: Read buffer sizes did not match: " + to_string(ReadoutSize[LAPPD_on_ACC[0]]) + " vs " + to_string(ReadoutSize[LAPPD_on_ACC[1]]);
+    //     WriteErrorLog(err_msg);
+    //     return -603;       
+    // }
 
 
 	//each ACDC needs to be queried individually

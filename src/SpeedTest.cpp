@@ -236,6 +236,16 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
             vector<uint64_t> accif = acc_eth->ReturnACCIF();
             vector<int> bi = acc_eth->ReturnBoardIndices();
             acc_eth->ClearData();
+            if(data.size()==7795+16)
+            {
+                std::string name = "./MixedFrame.txt";
+                ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
+                for(auto k: data)
+                {
+                    file<<i<<" "<<k<<endl;
+                }
+                file.close();
+            }
             events++;
         }else
         {
