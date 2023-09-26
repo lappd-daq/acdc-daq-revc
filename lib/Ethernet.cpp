@@ -217,36 +217,10 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
 
-    // Read header first
-    tv_ = {timeout_sec, timeout_us};  // 0 seconds and 250000 useconds
-    int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
-    if(retval > 0)
-    {   
-        if((numbytes = recvfrom(m_socket,buffer,10,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
-        {
-            perror("recvfrom");
-            functionreturn = 0xeeeebb22;
-            return {};
-        }else
-        {
-            std::cout << "Got " << numbytes << " bytes back to remove" << std::endl;
-        }
-        memset(buffer, 0, sizeof buffer);
-    }else if(retval == 0)
-    {
-        printf("Burst Read Timeout\n");
-        functionreturn = 0xeeeebb23;
-        return {};
-    }else
-    {
-        perror("select()");
-        functionreturn = 0xeeeebb24;
-        return {};
-    }
-
     buffer[0] = 0;
 
     int bytesize = 2;
+    numwords += 8/bytesize;
     if(2*numwords>maxbytes)
     {
         how_much_to_read = maxbytes + 2;
@@ -271,7 +245,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 break;
             }else
             {
-                std::cout << "Got " << numbytes << " bytes back" << std::endl;
+                std::cout << "Got " << numbytes << " words back" << std::endl;
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
@@ -316,7 +290,9 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         data.push_back(functionreturn);
     }
 
-    //data.erase(data.begin(), data.begin() + 4);
+    std::cout << data.size() << std::endl;
+    for(int k=0; k<4;k++){std::cout<<data.at(k)<<std::endl;}
+    data.erase(data.begin(), data.begin() + 4);
 
     memset(buffer, 0, sizeof buffer);
     return data;
