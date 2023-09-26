@@ -229,11 +229,13 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
         }
 
         std::vector<uint64_t> ret_acc = acc_eth->Temp_Read(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
-        for(auto k: ret_acc)
+        std::cout << "Returned were " << ret_acc.size() << " values" << std::endl;
+        for(uint64_t k: ret_acc)
         {
             std::cout << k << " | ";
         }
         std::cout << std::endl;
+        events++;
     }
 }
 
