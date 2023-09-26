@@ -357,12 +357,12 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
             if(datadetect & (1<<k))
             {
                 //Data is seen
-                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME)
+                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME+4)
                 {
                     //Data matches
                     BoardsReadyForRead.push_back(k);
 					ReadoutSize[k] = PSECFRAME;
-                }else if(((allbuffers>>k*16) & 0xffff) < PSECFRAME)
+                }else if(((allbuffers>>k*16) & 0xffff) < PSECFRAME+4)
                 {
                     //No data matches
                     // std::stringstream stream;
@@ -431,7 +431,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         acdc_buffer = CorrectData(eth_burst->RecieveBurst(ReadoutSize[bi],10,0));
 
 		//Handles buffers =/= 7795 words
-		if((int)acdc_buffer.size() != ReadoutSize[bi])
+		if((int)acdc_buffer.size() != ReadoutSize[bi]+4)
 		{
 			std::string err_msg = "Couldn't read " + to_string(ReadoutSize[bi]) + " words as expected! Tryingto fix it! Size was: " + to_string(acdc_buffer.size());
 			WriteErrorLog(err_msg);

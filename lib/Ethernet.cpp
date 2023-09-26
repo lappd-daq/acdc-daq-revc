@@ -290,10 +290,9 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         data.push_back(functionreturn);
     }
 
-    data.erase(data.begin(), data.begin() + 4);
+    //data.erase(data.begin(), data.begin() + 4);
 
     memset(buffer, 0, sizeof buffer);
-
     return data;
 }
 
