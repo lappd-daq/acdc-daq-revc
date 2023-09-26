@@ -219,25 +219,21 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
     auto t0 = std::chrono::high_resolution_clock::now();
     while(events<NumOfEvents)
     {
-        if(Settings["Triggermode"]=="1" && read_back!=-601)
+        if(Settings["Triggermode"]=="1")
         {
             std::cout<<"Software trigger" <<std::endl;
             acc_eth->GenerateSoftwareTrigger();
-        }else if (Settings["Triggermode"]=="1" && read_back==-601)
-        {
-            std::cout << "Since timeout was called is will not trigger again" << std::endl;
         }
-
 
         std::vector<uint64_t> ret_acc = {601};
         while(ret_acc.at(0)==601)
         {
             ret_acc = acc_eth->Temp_Read(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
         }
-        std::cout << "Returned were " << ret_acc.size() << " values" << std::endl;
+
         for(uint64_t k: ret_acc)
         {
-            std::cout << k << " | ";
+            std::cout << std::hex << k << std::dec << " | ";
         }
         std::cout << std::endl;
         events++;
