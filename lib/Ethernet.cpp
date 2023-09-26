@@ -226,7 +226,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
         {
             perror("recvfrom");
             functionreturn = 0xeeeebb22;
-            break;
+            return {};
         }else
         {
             std::cout << "Got " << numbytes << " words back to remove" << std::endl;
@@ -236,12 +236,12 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     {
         printf("Burst Read Timeout\n");
         functionreturn = 0xeeeebb23;
-        break;
+        return {};
     }else
     {
         perror("select()");
         functionreturn = 0xeeeebb24;
-        break;
+        return {};
     }
 
     int bytesize = 2;
