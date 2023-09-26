@@ -210,7 +210,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     int numbytes = 0;
     int wordsRead = 0;
     int how_much_to_read = 0;
-    int maxwords = 1456;
+    int maxbytes = 1456;
     bool firstread = true;
     uint64_t functionreturn = 0xeeeebb01;
 
@@ -229,7 +229,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
             return {};
         }else
         {
-            std::cout << "Got " << numbytes << " words back to remove" << std::endl;
+            std::cout << "Got " << numbytes << " bytes back to remove" << std::endl;
         }
         memset(buffer, 0, sizeof buffer);
     }else if(retval == 0)
@@ -245,9 +245,9 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     }
 
     int bytesize = 2;
-    if(2*numwords>maxwords)
+    if(2*numwords>maxbytes)
     {
-        how_much_to_read = maxwords + 2;
+        how_much_to_read = maxbytes + 2;
     }else
     {
         how_much_to_read = 2*numwords + 2;
@@ -269,7 +269,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 break;
             }else
             {
-                std::cout << "Got " << numbytes << " words back" << std::endl;
+                std::cout << "Got " << numbytes << " bytes back" << std::endl;
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
@@ -284,7 +284,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 }
             }
             wordsRead += (numbytes-2)/bytesize;
-            if(2*(numwords-wordsRead)<maxwords && numwords-wordsRead!=0)
+            if(2*(numwords-wordsRead)<maxbytes && numwords-wordsRead!=0)
             {
                 how_much_to_read = (numwords - wordsRead)*2 + 2;
                 std::cout << "Setting read to " << (numwords - wordsRead)*2 + 2 << std::endl;
