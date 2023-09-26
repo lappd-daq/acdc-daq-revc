@@ -357,12 +357,12 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
             if(datadetect & (1<<k))
             {
                 //Data is seen
-                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME+4)
+                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME)
                 {
                     //Data matches
                     BoardsReadyForRead.push_back(k);
 					ReadoutSize[k] = PSECFRAME;
-                }else if(((allbuffers>>k*16) & 0xffff) < PSECFRAME+4)
+                }else if(((allbuffers>>k*16) & 0xffff) < PSECFRAME)
                 {
                     //No data matches
                     // std::stringstream stream;
