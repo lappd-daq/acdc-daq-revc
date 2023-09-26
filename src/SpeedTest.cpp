@@ -323,6 +323,16 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
                 }
                 file.close();
             }
+            if(data.size()==2*7795)
+            {
+                std::string name = "./DataFrame.txt";
+                ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
+                for(int k=0; k<data.size(); k++)
+                {
+                    file<<k<<" "<<data.at(k)<<endl;
+                }
+                file.close();
+            }
             events++;
         }else
         {
@@ -406,7 +416,7 @@ int main(int argc, char *argv[])
         StartTest_USB(Settings, NumOfEvents);
     }else if(acc_eth)
     {
-        StartTest_ETH_buffercheck(Settings, NumOfEvents);
+        StartTest_ETH(Settings, NumOfEvents);
     }
 
     delete acc_eth;
