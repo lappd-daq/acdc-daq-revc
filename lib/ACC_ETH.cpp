@@ -758,5 +758,11 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffers_0123,buffers_4567};
     }
 
+    for(uint64_t k: LastACCBuffer)
+    {
+        std::cout << k << " | ";
+    }
+    std::cout << std::endl;
+
     return LastACCBuffer;
 }
