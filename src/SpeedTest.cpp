@@ -233,7 +233,7 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
         {
             std::cout << k << " | ";
         }
-        std::endl;
+        std::cout << std::endl;
     }
 }
 
