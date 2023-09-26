@@ -222,7 +222,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
     if(retval > 0)
     {   
-        if((numbytes = recvfrom(m_socket,buffer,8,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
+        if((numbytes = recvfrom(m_socket,buffer,10,0,(struct sockaddr*)&their_addr,&addr_len)) == -1)
         {
             perror("recvfrom");
             functionreturn = 0xeeeebb22;
