@@ -460,6 +460,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         }
 
 		out_raw_data.insert(out_raw_data.end(), transfer_vector.begin(), transfer_vector.end());
+        out_raw_data.push_back(0xffff);
         transfer_vector.clear();
         acdc_buffer.clear();
 	}
