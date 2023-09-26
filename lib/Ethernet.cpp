@@ -243,7 +243,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 break;
             }else
             {
-                // std::cout << "Got " << numbytes << " words back" << std::endl;
+                std::cout << "Got " << numbytes << " words back" << std::endl;
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
@@ -263,7 +263,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 how_much_to_read = (numwords - wordsRead)*2 + 2;
             }else if(numwords-wordsRead==0)
             {
-                // printf("Data successfull %i\n",wordsRead);
+                printf("Data successfull %i\n",wordsRead);
                 break;
             }else if(numwords-wordsRead<0)
             {
