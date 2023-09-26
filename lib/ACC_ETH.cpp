@@ -378,7 +378,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
                     printf("Reading %i with %i\n",k,((allbuffers>>k*16) & 0xffff));
-                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(7796,1,0);
+                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(15000,1,0);
                     printf("Got %i words back\n",acdc_buffer.size());
 
                     std::string name = "./OneOffBuffer" + to_string(k) + ".txt";
