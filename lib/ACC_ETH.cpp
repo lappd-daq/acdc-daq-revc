@@ -681,7 +681,7 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
 }
 
 
-vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
+std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
 {
     vector<int> BoardsReadyForRead;
 	map<int,int> ReadoutSize;
@@ -709,6 +709,8 @@ vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
     uint64_t plllock = eth->RecieveDataSingle(CML_ACC.PLL_Lock_Readback,0x0);
     uint64_t firmwareversion = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x0);
     uint64_t external_clock = eth->RecieveDataSingle(CML_ACC.External_CLock_Lock_Readback,0x0);
+
+    LastACCBuffer = {404};
 
 	while(true)
 	{ 

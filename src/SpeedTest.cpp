@@ -236,6 +236,7 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
         }
         std::cout << std::endl;
         events++;
+        acc_eth->ClearData();
     }
 }
 
