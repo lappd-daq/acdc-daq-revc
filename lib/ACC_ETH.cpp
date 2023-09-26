@@ -378,7 +378,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
                     printf("Reading %i with %i\n",k,((allbuffers>>k*16) & 0xffff));
-                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(7796/8,1,0);
+                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(7796/4,1,0);
                     printf("Got %i words back\n",acdc_buffer.size());
 
                     std::string name = "./OneOffBuffer" + to_string(k) + ".txt";
@@ -428,7 +428,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-        acdc_buffer = eth_burst->RecieveBurst(1950,1,0);
+        eth_burst->RecieveBurst(1950,1,0);
 
 		// // Handles buffers =/= 7795 words
 		// if((int)acdc_buffer.size() != ReadoutSize[bi])
