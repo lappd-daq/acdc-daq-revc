@@ -650,7 +650,7 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
             corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-2)));
             corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-3)));
         }
-    }else if(input_data.size()==7795)
+    }else if(input_data.size()==7795+4)
     { 
         try
         {
