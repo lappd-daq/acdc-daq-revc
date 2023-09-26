@@ -710,8 +710,6 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
     uint64_t firmwareversion = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x0);
     uint64_t external_clock = eth->RecieveDataSingle(CML_ACC.External_CLock_Lock_Readback,0x0);
 
-    LastACCBuffer = {404};
-
 	while(true)
 	{ 
 		//Clear the boards read vector
@@ -790,6 +788,8 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
 			break;
 		}
     }
+
+    eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xff,"w");
 
     return LastACCBuffer;
 }
