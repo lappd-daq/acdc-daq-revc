@@ -329,7 +329,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
                 ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
                 for(int k=0; k<data.size(); k++)
                 {
-                    file<<k<<" "<<data.at(k)<<endl;
+                    file<<k<<" "<<std::hex<<data.at(k)<<std::dec<<endl;
                 }
                 file.close();
             }
