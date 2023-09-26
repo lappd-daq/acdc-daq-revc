@@ -240,9 +240,9 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
             {
                 std::string name = "./MixedFrame.txt";
                 ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
-                for(auto k: data)
+                for(int k=0; k<data.size(); k++)
                 {
-                    file<<i<<" "<<k<<endl;
+                    file<<k<<" "<<data.at(k)<<endl;
                 }
                 file.close();
             }
