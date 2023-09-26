@@ -741,7 +741,7 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
 
 		if(chrono::duration_cast<chrono::milliseconds>(now - start) > timeoutDuration)
 		{
-			return {-601};
+			return LastACCBuffer;
 		}
 
 		//If sigint happens, return value of 3
