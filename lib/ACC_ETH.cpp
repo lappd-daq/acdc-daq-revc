@@ -741,13 +741,13 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
 
 		if(chrono::duration_cast<chrono::milliseconds>(now - start) > timeoutDuration)
 		{
-			return LastACCBuffer;
+			return {601};
 		}
 
 		//If sigint happens, return value of 3
 		if(quitacc.load())
 		{
-			return {-602};
+			return {602};
 		}
 
         //Determine buffers and create info frame
@@ -756,13 +756,40 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t datadetect = eth->RecieveDataSingle(CML_ACC.Data_Frame_Receive,0x0);
 
         LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffers_0123,buffers_4567};
-    }
+        uint64_t allbuffers = (buffers_4567<<32) | buffers_0123;
 
-    for(uint64_t k: LastACCBuffer)
-    {
-        std::cout << k << " | ";
+		//go through all boards on the acc info frame and if 7795 words were transfered note that board
+		for(int k: LAPPD_on_ACC)
+		{
+            if(datadetect & (1<<k))
+            {
+                //Data is seen
+                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME)
+                {
+                    //Data matches
+                    BoardsReadyForRead.push_back(k);
+					ReadoutSize[k] = PSECFRAME;
+                }
+            }else
+            {
+                //Else is seen
+                if(((allbuffers>>k*16) & 0xffff) == PPSFRAME)
+                {
+                    //PPS matches
+                    BoardsReadyForRead.push_back(k);
+					ReadoutSize[k] = PPSFRAME;
+                }
+            }
+		}
+
+		//old trigger
+		if(BoardsReadyForRead==LAPPD_on_ACC)
+		{
+            out_acc_if = LastACCBuffer;
+            out_boardid = BoardsReadyForRead;
+			break;
+		}
     }
-    std::cout << std::endl;
 
     return LastACCBuffer;
 }
