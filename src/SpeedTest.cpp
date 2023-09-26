@@ -323,7 +323,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
                 }
                 file.close();
             }
-            if(data.size()==2*7795 || data.size()==2*7799)
+            if(data.size()==2*7795)
             {
                 std::string name = "./DataFrame.txt";
                 ofstream file(name.c_str(),ios_base::out | ios_base::trunc);
