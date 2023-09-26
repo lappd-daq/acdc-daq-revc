@@ -292,10 +292,10 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
 
     data.erase(data.begin(), data.begin() + (int)8/bytesize);
 
-    if(data.at(3)=0x1234 && data.at(2)=0x5678 && data.at(1)=0xabcd)
+    if(data.at(3)==0x1234 && data.at(2)==0x5678 && data.at(1)==0xabcd)
     {
         std::cout << "> Start has header" << std::endl;
-    }else if(data.at(7794)=0x1234 && data.at(7793)=0x5678 && data.at(7792)=0xabcd)
+    }else if(data.at(7794)==0x1234 && data.at(7793)==0x5678 && data.at(7792)==0xabcd)
     {
         std::cout << "> End has header" << std::endl;
     }
