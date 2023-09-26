@@ -345,6 +345,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
             }else
             {
                 std::cout << "A non-404 error happened: " << read_back << std::endl;
+                exit(1);
                 acc_eth->ClearData();
                 acc_eth->DumpData(0xff);
             }
