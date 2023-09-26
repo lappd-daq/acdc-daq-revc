@@ -167,6 +167,77 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
     cout << "The mean rate was thus "<< 1/dt <<" Hz."<< endl;
 }
 
+void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int NumOfEvents)
+{
+    acc_eth->SetTimeoutInMs(std::stoi(Settings["Timeout"]));
+
+	acc_eth->SetSign(std::stoi(Settings["ACC_Sign"]), 2);
+	acc_eth->SetSign(std::stoi(Settings["ACDC_Sign"]), 3);
+	acc_eth->SetSign(std::stoi(Settings["SELF_Sign"]), 4);
+
+    acc_eth->SetEnableCoin(std::stoi(Settings["SELF_Enable_Coincidence"]));
+    acc_eth->SetNumChCoin(std::stoi(Settings["SELF_Coincidence_Number"]));
+    acc_eth->SetThreshold(std::stoi(Settings["SELF_threshold"]));
+
+    std::vector<int> PsecChipMask = {std::stoi(Settings["PSEC_Chip_Mask_0"]),
+                                        std::stoi(Settings["PSEC_Chip_Mask_1"]),
+                                        std::stoi(Settings["PSEC_Chip_Mask_2"]),
+                                        std::stoi(Settings["PSEC_Chip_Mask_3"]),
+                                        std::stoi(Settings["PSEC_Chip_Mask_4"])};
+	std::vector<unsigned int> VecPsecChannelMask = {static_cast<unsigned int>(std::stoul(Settings["PSEC_Channel_Mask_0"],nullptr,10)),
+                                                    static_cast<unsigned int>(std::stoul(Settings["PSEC_Channel_Mask_1"],nullptr,10)),
+                                                    static_cast<unsigned int>(std::stoul(Settings["PSEC_Channel_Mask_2"],nullptr,10)),
+                                                    static_cast<unsigned int>(std::stoul(Settings["PSEC_Channel_Mask_3"],nullptr,10)),
+                                                    static_cast<unsigned int>(std::stoul(Settings["PSEC_Channel_Mask_4"],nullptr,10))};
+    acc_eth->SetPsecChipMask(PsecChipMask);
+	acc_eth->SetPsecChannelMask(VecPsecChannelMask);
+
+    acc_eth->SetValidationStart((unsigned int)std::stoi(Settings["Validation_Start"])/25); 
+    acc_eth->SetValidationWindow((unsigned int)std::stoi(Settings["Validation_Window"])/25);
+
+    acc_eth->SetPedestals(std::stoul(Settings["ACDC_mask"],nullptr,10),std::stoul(Settings["Pedestal_channel_mask"],nullptr,10),std::stoi(Settings["Pedestal_channel"]));
+
+    acc_eth->SetPPSRatio(std::stoi(Settings["PPSRatio"]));
+    acc_eth->SetPPSBeamMultiplexer(std::stoi(Settings["PPSBeamMultiplexer"]));
+
+    acc_eth->SetSMA_Debug(std::stoi(Settings["SMA_PPS"]),std::stoi(Settings["SMA_Beamgate"]));
+
+    int retval;
+	retval = acc_eth->InitializeForDataReadout(std::stoul(Settings["ACDC_mask"],nullptr,10), std::stoi(Settings["Triggermode"]));
+    if(retval!=0)
+    {
+        std::cout << "Setup went wrong!" << std::endl;
+    }else
+    {
+        std::cout << "Setup went well!" << std::endl;
+    }
+
+    int events = 0;
+    int read_back = -1;
+    vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"]),std::stoi(Settings["Port1"])};
+
+    auto t0 = std::chrono::high_resolution_clock::now();
+    while(events<NumOfEvents)
+    {
+        if(Settings["Triggermode"]=="1" && read_back!=-601)
+        {
+            std::cout<<"Software trigger" <<std::endl;
+            acc_eth->GenerateSoftwareTrigger();
+        }else if (Settings["Triggermode"]=="1" && read_back==-601)
+        {
+            std::cout << "Since timeout was called is will not trigger again" << std::endl;
+        }
+
+        std::vector<uint64_t> ret_acc = acc_eth->TempRead(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
+        for(auto k: ret_acc)
+        {
+            std::cout << k << " | ";
+        }
+        std::endl;
+    }
+}
+
+
 void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
 {
     acc_eth->SetTimeoutInMs(std::stoi(Settings["Timeout"]));

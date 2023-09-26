@@ -378,7 +378,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
                     printf("Reading %i with %i\n",k,((allbuffers>>k*16) & 0xffff));
-                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(15000,1,0);
+                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(7796,1,0);
                     printf("Got %i words back\n",acdc_buffer.size());
 
                     std::string name = "./OneOffBuffer" + to_string(k) + ".txt";
@@ -681,3 +681,80 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
 }
 
 
+vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
+{
+    vector<int> BoardsReadyForRead;
+	map<int,int> ReadoutSize;
+
+	//setup a sigint capturer to safely
+	//reset the boards if a ctrl-c signal is found
+	struct sigaction sa;
+	memset( &sa, 0, sizeof(sa) );
+	sa.sa_handler = got_signal;
+	sigfillset(&sa.sa_mask);
+	sigaction(SIGINT,&sa,NULL);
+
+    //Enalble Data Transfer
+    bool ret = eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Enable_Transfer | (0xff<<24) ,"w");
+    if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}
+  	
+	//duration variables
+	auto start = chrono::steady_clock::now(); //start of the current event listening. 
+	auto now = chrono::steady_clock::now(); //just for initialization 
+	auto printDuration = chrono::milliseconds(10000); //prints as it loops and listens
+	auto lastPrint = chrono::steady_clock::now();
+	auto timeoutDuration = chrono::milliseconds(timeoutvalue); // will exit and reinitialize
+
+    uint64_t acdcboads = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);
+    uint64_t plllock = eth->RecieveDataSingle(CML_ACC.PLL_Lock_Readback,0x0);
+    uint64_t firmwareversion = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x0);
+    uint64_t external_clock = eth->RecieveDataSingle(CML_ACC.External_CLock_Lock_Readback,0x0);
+
+	while(true)
+	{ 
+		//Clear the boards read vector
+		BoardsReadyForRead.clear(); 
+		ReadoutSize.clear();
+        LastACCBuffer.clear();
+		
+		//Time the listen fuction
+		now = chrono::steady_clock::now();
+		if(chrono::duration_cast<chrono::milliseconds>(now - lastPrint) > printDuration)
+		{	
+			string err_msg = "Have been waiting for a trigger for ";
+			err_msg += to_string(chrono::duration_cast<chrono::milliseconds>(now - start).count());
+			err_msg += " seconds";
+			WriteErrorLog(err_msg);
+			for(int i=0; i<MAX_NUM_BOARDS; i++)
+			{
+				string err_msg = "Buffer for board ";
+				err_msg += to_string(i);
+				err_msg += " has ";
+				err_msg += to_string(LastACCBuffer.at(16+i));
+				err_msg += " words";
+				WriteErrorLog(err_msg);
+			}
+			lastPrint = chrono::steady_clock::now();
+		}
+
+		if(chrono::duration_cast<chrono::milliseconds>(now - start) > timeoutDuration)
+		{
+			return -601;
+		}
+
+		//If sigint happens, return value of 3
+		if(quitacc.load())
+		{
+			return -602;
+		}
+
+        //Determine buffers and create info frame
+        uint64_t buffers_0123 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch0123_Readback,0x0);
+        uint64_t buffers_4567 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch4567_Readback,0x0);
+        uint64_t datadetect = eth->RecieveDataSingle(CML_ACC.Data_Frame_Receive,0x0);
+
+        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffers_0123,buffers_4567};
+    }
+
+    return LastACCBuffer;
+}

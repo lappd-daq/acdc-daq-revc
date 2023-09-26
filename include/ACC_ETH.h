@@ -78,6 +78,7 @@ public:
 	int SetTriggerSource(unsigned int boardmask = 0xFF, int triggersource = 0); 
     //ID 6: Main listen fuction for data readout. Runs for 5s before retuning a negative//
 	int ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC); 
+    vector<uint64_t> TempRead(int trigMode, vector<int> LAPPD_on_ACC);
 	//ID 7: Special function to check connected ACDCs for their firmware version// 
 	void VersionCheck();
 	//ID 8: Fires the software trigger//
