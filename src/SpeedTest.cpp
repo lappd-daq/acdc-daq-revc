@@ -228,7 +228,12 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
             std::cout << "Since timeout was called is will not trigger again" << std::endl;
         }
 
-        std::vector<uint64_t> ret_acc = acc_eth->Temp_Read(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
+
+        std::vector<uint64_t> ret_acc = {601};
+        while(ret_acc.at(0)==601)
+        {
+            ret_acc = acc_eth->Temp_Read(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
+        }
         std::cout << "Returned were " << ret_acc.size() << " values" << std::endl;
         for(uint64_t k: ret_acc)
         {
