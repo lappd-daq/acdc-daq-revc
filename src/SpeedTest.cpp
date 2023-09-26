@@ -219,7 +219,7 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
     auto t0 = std::chrono::high_resolution_clock::now();
     while(events<NumOfEvents)
     {
-        int doomcout = 0;
+        int doomcount = 0;
         if(Settings["Triggermode"]=="1")
         {
             std::cout<<"Software trigger" <<std::endl;
@@ -230,7 +230,7 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
         while(ret_acc.at(0)==601 && doomcount<10)
         {
             ret_acc = acc_eth->Temp_Read(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
-            doomcout++;
+            doomcount++;
         }
 
         for(uint64_t k: ret_acc)
