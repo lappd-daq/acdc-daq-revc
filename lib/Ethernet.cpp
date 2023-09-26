@@ -219,7 +219,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
 
     buffer[0] = 0;
 
-    int bytesize = 2;
+    int bytesize = 8;
     numwords += 8/bytesize;
     if(2*numwords>maxbytes)
     {
@@ -291,7 +291,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     }
 
     std::cout << data.size() << std::endl;
-    for(int k=0; k<4;k++){std::cout<<std::hex<<data.at(k)<<std::dec<<std::endl;}
+    for(int k=0; k<data.size();k++){std::cout<<std::hex<<data.at(k)<<std::dec<<std::endl;}
     data.erase(data.begin(), data.begin() + 4);
 
     memset(buffer, 0, sizeof buffer);

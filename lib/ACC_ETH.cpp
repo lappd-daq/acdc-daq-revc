@@ -378,7 +378,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
                     printf("Reading %i with %i\n",k,((allbuffers>>k*16) & 0xffff));
-                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(7796,1,0);
+                    vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(7796/8,1,0);
                     printf("Got %i words back\n",acdc_buffer.size());
 
                     std::string name = "./OneOffBuffer" + to_string(k) + ".txt";
@@ -430,22 +430,22 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 
         acdc_buffer = CorrectData(eth_burst->RecieveBurst(ReadoutSize[bi],10,0));
 
-		// Handles buffers =/= 7795 words
-		if((int)acdc_buffer.size() != ReadoutSize[bi])
-		{
-			std::string err_msg = "Couldn't read " + to_string(ReadoutSize[bi]) + " words as expected! Tryingto fix it! Size was: " + to_string(acdc_buffer.size());
-			WriteErrorLog(err_msg);
-            ofstream corpt_file("./corrupt_buffer",ios_base::out | ios_base::trunc);
-            for(int l=0; l<acdc_buffer.size();l++){corpt_file<<l<<" "<<std::hex<<acdc_buffer.at(l)<<std::dec<<std::endl;}
-            corpt_file.close();
-			return -605;
-		}
+		// // Handles buffers =/= 7795 words
+		// if((int)acdc_buffer.size() != ReadoutSize[bi])
+		// {
+		// 	std::string err_msg = "Couldn't read " + to_string(ReadoutSize[bi]) + " words as expected! Tryingto fix it! Size was: " + to_string(acdc_buffer.size());
+		// 	WriteErrorLog(err_msg);
+        //     ofstream corpt_file("./corrupt_buffer",ios_base::out | ios_base::trunc);
+        //     for(int l=0; l<acdc_buffer.size();l++){corpt_file<<l<<" "<<std::hex<<acdc_buffer.at(l)<<std::dec<<std::endl;}
+        //     corpt_file.close();
+		// 	return -605;
+		// }
 
-		if(acdc_buffer[0] != 0x1234)
-		{
-			acdc_buffer.clear();
-            return -606;
-		}
+		// if(acdc_buffer[0] != 0x1234)
+		// {
+		// 	acdc_buffer.clear();
+        //     return -606;
+		// }
 
         vector<unsigned short> transfer_vector;
         for (const uint64_t& value : acdc_buffer) 
