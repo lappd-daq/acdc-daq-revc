@@ -228,7 +228,7 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
             std::cout << "Since timeout was called is will not trigger again" << std::endl;
         }
 
-        std::vector<uint64_t> ret_acc = acc_eth->TempRead(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
+        std::vector<uint64_t> ret_acc = acc_eth->Temp_Read(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
         for(auto k: ret_acc)
         {
             std::cout << k << " | ";
@@ -400,7 +400,7 @@ int main(int argc, char *argv[])
         StartTest_USB(Settings, NumOfEvents);
     }else if(acc_eth)
     {
-        StartTest_ETH(Settings, NumOfEvents);
+        StartTest_ETH_buffercheck(Settings, NumOfEvents);
     }
 
     delete acc_eth;
