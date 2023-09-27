@@ -233,11 +233,6 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
             doomcount++;
         }
 
-        // for(uint64_t k: ret_acc)
-        // {
-        //     std::cout << std::hex << k << std::dec << " | ";
-        // }
-        // std::cout << std::endl;
         events++;
         acc_eth->ClearData();
     }
@@ -361,7 +356,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
 int main(int argc, char *argv[])
 {
     //Load ACC 
-    if(argc <= 2)
+    if(argc <= 3)
     {
         std::cout << "Please enter an option for the connection as well:" << std::endl;
         std::cout << "./SpeedTest [USB or ETH] [Number of Events] [*options]" << std::endl;
@@ -380,12 +375,15 @@ int main(int argc, char *argv[])
     std::string choice_yn;
     while(true)
     {
-        if(strcmp(argv[3], "-y") == 0)
+        if(argc>3)
         {
-            break;
-        }else
-        {
-            std::cout << argv[3] << std::endl;
+            if(strcmp(argv[3], "-y") == 0)
+            {
+                break;
+            }else
+            {
+                std::cout << argv[3] << std::endl;
+            }
         }
         std::cout << "Are you ok with these settings (y/n)?   ";
         std::cin >> choice_yn;
@@ -401,7 +399,7 @@ int main(int argc, char *argv[])
     if(strcmp(argv[1], "USB") == 0)
     {
         acc_usb = new ACC_USB();
-    }else if(strcmp(argv[1], "ETH") == 0)
+    }else if(strcmp(argv[1], "ETH") == 0 || strcmp(argv[1], "ETH_TEST") == 0)
     {
         acc_eth = new ACC_ETH(ip,port);
     }else
@@ -410,14 +408,20 @@ int main(int argc, char *argv[])
         return 0;
     }
 
-
     int NumOfEvents = std::stoi(argv[2]);
-    if(acc_usb)
+    if(strcmp(argv[1], "USB") == 0 && acc_usb)
     {
         StartTest_USB(Settings, NumOfEvents);
-    }else if(acc_eth)
+    }else if(strcmp(argv[1], "ETH") == 0 && acc_eth)
+    {
+        StartTest_ETH(Settings, NumOfEvents);
+    }else if(strcmp(argv[1], "ETH_TEST") == 0&& acc_eth)
     {
         StartTest_ETH_buffercheck(Settings, NumOfEvents);
+    }else
+    {
+        std::cout << "Please enter a valid connection option" << std::endl;
+        return 0;
     }
 
     delete acc_eth;

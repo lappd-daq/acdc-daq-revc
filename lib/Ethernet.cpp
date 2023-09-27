@@ -205,7 +205,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 
 std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int timeout_us)
 {
-    std::cout << " >>> As argument " << numwords << " words were given as goal" << std::endl; 
+    // std::cout << " >>> As argument " << numwords << " words were given as goal" << std::endl; 
 
     int numbytes = 0;
     int wordsRead = 0;
@@ -245,7 +245,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 break;
             }else
             {
-                std::cout << "Got " << numbytes << " words back" << std::endl;
+                // std::cout << "Got " << numbytes << " words back" << std::endl;
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
@@ -263,10 +263,10 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
             if(bytesize*(numwords-wordsRead)<maxbytes && numwords-wordsRead!=0)
             {
                 how_much_to_read = (numwords - wordsRead)*bytesize + 2;
-                std::cout << "Setting read to " << (numwords - wordsRead)*2 + 2 << std::endl;
+                // std::cout << "Setting read to " << (numwords - wordsRead)*2 + 2 << std::endl;
             }else if(numwords-wordsRead==0)
             {
-                printf("Data successfull %i\n",wordsRead);
+                // printf("Data successfull %i\n",wordsRead);
                 break;
             }else if(numwords-wordsRead<0)
             {

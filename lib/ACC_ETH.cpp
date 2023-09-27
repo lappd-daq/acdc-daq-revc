@@ -409,13 +409,13 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 		}
 	}
 
-    //check for mixed buffersizes
-    // if(ReadoutSize[LAPPD_on_ACC[0]]!=ReadoutSize[LAPPD_on_ACC[1]])
-    // {
-    //     std::string err_msg = "ERR: Read buffer sizes did not match: " + to_string(ReadoutSize[LAPPD_on_ACC[0]]) + " vs " + to_string(ReadoutSize[LAPPD_on_ACC[1]]);
-    //     WriteErrorLog(err_msg);
-    //     return -603;       
-    // }
+    check for mixed buffersizes
+    if(ReadoutSize[LAPPD_on_ACC[0]]!=ReadoutSize[LAPPD_on_ACC[1]])
+    {
+        std::string err_msg = "ERR: Read buffer sizes did not match: " + to_string(ReadoutSize[LAPPD_on_ACC[0]]) + " vs " + to_string(ReadoutSize[LAPPD_on_ACC[1]]);
+        WriteErrorLog(err_msg);
+        // return -603;       
+    }
 
 
 	//each ACDC needs to be queried individually
@@ -641,32 +641,10 @@ void ACC_ETH::WriteErrorLog(string errorMsg)
 std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_data)
 {
     std::vector<unsigned short> corrected_data;
-    if(input_data.size()>7795)
+
+    if(input_data.size()==PSECFRAME+4)
     {
-        try
-        {
-            int i_sort;
-            for(i_sort=0; i_sort<input_data.size(); i_sort+=4)
-            {
-                if(input_data.size()-i_sort<4)
-                {
-                    int how_much_is_left = input_data.size() - i_sort; 
-                    for(int i_sort2=how_much_is_left; i_sort2>0; i_sort2--)
-                    {
-                        corrected_data.push_back(static_cast<unsigned short>(input_data.at(i_sort+i_sort2-1)));
-                    }
-                    break;
-                }
-                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-0)));
-                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-1)));
-                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-2)));
-                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-3)));
-            }  
-        }catch(const std::exception& e)
-        {
-            std::cerr << "Error in 7795+ reordering and casting: " << e.what() << '\n';
-        }
-        return corrected_data;
+        input_data.erase(input_data.begin(), input_data.begin()+4);
     }
 
     if(input_data.size()==32 || input_data.size()==16)
@@ -823,6 +801,36 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
         std::vector<unsigned short> buffer = CorrectData(eth_burst->RecieveBurst(7795,1,0));
+
+        if(buffer.size()>=7795)
+        {
+            try
+            {
+                int i_sort;
+                for(i_sort=0; i_sort<buffer.size(); i_sort+=4)
+                {
+                    if(buffer.size()-i_sort<4)
+                    {
+                        int how_much_is_left = buffer.size() - i_sort; 
+                        for(int i_sort2=how_much_is_left; i_sort2>0; i_sort2--)
+                        {
+                            corrected_data.push_back(static_cast<unsigned short>(buffer.at(i_sort+i_sort2-1)));
+                        }
+                        break;
+                    }
+                    corrected_data.push_back(static_cast<unsigned short>(buffer.at(3+i_sort-0)));
+                    corrected_data.push_back(static_cast<unsigned short>(buffer.at(3+i_sort-1)));
+                    corrected_data.push_back(static_cast<unsigned short>(buffer.at(3+i_sort-2)));
+                    corrected_data.push_back(static_cast<unsigned short>(buffer.at(3+i_sort-3)));
+                }  
+            }catch(const std::exception& e)
+            {
+                std::cerr << "Error in 7795+ reordering and casting: " << e.what() << '\n';
+            }
+        }else
+        {
+            std::cout << "HOW IS " << buffer.size() << "EVEN POSSIBLE" << std::endl;
+        }
 
         std::string name = "./WTF.txt";
         ofstream file(name.c_str(),ios_base::out | ios_base::app);
