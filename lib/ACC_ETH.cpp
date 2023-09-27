@@ -822,7 +822,7 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-        std::vector<unsigned short> buffer = CorrectData(eth_burst->RecieveBurst(7800,1,0));
+        std::vector<unsigned short> buffer = CorrectData(eth_burst->RecieveBurst(7795,1,0));
 
         std::string name = "./WTF.txt";
         ofstream file(name.c_str(),ios_base::out | ios_base::app);
