@@ -643,7 +643,11 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
     std::vector<unsigned short> corrected_data;
     if(input_data.size()>7795)
     {
-        return input_data;
+        for(uint64_t k: input_data)
+        {
+            corrected_data.push_back(static_cast<unsigned short>(k));
+        }
+        return corrected_data;
     }
 
     if(input_data.size()==32 || input_data.size()==16)
