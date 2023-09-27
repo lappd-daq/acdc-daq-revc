@@ -842,7 +842,7 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         }
         file << std::endl;
         file.close();
-    }eh
+    }
 
     buffer.clear();
     corrected_data.clear();
