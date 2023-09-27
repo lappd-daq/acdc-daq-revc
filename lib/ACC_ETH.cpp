@@ -800,7 +800,8 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-        std::vector<unsigned short> buffer = CorrectData(eth_burst->RecieveBurst(7795,1,0));
+        std::vector<unsigned short> buffer = eth_burst->RecieveBurst(7795,1,0);
+        std::vector<unsigned short> corrected_data;
 
         if(buffer.size()>=7795)
         {
@@ -835,13 +836,16 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         std::string name = "./WTF.txt";
         ofstream file(name.c_str(),ios_base::out | ios_base::app);
         file << "ID-" << bi << " ";
-        for(int k=0; k<buffer.size(); k++)
+        for(int k=0; k<corrected_data.size(); k++)
         {
-            file << std::hex << buffer.at(k) << std::dec << " ";
+            file << std::hex << corrected_data.at(k) << std::dec << " ";
         }
         file << std::endl;
         file.close();
     }
+
+    buffer.clear();
+    corrected_data.clear();
 
     return LastACCBuffer;
 }
