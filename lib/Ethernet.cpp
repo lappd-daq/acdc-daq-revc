@@ -205,8 +205,6 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 
 std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int timeout_us)
 {
-    // std::cout << " >>> As argument " << numwords << " words were given as goal" << std::endl; 
-
     int numbytes = 0;
     int wordsRead = 0;
     int how_much_to_read = 0;
