@@ -131,6 +131,7 @@ private:
     vector<int> out_boardid;
     vector<uint64_t> LastACCBuffer;
 
+
     // >>>> ID 0: Sigint handling
 	static void got_signal(int);
 };
