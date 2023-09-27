@@ -643,9 +643,28 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
     std::vector<unsigned short> corrected_data;
     if(input_data.size()>7795)
     {
-        for(uint64_t k: input_data)
+        try
         {
-            corrected_data.push_back(static_cast<unsigned short>(k));
+            int i_sort;
+            for(i_sort=0; i_sort<input_data.size(); i_sort+=4)
+            {
+                if(input_data.size()-i_sort<4)
+                {
+                    int how_much_is_left = input_data.size() - i_sort; 
+                    for(int i_sort2=how_much_is_left; i_sort2>0; i_sort2--)
+                    {
+                        corrected_data.push_back(static_cast<unsigned short>(input_data.at(i_sort+i_sort2-1)));
+                    }
+                    break;
+                }
+                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-0)));
+                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-1)));
+                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-2)));
+                corrected_data.push_back(static_cast<unsigned short>(input_data.at(3+i_sort-3)));
+            }  
+        }catch(const std::exception& e)
+        {
+            std::cerr << "Error in 7795+ reordering and casting: " << e.what() << '\n';
         }
         return corrected_data;
     }
@@ -803,7 +822,7 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-        std::vector<uint64_t> buffer = eth_burst->RecieveBurst(7795,1,0);
+        std::vector<uint64_t> buffer = eth_burst->RecieveBurst(7800,1,0);
 
         std::string name = "./WTF.txt";
         ofstream file(name.c_str(),ios_base::out | ios_base::app);
