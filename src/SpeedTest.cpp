@@ -233,11 +233,11 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
             doomcount++;
         }
 
-        for(uint64_t k: ret_acc)
-        {
-            std::cout << std::hex << k << std::dec << " | ";
-        }
-        std::cout << std::endl;
+        // for(uint64_t k: ret_acc)
+        // {
+        //     std::cout << std::hex << k << std::dec << " | ";
+        // }
+        // std::cout << std::endl;
         events++;
         acc_eth->ClearData();
     }
@@ -417,7 +417,7 @@ int main(int argc, char *argv[])
         StartTest_USB(Settings, NumOfEvents);
     }else if(acc_eth)
     {
-        StartTest_ETH(Settings, NumOfEvents);
+        StartTest_ETH_buffercheck(Settings, NumOfEvents);
     }
 
     delete acc_eth;
