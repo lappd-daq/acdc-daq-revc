@@ -356,7 +356,7 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
 int main(int argc, char *argv[])
 {
     //Load ACC 
-    if(argc <= 3)
+    if(argc <= 2)
     {
         std::cout << "Please enter an option for the connection as well:" << std::endl;
         std::cout << "./SpeedTest [USB or ETH] [Number of Events] [*options]" << std::endl;
