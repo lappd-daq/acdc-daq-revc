@@ -175,7 +175,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
     
-    tv_ = {0, 250000};  // 0 seconds and 250000 useconds
+    tv_ = {1, 250000};  // 0 seconds and 250000 useconds
     int retval = select(m_socket+1, &rfds_, NULL, NULL, &tv_);
 
     if(retval > 0)
