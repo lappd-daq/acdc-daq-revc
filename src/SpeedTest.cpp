@@ -132,7 +132,7 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
     vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"]),std::stoi(Settings["Port1"])};
 
     auto t0 = std::chrono::high_resolution_clock::now();
-    
+    ofstream outfile("./datafile_usb.txt", ios_base::out | ios_base::trunc);
     while(events<NumOfEvents)
     {
         if(Settings["Triggermode"]=="1")
@@ -146,6 +146,13 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
             vector<unsigned short> accif = acc_usb->returnACCIF();
             vector<int> bi = acc_usb->returnBoardIndices();
             acc_usb->clearData();
+	    
+	    for(unsigned short k: data)
+	    {
+		outfile << k << "\t";
+	    }
+	    outfile << endl;
+	     
             events++;
         }else
         {
@@ -160,7 +167,11 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
                 acc_usb->emptyUsbLine();
             }
         }
+	data.clear();
+    	accif.clear();
+	bi.clear();
     }
+    outfile.close();
     auto t1 = std::chrono::high_resolution_clock::now();
 	auto dt = 1.e-9*std::chrono::duration_cast<std::chrono::nanoseconds>(t1-t0).count();
 	cout << "It took "<< dt <<" second(s)."<< endl;
