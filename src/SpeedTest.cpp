@@ -167,9 +167,6 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
                 acc_usb->emptyUsbLine();
             }
         }
-	data.clear();
-    	accif.clear();
-	bi.clear();
     }
     outfile.close();
     auto t1 = std::chrono::high_resolution_clock::now();
