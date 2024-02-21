@@ -42,6 +42,7 @@ std::map<std::string,std::string> LoadFile()
     return Settings;
 }
 
+
 int main(int argc, char *argv[])
 {
     if(argc < 4)
@@ -49,7 +50,7 @@ int main(int argc, char *argv[])
         std::cout << "Usage: ./Command [command address] [command value] [read/write]" << std::endl;
         std::cout << "[command address]: Address for the RX command" << std::endl;
         std::cout << "[command value]: Value for the RX command" << std::endl;
-        std::cout << "[read/write]: Read single/vector or write command selected by rs, rv or w" << std::endl;
+        std::cout << "[read/write]: Read single/vector or write command selected by rs, rb or w" << std::endl;
 
         return 0;
     }
@@ -87,8 +88,10 @@ int main(int argc, char *argv[])
         }else if(rw=="rb")
         {
             eth_burst->SwitchToBurst();
+            usleep(10000);
             eth_burst->SetBurstState(true);
-            std::vector<uint64_t> returndata = eth_burst->RecieveBurst(1400);
+            usleep(10000);
+            std::vector<uint64_t> returndata = eth_burst->RecieveBurst(1500);
             for(uint64_t k: returndata)
             {
                 std::cout << std::hex << k << std::dec << std::endl;
