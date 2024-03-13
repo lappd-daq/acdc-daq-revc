@@ -360,6 +360,10 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffer_7= (buffers_4567 & 0xffff<<48)>>48;
 
         LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7};
+        for(auto k: LastACCBuffer)
+        {
+            printf("B: 0x%016llx\n",k);
+        }
 
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k: LAPPD_on_ACC)
@@ -408,10 +412,6 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     //PPS matches
                     BoardsReadyForRead.push_back(k);
 					ReadoutSize[k] = PPSFRAME;
-                }else
-                {
-                    uint64_t emptybuffer = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Empty_Readback,0x0);
-                    printf("%016llx\n",emptybuffer);
                 }
             }
 		}
