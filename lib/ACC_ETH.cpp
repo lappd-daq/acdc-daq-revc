@@ -375,6 +375,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 					ReadoutSize[k] = PSECFRAME;
                 }else if(LastACCBuffer.at(k+7) < PSECFRAME)
                 {
+                    std::cout << "here" << std::endl;
                     //No data matches
                     // std::stringstream stream;
                     // stream << "0x" << std::hex << std::uppercase << ((allbuffers>>k*16) & 0xffff) ;
@@ -407,6 +408,9 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     //PPS matches
                     BoardsReadyForRead.push_back(k);
 					ReadoutSize[k] = PPSFRAME;
+                }else
+                {
+                    std::cout << "here2" << std::endl;
                 }
             }
 		}
