@@ -744,7 +744,7 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
 			WriteErrorLog(err_msg);
 			for(int i=0; i<MAX_NUM_BOARDS; i++)
 			{
-				string err_msg = "Buffer for board ";15
+				string err_msg = "Buffer for board ";
 				err_msg += to_string(i);
 				err_msg += " has ";
 				err_msg += to_string(LastACCBuffer.at(i+7));
@@ -757,13 +757,13 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
 
 		if(chrono::duration_cast<chrono::milliseconds>(now - start) > timeoutDuration)
 		{
-			return -601;
+			return {-601};
 		}
 
 		//If sigint happens, return value of 3
 		if(quitacc.load())
 		{
-			return -602;
+			return {-602};
 		}
 
         //Determine buffers and create info frame
