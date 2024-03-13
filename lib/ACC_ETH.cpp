@@ -361,6 +361,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k: LAPPD_on_ACC)
 		{
+            printf("Reading %i with %i\n",k,LastACCBuffer.at(k+7));
             if(datadetect & (1<<k))
             {
                 //Data is seen
