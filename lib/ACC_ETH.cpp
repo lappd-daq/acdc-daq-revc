@@ -295,7 +295,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
-	auto printDuration = chrono::milliseconds(2000); //prints as it loops and listens
+	auto printDuration = chrono::milliseconds(1000); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
 	auto timeoutDuration = chrono::milliseconds(timeoutvalue); // will exit and reinitialize
 

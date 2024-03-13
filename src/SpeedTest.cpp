@@ -247,6 +247,7 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
         {
             ret_acc = acc_eth->Temp_Read(std::stoi(Settings["Triggermode"]),LAPPD_on_ACC);
             doomcount++;
+            std::cout << doomcount << std::endl;
         }
 
         events++;
