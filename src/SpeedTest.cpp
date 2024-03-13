@@ -129,7 +129,11 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
 
     int events = 0;
     int read_back = -1;
-    vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"]),std::stoi(Settings["Port1"])};
+    vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"])};
+    if(std::stoi(Settings["Port0"]) != std::stoi(Settings["Port1"]))
+    {
+        LAPPD_on_ACC.push_back(std::stoi(Settings["Port1"]));
+    }
 
     auto t0 = std::chrono::high_resolution_clock::now();
     ofstream outfile("./datafile_usb.txt", ios_base::out | ios_base::trunc);
@@ -222,7 +226,11 @@ void StartTest_ETH_buffercheck(std::map<std::string,std::string> Settings, int N
 
     int events = 0;
     int read_back = -1;
-    vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"]),std::stoi(Settings["Port1"])};
+    vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"])};
+    if(std::stoi(Settings["Port0"]) != std::stoi(Settings["Port1"]))
+    {
+        LAPPD_on_ACC.push_back(std::stoi(Settings["Port1"]));
+    }
 
     auto t0 = std::chrono::high_resolution_clock::now();
     while(events<NumOfEvents)
@@ -294,7 +302,11 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
 
     int events = 0;
     int read_back = -1;
-    vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"]),std::stoi(Settings["Port1"])};
+    vector<int> LAPPD_on_ACC = {std::stoi(Settings["Port0"])};
+    if(std::stoi(Settings["Port0"]) != std::stoi(Settings["Port1"]))
+    {
+        LAPPD_on_ACC.push_back(std::stoi(Settings["Port1"]));
+    }
 
     auto t0 = std::chrono::high_resolution_clock::now();
     while(events<NumOfEvents)

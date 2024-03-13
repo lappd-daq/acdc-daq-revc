@@ -398,7 +398,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
             }else
             {
                 //Else is seen
-                if(((allbuffers>>k*16) & 0xffff) == PPSFRAME)
+                if(LastACCBuffer.at(k+7) == PPSFRAME)
                 {
                     //PPS matches
                     BoardsReadyForRead.push_back(k);
