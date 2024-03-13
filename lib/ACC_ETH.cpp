@@ -491,6 +491,8 @@ void ACC_ETH::VersionCheck()
     usleep(100);
     eth_burst->SetBurstState(true);
 
+    eth->SendData(CML_ACC.RX_Buffer_Reset_Request,0xff,"w");
+
     //Get ACC Info
     uint64_t acc_fw_version = eth->RecieveDataSingle(CML_ACC.Firmware_Version_Readback,0x1);
     //printf("V: 0x%016llx\n",acc_fw_version);
