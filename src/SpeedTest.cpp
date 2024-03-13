@@ -308,6 +308,8 @@ void StartTest_ETH(std::map<std::string,std::string> Settings, int NumOfEvents)
     {
         LAPPD_on_ACC.push_back(std::stoi(Settings["Port1"]));
     }
+    std::cout << "Got ports " << LAPPD_on_ACC[0] << " | " << LAPPD_on_ACC[1] << std::endl; 
+
 
     auto t0 = std::chrono::high_resolution_clock::now();
     while(events<NumOfEvents)
