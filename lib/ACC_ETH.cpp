@@ -566,20 +566,12 @@ void ACC_ETH::VersionCheck()
 // >>>> ID 8: Fires the software trigger
 void ACC_ETH::GenerateSoftwareTrigger()
 {
-    /*The following is a debug part*/
-    usb = new stdUSB();
-    unsigned int command = 0xFFB70000;
-	bool usbcheck=usb->sendData(command); 
-
-
-    /*If in use use the following code*/
-
     //Software trigger
-	/*command_address = CML_ACC.Generate_Software_Trigger;
+	command_address = CML_ACC.Generate_Software_Trigger;
     command_value = 0x1;
 
     bool ret = eth->SendData(command_address,command_value,"w");
-    if(!ret){printf("Could not send command 0x%08llX with value %i to generate a software trigger!\n",command_address,command_value);}*/
+    if(!ret){printf("Could not send command 0x%08llX with value %i to generate a software trigger!\n",command_address,command_value);}
 }
 
 // >>>> ID 9: Tells ACDCs to clear their buffer

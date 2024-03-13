@@ -22,10 +22,6 @@
 #include <ctime>
 #include <map>
 
-/*This is only for debug purposes. USB should not be used*/
-/* in tandem with ethernet*/
-#include "stdUSB.h"
-
 using namespace std;
 
 #define NUM_CH 30 //maximum number of channels for one ACDC board
@@ -111,10 +107,6 @@ private:
     Ethernet* eth_burst;
     CommandLibrary_ACC CML_ACC;
     CommandLibrary_ACDC CML_ACDC;
-
-	/*This is only for debug purposes. USB should not be used*/
-	/* in tandem with ethernet*/
-	stdUSB *usb;
 
 	//----------all neccessary global variables
 	unsigned int command_address; //var: contain command address for ethernet communication
