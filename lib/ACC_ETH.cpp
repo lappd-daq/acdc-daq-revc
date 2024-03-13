@@ -569,7 +569,7 @@ void ACC_ETH::GenerateSoftwareTrigger()
     /*The following is a debug part*/
     usb = new stdUSB();
     unsigned int command = 0xFFB70000;
-	bool usbcheck=usb->sendData(command); if(usbcheck==false){errorcode.push_back(0xAC13EE01);}	
+	bool usbcheck=usb->sendData(command); 
 
 
     /*If in use use the following code*/
