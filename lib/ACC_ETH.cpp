@@ -495,7 +495,7 @@ void ACC_ETH::VersionCheck()
     std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
     
     uint64_t acdcs_detected = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);    
-    std::cout << "Detected " << acdcs_detected << " boards" << std::endl;
+    printf("Detected boards 0x%016llx\n",acdcs_detected);
 
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Disable_Transfer | (0xff<<24),"w");
     usleep(100000);
@@ -516,7 +516,7 @@ void ACC_ETH::VersionCheck()
             {
     		    bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
     		
-                vector<unsigned short> return_vector = CorrectData(eth_burst->RecieveBurst(ACDCFRAME,1,0));
+                vector<unsigned short> return_vector = eth_burst->RecieveBurst(ACDCFRAME,1,0);
                 for(auto k: return_vector)
                 {
                     printf("%016llx\n",k);
@@ -537,7 +537,7 @@ void ACC_ETH::VersionCheck()
                 }
             }else
             {
-                std::cout << "The ACDC ID buffer has not 32 words but " << retval << std::endl;
+                std::cout << "The ACDC IF buffer has not 32 words but " << retval << std::endl;
             }
         }else
         {
