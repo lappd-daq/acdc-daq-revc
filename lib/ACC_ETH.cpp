@@ -510,16 +510,16 @@ void ACC_ETH::VersionCheck()
     	if(acdcs_detected & (1<<bi))
     	{
     		uint64_t retval = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Readback  | bi, 0x1);
-    		printf("Board %i got 0x%016llx\n",bi,retval);
+    		//printf("Board %i got 0x%016llx\n",bi,retval);
 
             if(retval==32)
             {
     		    bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
     		
-                vector<uint64_t> return_vector = eth_burst->RecieveBurst(ACDCFRAME,1,0);
+                vector<unsigned short> return_vector = CorrectData(eth_burst->RecieveBurst(ACDCFRAME,1,0));
                 for(auto k: return_vector)
                 {
-                    printf("%016llx\n",k);
+                    //printf("%016llx\n",k);
                 }
                 if(return_vector.size()==32)
                 {
