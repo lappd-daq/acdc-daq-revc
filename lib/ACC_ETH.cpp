@@ -410,7 +410,8 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 					ReadoutSize[k] = PPSFRAME;
                 }else
                 {
-                    std::cout << "here2" << std::endl;
+                    uint64_t emptybuffer = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Empty_Readback,0x0);
+                    printf("%016llx\n",emptybuffer);
                 }
             }
 		}
