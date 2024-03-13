@@ -555,6 +555,7 @@ void ACC_ETH::VersionCheck()
             std::cout << "ACDC boards " << bi << " was not detected" << endl;
         }
     }
+    eth->SendData(CML_ACC.RX_Buffer_Reset_Request,(1<<bi),"w");
 }
 
 //------------------------------------------------------------------------------------//
