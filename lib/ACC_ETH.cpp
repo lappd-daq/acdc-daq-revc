@@ -643,7 +643,7 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
 {
     std::vector<unsigned short> corrected_data;
 
-    if(input_data.size()==PSECFRAME+4)
+    if(input_data.size()==PSECFRAME+4 || input_data.size()==ACCFRAME+4 || input_data.size()==ACDCFRAME+4 || input_data.size()==PPSFRAME+4)
     {
         input_data.erase(input_data.begin(), input_data.begin()+4);
     }
