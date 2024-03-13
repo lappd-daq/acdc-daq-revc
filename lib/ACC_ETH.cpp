@@ -295,7 +295,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
-	auto printDuration = chrono::milliseconds(10000); //prints as it loops and listens
+	auto printDuration = chrono::milliseconds(2000); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
 	auto timeoutDuration = chrono::milliseconds(timeoutvalue); // will exit and reinitialize
 
@@ -324,7 +324,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 				string err_msg = "Buffer for board ";
 				err_msg += to_string(i);
 				err_msg += " has ";
-				err_msg += to_string(LastACCBuffer.at(16+i));
+				err_msg += to_string(777);
 				err_msg += " words";
 				WriteErrorLog(err_msg);
 			}
