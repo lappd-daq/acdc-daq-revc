@@ -295,7 +295,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
-	auto printDuration = chrono::milliseconds(1000); //prints as it loops and listens
+	auto printDuration = chrono::milliseconds(5000); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
 	auto timeoutDuration = chrono::milliseconds(timeoutvalue); // will exit and reinitialize
 
@@ -328,7 +328,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 				err_msg += " words";
 				WriteErrorLog(err_msg);
 			}
-            std::cout << "HEREEEEEEEEEEE" << std::endl;
+            //std::cout << "HEREEEEEEEEEEE" << std::endl;
 			lastPrint = chrono::steady_clock::now();
 		}
 
@@ -348,23 +348,23 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffers_4567 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch4567_Readback,0x0);
         uint64_t datadetect = eth->RecieveDataSingle(CML_ACC.Data_Frame_Receive,0x0);
 
-        printf("%016llx\n",buffers_0123);
+        //printf("%016llx\n",buffers_0123);
 
-        uint16_t buffer_0= (buffers_0123 & 0xffff);
-        uint16_t buffer_1= (buffers_0123 & 0xffff<<16)>>16;
-        uint16_t buffer_2= (buffers_0123 & 0xffff<<32)>>32;
-        uint16_t buffer_3= (buffers_0123 & 0xffff<<48)>>48;
-        uint16_t buffer_4= (buffers_4567 & 0xffff);
-        uint16_t buffer_5= (buffers_4567 & 0xffff<<16)>>16;
-        uint16_t buffer_6= (buffers_4567 & 0xffff<<32)>>32;
-        uint16_t buffer_7= (buffers_4567 & 0xffff<<48)>>48;
+        uint64_t buffer_0= (buffers_0123 & 0xffff);
+        uint64_t buffer_1= (buffers_0123 & 0xffff<<16)>>16;
+        uint64_t buffer_2= (buffers_0123 & 0xffff<<32)>>32;
+        uint64_t buffer_3= (buffers_0123 & 0xffff<<48)>>48;
+        uint64_t buffer_4= (buffers_4567 & 0xffff);
+        uint64_t buffer_5= (buffers_4567 & 0xffff<<16)>>16;
+        uint64_t buffer_6= (buffers_4567 & 0xffff<<32)>>32;
+        uint64_t buffer_7= (buffers_4567 & 0xffff<<48)>>48;
 
         LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7};
 
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k: LAPPD_on_ACC)
 		{
-            printf("Reading %i with %i\n",k,LastACCBuffer.at(k+7));
+            //printf("Reading %i with %i\n",k,LastACCBuffer.at(k+7));
             if(datadetect & (1<<k))
             {
                 //Data is seen
