@@ -57,7 +57,7 @@ int main(int argc, char *argv[])
     std::string ip = Settings["IP"];
     std::string port = Settings["Port"];
 
-    //std::cout << ">>>> Connecting to: " << ip << ":" << port << std::endl;
+    std::cout << ">>>> Connecting to: " << ip << ":" << port << std::endl;
 
     int mode = 0;
     if(argc==2){mode=std::stoi(argv[1]);}
