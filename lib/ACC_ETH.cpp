@@ -347,6 +347,8 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffers_4567 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch4567_Readback,0x0);
         uint64_t datadetect = eth->RecieveDataSingle(CML_ACC.Data_Frame_Receive,0x0);
 
+        printf("%016llx\n",buffers_0123);
+
         uint16_t buffer_0= (buffers_0123 & 0xffff);
         uint16_t buffer_1= (buffers_0123 & 0xffff<<16)>>16;
         uint16_t buffer_2= (buffers_0123 & 0xffff<<32)>>32;
