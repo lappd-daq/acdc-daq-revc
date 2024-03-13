@@ -495,7 +495,7 @@ void ACC_ETH::VersionCheck()
     std::cout << " from " << std::hex << acc_fw_year << std::dec << "/" << std::hex << acc_fw_month << std::dec << "/" << std::hex << acc_fw_day << std::dec << std::endl;
     
     uint64_t acdcs_detected = eth->RecieveDataSingle(CML_ACC.ACDC_Board_Detect,0x0);    
-    std::cout << "Detected " << acdcs_detected << " boards << std::endl;
+    std::cout << "Detected " << acdcs_detected << " boards" << std::endl;
 
     eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Disable_Transfer | (0xff<<24),"w");
     usleep(100000);
