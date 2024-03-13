@@ -509,8 +509,8 @@ void ACC_ETH::VersionCheck()
     {
     	if(acdcs_detected & (1<<bi))
     	{
-    		uint64_t retval = eth->RecieveDataSingle(0x2010 | bi, 0x0);
-    		//printf("Board %i got 0x%016llx\n",bi,retval);
+    		uint64_t retval = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Readback  | bi, 0x1);
+    		printf("Board %i got 0x%016llx\n",bi,retval);
 
             if(retval==32)
             {
