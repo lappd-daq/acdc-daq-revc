@@ -324,7 +324,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 				string err_msg = "Buffer for board ";
 				err_msg += to_string(i);
 				err_msg += " has ";
-				err_msg += to_string(777);
+				err_msg += to_string(LastACCBuffer.at(i+7));
 				err_msg += " words";
 				WriteErrorLog(err_msg);
 			}
@@ -347,7 +347,16 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffers_4567 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch4567_Readback,0x0);
         uint64_t datadetect = eth->RecieveDataSingle(CML_ACC.Data_Frame_Receive,0x0);
 
-        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffers_0123,buffers_4567};
+        uint16_t buffer_0= (buffers_0123 & 0xffff);
+        uint16_t buffer_1= (buffers_0123 & 0xffff<<16)>>16;
+        uint16_t buffer_2= (buffers_0123 & 0xffff<<32)>>32;
+        uint16_t buffer_3= (buffers_0123 & 0xffff<<48)>>48;
+        uint16_t buffer_4= (buffers_4567 & 0xffff);
+        uint16_t buffer_5= (buffers_4567 & 0xffff<<16)>>16;
+        uint16_t buffer_6= (buffers_4567 & 0xffff<<32)>>32;
+        uint16_t buffer_7= (buffers_4567 & 0xffff<<48)>>48;
+
+        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7};
 
         uint64_t allbuffers = (buffers_4567<<32) | buffers_0123;
 
