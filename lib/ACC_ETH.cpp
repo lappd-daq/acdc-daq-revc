@@ -358,20 +358,18 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 
         LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7};
 
-        uint64_t allbuffers = (buffers_4567<<32) | buffers_0123;
-
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k: LAPPD_on_ACC)
 		{
             if(datadetect & (1<<k))
             {
                 //Data is seen
-                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME)
+                if(LastACCBuffer.at(k+7) == PSECFRAME)
                 {
                     //Data matches
                     BoardsReadyForRead.push_back(k);
 					ReadoutSize[k] = PSECFRAME;
-                }else if(((allbuffers>>k*16) & 0xffff) < PSECFRAME)
+                }else if(LastACCBuffer.at(k+7) < PSECFRAME)
                 {
                     //No data matches
                     // std::stringstream stream;
@@ -386,7 +384,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
                     ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, k,"w");
                     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-                    printf("Reading %i with %i\n",k,((allbuffers>>k*16) & 0xffff));
+                    printf("Reading %i with %i\n",k,LastACCBuffer.at(k+7));
                     vector<uint64_t> acdc_buffer = eth_burst->RecieveBurst(7796,1,0);
                     printf("Got %i words back\n",acdc_buffer.size());
 
