@@ -526,7 +526,7 @@ void ACC_ETH::VersionCheck()
                     if(return_vector.at(1)==0xbbbb)
                     {
                         std::cout << "Board " << bi << " got the firmware version: " << std::hex << return_vector.at(2) << std::dec;
-                        std::cout << " from " << std::hex << return_vector.at(3) << std::dec << "/" << std::hex << (return_vector.at(4) & 0xff<<8)>>8 << std::dec << "/" << std::hex << return_vector.at(4) & 0xff << std::dec << std::endl;
+                        std::cout << " from " << std::hex << return_vector.at(3) << std::dec << "/" << std::hex << ((return_vector.at(4) & 0xff<<8)>>8) << std::dec << "/" << std::hex << (return_vector.at(4) & 0xff) << std::dec << std::endl;
                     }else
                     {
                         std::cout << "Board " << bi << " got the wrong info frame" << std::endl;
