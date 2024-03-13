@@ -309,7 +309,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 		//Clear the boards read vector
 		BoardsReadyForRead.clear(); 
 		ReadoutSize.clear();
-        LastACCBuffer.clear();
+        //LastACCBuffer.clear();
 		
 		//Time the listen fuction
 		now = chrono::steady_clock::now();
@@ -716,10 +716,9 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
     bool ret = eth->SendData(CML_ACC.ACDC_Command,CML_ACDC.Enable_Transfer | (0xff<<24) ,"w");
     if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}
   	
-	//duration variables
 	auto start = chrono::steady_clock::now(); //start of the current event listening. 
 	auto now = chrono::steady_clock::now(); //just for initialization 
-	auto printDuration = chrono::milliseconds(10000); //prints as it loops and listens
+	auto printDuration = chrono::milliseconds(1000); //prints as it loops and listens
 	auto lastPrint = chrono::steady_clock::now();
 	auto timeoutDuration = chrono::milliseconds(timeoutvalue); // will exit and reinitialize
 
@@ -745,25 +744,26 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
 			WriteErrorLog(err_msg);
 			for(int i=0; i<MAX_NUM_BOARDS; i++)
 			{
-				string err_msg = "Buffer for board ";
+				string err_msg = "Buffer for board ";15
 				err_msg += to_string(i);
 				err_msg += " has ";
-				err_msg += to_string(LastACCBuffer.at(16+i));
+				err_msg += to_string(LastACCBuffer.at(i+7));
 				err_msg += " words";
 				WriteErrorLog(err_msg);
 			}
+            std::cout << "HEREEEEEEEEEEE" << std::endl;
 			lastPrint = chrono::steady_clock::now();
 		}
 
 		if(chrono::duration_cast<chrono::milliseconds>(now - start) > timeoutDuration)
 		{
-			return {601};
+			return -601;
 		}
 
 		//If sigint happens, return value of 3
 		if(quitacc.load())
 		{
-			return {602};
+			return -602;
 		}
 
         //Determine buffers and create info frame
@@ -771,8 +771,18 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffers_4567 = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Ch4567_Readback,0x0);
         uint64_t datadetect = eth->RecieveDataSingle(CML_ACC.Data_Frame_Receive,0x0);
 
-        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffers_0123,buffers_4567};
-        uint64_t allbuffers = (buffers_4567<<32) | buffers_0123;
+        printf("%016llx\n",buffers_0123);
+
+        uint16_t buffer_0= (buffers_0123 & 0xffff);
+        uint16_t buffer_1= (buffers_0123 & 0xffff<<16)>>16;
+        uint16_t buffer_2= (buffers_0123 & 0xffff<<32)>>32;
+        uint16_t buffer_3= (buffers_0123 & 0xffff<<48)>>48;
+        uint16_t buffer_4= (buffers_4567 & 0xffff);
+        uint16_t buffer_5= (buffers_4567 & 0xffff<<16)>>16;
+        uint16_t buffer_6= (buffers_4567 & 0xffff<<32)>>32;
+        uint16_t buffer_7= (buffers_4567 & 0xffff<<48)>>48;
+
+        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7};
 
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k: LAPPD_on_ACC)
@@ -780,7 +790,7 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
             if(datadetect & (1<<k))
             {
                 //Data is seen
-                if(((allbuffers>>k*16) & 0xffff) == PSECFRAME)
+                if(LastACCBuffer.at(7+k) == PSECFRAME)
                 {
                     //Data matches
                     BoardsReadyForRead.push_back(k);
@@ -789,7 +799,7 @@ std::vector<uint64_t> ACC_ETH::Temp_Read(int trigMode, vector<int> LAPPD_on_ACC)
             }else
             {
                 //Else is seen
-                if(((allbuffers>>k*16) & 0xffff) == PPSFRAME)
+                if(LastACCBuffer.at(7+k) == PPSFRAME)
                 {
                     //PPS matches
                     BoardsReadyForRead.push_back(k);
