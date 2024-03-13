@@ -328,6 +328,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 				err_msg += " words";
 				WriteErrorLog(err_msg);
 			}
+            std::cout << "HEREEEEEEEEEEE" << std::endl;
 			lastPrint = chrono::steady_clock::now();
 		}
 
