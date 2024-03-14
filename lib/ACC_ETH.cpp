@@ -445,7 +445,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-        acdc_buffer = eth_burst->RecieveBurst(7795,10,0);
+        acdc_buffer = CorrectData(eth_burst->RecieveBurst(ReadoutSize[bi],10,0));
 
 		// Handles buffers =/= 7795 words
 		if((int)acdc_buffer.size() != ReadoutSize[bi])
@@ -533,12 +533,12 @@ void ACC_ETH::VersionCheck()
     {
     	if(acdcs_detected & (1<<bi))
     	{
-    		uint64_t retval = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Readback  | bi, 0x1);
+    		uint64_t retval = eth->RecieveDataSingle(CML_ACC.RX_Buffer_Size_Readback | bi, 0x1);
     		//printf("Board %i got 0x%016llx\n",bi,retval);
 
             if(retval==32)
             {
-    		    bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi);
+    		    bool ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer,bi,"w");
     		
                 vector<unsigned short> return_vector = CorrectData(eth_burst->RecieveBurst(ACDCFRAME,1,0));
                 for(auto k: return_vector)
