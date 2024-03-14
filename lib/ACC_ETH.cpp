@@ -666,6 +666,8 @@ void ACC_ETH::WriteErrorLog(string errorMsg)
 // >>>> ID 17: Correct the order of the input vector and cast it to short
 std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_data)
 {
+    std::cout << "Data correction has gotten " << input_data.size() << " entries to correct" << std::endl;
+
     std::vector<unsigned short> corrected_data;
 
     if(input_data.size()==PSECFRAME+4 || input_data.size()==ACCFRAME+4 || input_data.size()==ACDCFRAME+4 || input_data.size()==PPSFRAME+4)
