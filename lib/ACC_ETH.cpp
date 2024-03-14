@@ -364,7 +364,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         {
             printf("B-%d: 0x%016llx\n",k,LastACCBuffer.at(k));
         }
-        printf("-----------");
+        printf("-----------\n");
 
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k: LAPPD_on_ACC)
@@ -460,6 +460,11 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 
 		if(acdc_buffer[0] != 0x1234)
 		{
+            std::string err_msg = "2 - Couldn't read " + to_string(ReadoutSize[bi]) + " words as expected! Tryingto fix it! Size was: " + to_string(acdc_buffer.size());
+			WriteErrorLog(err_msg);
+            ofstream corpt_file("./corrupt_buffer2.txt",ios_base::out | ios_base::trunc);
+            for(int l=0; l<acdc_buffer.size();l++){corpt_file<<l<<" "<<std::hex<<acdc_buffer.at(l)<<std::dec<<std::endl;}
+            corpt_file.close();
 			acdc_buffer.clear();
             return -606;
 		}
