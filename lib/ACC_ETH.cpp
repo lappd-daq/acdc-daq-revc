@@ -360,10 +360,11 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffer_7 = (buffers_4567 & 0xffff<<48)>>48;
 
         LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7,0xAAAA,0x4321};
-        for(auto k: LastACCBuffer)
+        for(int k=0; k<LastACCBuffer.size(); k++)
         {
-            printf("B: 0x%016llx\n",k);
+            printf("B-%d: 0x%016llx\n",k,LastACCBuffer.at(k));
         }
+        printf("-----------");
 
 		//go through all boards on the acc info frame and if 7795 words were transfered note that board
 		for(int k: LAPPD_on_ACC)
@@ -444,10 +445,10 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-        acdc_buffer = CorrectData(eth_burst->RecieveBurst(7799,1,0));
+        acdc_buffer = CorrectData(eth_burst->RecieveBurst(7795,10,0));
 
 		// Handles buffers =/= 7795 words
-		if((int)acdc_buffer.size() != ReadoutSize[bi]+4)
+		if((int)acdc_buffer.size() != ReadoutSize[bi])
 		{
 			std::string err_msg = "Couldn't read " + to_string(ReadoutSize[bi]) + " words as expected! Tryingto fix it! Size was: " + to_string(acdc_buffer.size());
 			WriteErrorLog(err_msg);
