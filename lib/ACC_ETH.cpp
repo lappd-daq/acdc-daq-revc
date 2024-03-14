@@ -350,16 +350,16 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 
         //printf("%016llx\n",buffers_0123);
 
-        uint64_t buffer_0= (buffers_0123 & 0xffff);
-        uint64_t buffer_1= (buffers_0123 & 0xffff<<16)>>16;
-        uint64_t buffer_2= (buffers_0123 & 0xffff<<32)>>32;
-        uint64_t buffer_3= (buffers_0123 & 0xffff<<48)>>48;
-        uint64_t buffer_4= (buffers_4567 & 0xffff);
-        uint64_t buffer_5= (buffers_4567 & 0xffff<<16)>>16;
-        uint64_t buffer_6= (buffers_4567 & 0xffff<<32)>>32;
-        uint64_t buffer_7= (buffers_4567 & 0xffff<<48)>>48;
+        uint64_t buffer_0 = (buffers_0123 & 0xffff);
+        uint64_t buffer_1 = (buffers_0123 & 0xffff<<16)>>16;
+        uint64_t buffer_2 = (buffers_0123 & 0xffff<<32)>>32;
+        uint64_t buffer_3 = (buffers_0123 & 0xffff<<48)>>48;
+        uint64_t buffer_4 = (buffers_4567 & 0xffff);
+        uint64_t buffer_5 = (buffers_4567 & 0xffff<<16)>>16;
+        uint64_t buffer_6 = (buffers_4567 & 0xffff<<32)>>32;
+        uint64_t buffer_7 = (buffers_4567 & 0xffff<<48)>>48;
 
-        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7};
+        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7,0xAAAA,0x4321};
         for(auto k: LastACCBuffer)
         {
             printf("B: 0x%016llx\n",k);
@@ -444,7 +444,7 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         ret = eth->SendData(CML_ACC.Read_ACDC_Data_Buffer, bi,"w");
         if(!ret){printf("Could not send command 0x%08llX with value %i to enable transfer!\n",command_address,command_value);}  
 
-        acdc_buffer = CorrectData(eth_burst->RecieveBurst(7795,1,0));
+        acdc_buffer = CorrectData(eth_burst->RecieveBurst(7799,1,0));
 
 		// Handles buffers =/= 7795 words
 		if((int)acdc_buffer.size() != ReadoutSize[bi])
