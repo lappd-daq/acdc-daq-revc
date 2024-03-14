@@ -667,6 +667,10 @@ void ACC_ETH::WriteErrorLog(string errorMsg)
 std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_data)
 {
     std::cout << "Data correction has gotten " << input_data.size() << " entries to correct" << std::endl;
+    for(auto k: input_data)
+    {
+        printf("0x%08llX\n");
+    }
 
     std::vector<unsigned short> corrected_data;
 
