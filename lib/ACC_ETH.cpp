@@ -669,7 +669,7 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
     std::cout << "Data correction has gotten " << input_data.size() << " entries to correct" << std::endl;
     for(auto k: input_data)
     {
-        printf("0x%08llX\n");
+        printf("0x%016llX\n");
     }
 
     std::vector<unsigned short> corrected_data;
