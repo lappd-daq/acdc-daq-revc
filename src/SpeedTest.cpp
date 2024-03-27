@@ -126,7 +126,7 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
     {
         std::cout << "Setup went wrong!" << std::endl;
     }
-    
+
     acc_usb->emptyUsbLine();
     acc_usb->dumpData(0xff);
                 
@@ -155,11 +155,11 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
             vector<int> bi = acc_usb->returnBoardIndices();
             acc_usb->clearData();
 	    
-            for(unsigned short k: data)
-            {
-                outfile << k << "\t";
-            }
-            outfile << endl;
+            // for(unsigned short k: data)
+            // {
+            //     outfile << k << "\t";
+            // }
+            // outfile << endl;
 	     
             events++;
         }else
