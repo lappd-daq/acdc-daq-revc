@@ -417,12 +417,12 @@ int ACC_USB::listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 					readoutSize[k] = PPSFRAME;
 				}else
                 {
-                    std::cout<<"I broke down?"<<std::endl;
-					std::cout<<"For buffer "<<k<<" size was "<<lastAccBuffer.at(16+k)<<std::endl;
-					for(auto k: lastAccBuffer)
-					{
-						printf("0x%04x\n",k);
-					}
+                    // std::cout<<"I broke down?"<<std::endl;
+					// std::cout<<"For buffer "<<k<<" size was "<<lastAccBuffer.at(16+k)<<std::endl;
+					// for(auto k: lastAccBuffer)
+					// {
+					// 	printf("0x%04x\n",k);
+					// }
                 }
 			}
 		}
