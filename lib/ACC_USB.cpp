@@ -421,7 +421,7 @@ int ACC_USB::listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 					std::cout<<"For buffer "<<k<<" size was "<<lastAccBuffer.at(16+k)<<std::endl;
 					for(auto k: lastAccBuffer)
 					{
-						printf("0x&04x\n",k)
+						printf("0x&04x\n",k);
 					}
                 }
 			}
