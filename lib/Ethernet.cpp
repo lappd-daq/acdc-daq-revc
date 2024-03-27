@@ -211,18 +211,6 @@ std::vector<uint64_t> Ethernet::RecieveBurst(uint64_t addr, uint64_t value, int 
     int maxbytes = 1456;
     uint64_t functionreturn = 0xeeeebb01;
 
-    if(m_socket<=0) 
-    {
-        std::cerr << "Socket not open." << std::endl;
-        return 0xeeeeaa01;
-    }
-
-    if(!SendData(addr,value,"w"))
-    {
-        std::cout << "Could not send write for burst read command" << std::endl;
-        return 0xeeeeaa02;
-    }
-
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
 
