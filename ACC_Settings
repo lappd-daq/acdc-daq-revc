@@ -8,15 +8,15 @@ Port1 0
 Timeout 500 #in ms
 
 #Reset
-ResetSwitchACC 0
-ResetSwitchACDC 0
+ResetSwitchACC 1
+ResetSwitchACDC 1
 
 #SMA set
 SMA_PPS 0 #0 for RJ45 or 1 for SMA3 (pps)
 SMA_Beamgate 0 #0 for RJ45 or 1 for SMA4 (Beamgate)
 
 ##Triggermode
-Triggermode 5 #fixed by firmware v3.01
+Triggermode 1 #fixed by firmware v3.01
 
 ##ACC settings
 ACC_Sign 0 #normal(0) or inverted(1)
@@ -58,5 +58,5 @@ Pedestal_channel 2000 #pedestal value to be set
 Pedestal_channel_mask 31 #5 bit representin psec chips
 
 #PPS
-PPSRatio 10
+PPSRatio 1
 PPSBeamMultiplexer 1
