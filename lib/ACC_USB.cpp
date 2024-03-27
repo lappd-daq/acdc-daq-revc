@@ -747,3 +747,14 @@ void ACC_USB::setSMA_Debug(unsigned int PPS, unsigned int Beamgate)
     
 	usleep(1000000);
 }
+
+
+void ACC_USB::SetSpecialPpsState()
+{	
+	unsigned int command;
+
+    command = 0xFF900000 | 6;
+	usb->sendData(command); if(usbcheck==false){errorcode.push_back(0xAC29EE02);}
+
+	usleep(1000000);
+}

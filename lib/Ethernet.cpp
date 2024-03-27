@@ -203,14 +203,25 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 }
 
 
-std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int timeout_us)
+std::vector<uint64_t> Ethernet::RecieveBurst(uint64_t addr, uint64_t value, int numwords, int timeout_sec, int timeout_us)
 {
     int numbytes = 0;
     int wordsRead = 0;
     int how_much_to_read = 0;
     int maxbytes = 1456;
-    bool firstread = true;
     uint64_t functionreturn = 0xeeeebb01;
+
+    if(m_socket<=0) 
+    {
+        std::cerr << "Socket not open." << std::endl;
+        return 0xeeeeaa01;
+    }
+
+    if(!SendData(addr,value,"w"))
+    {
+        std::cout << "Could not send write for burst read command" << std::endl;
+        return 0xeeeeaa02;
+    }
 
     struct sockaddr_storage their_addr;
     socklen_t addr_len = sizeof(their_addr);
@@ -221,12 +232,12 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
     numwords += 8/bytesize;
     if(bytesize*numwords>maxbytes)
     {
-        how_much_to_read = maxbytes + 2;
+        how_much_to_read = maxbytes + 2; 
     }else
     {
         how_much_to_read = bytesize*numwords + 2;
     }
-    // std::cout << "For the first time I will read " << how_much_to_read << " words" << std::endl;
+    std::cout << "For the first time I will read " << how_much_to_read << " words" << std::endl;
 
     std::vector<uint64_t> data(numwords);
     while(wordsRead < numwords)
@@ -243,7 +254,7 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
                 break;
             }else
             {
-                // std::cout << "Got " << numbytes << " words back" << std::endl;
+                std::cout << "Got " << numbytes << " words back" << std::endl;
             }
             if(!((buffer[0] & 0x7) == 1 || (buffer[0] & 0x7) == 2 || (buffer[0] & 0x7) == 3)) printf("Not burst packet! %x\n", buffer[0]); 
 
@@ -261,10 +272,10 @@ std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int 
             if(bytesize*(numwords-wordsRead)<maxbytes && numwords-wordsRead!=0)
             {
                 how_much_to_read = (numwords - wordsRead)*bytesize + 2;
-                // std::cout << "Setting read to " << (numwords - wordsRead)*2 + 2 << std::endl;
+                std::cout << "Setting read to " << (numwords - wordsRead)*2 + 2 << std::endl;
             }else if(numwords-wordsRead==0)
             {
-                // printf("Data successfull %i\n",wordsRead);
+                printf("Data successfull %d\n",wordsRead);
                 break;
             }else if(numwords-wordsRead<0)
             {

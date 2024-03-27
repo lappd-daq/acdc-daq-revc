@@ -136,6 +136,7 @@ public:
 	unsigned int returncode = 0x00000000;
 
 	void setSMA_Debug(unsigned int PPS, unsigned int Beamgate);
+	void SetSpecialPpsState();
 	
 private:
 	/*------------------------------------------------------------------------------------*/

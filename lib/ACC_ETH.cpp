@@ -359,7 +359,25 @@ int ACC_ETH::ListenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
         uint64_t buffer_6 = (buffers_4567 & 0xffff<<32)>>32;
         uint64_t buffer_7 = (buffers_4567 & 0xffff<<48)>>48;
 
-        LastACCBuffer = {0x1234,0xAAAA,firmwareversion,plllock,external_clock,acdcboads,datadetect,buffer_0,buffer_1,buffer_2,buffer_3,buffer_4,buffer_5,buffer_6,buffer_7,0xAAAA,0x4321};
+        LastACCBuffer = {   
+                            0x1234, // 0
+                            0xAAAA, // 1
+                            firmwareversion, // 2
+                            plllock, // 3
+                            external_clock, // 4
+                            acdcboads, // 5
+                            datadetect, // 6
+                            buffer_0, // 7
+                            buffer_1, // 8
+                            buffer_2, // 9
+                            buffer_3, // 10
+                            buffer_4, // 11
+                            buffer_5, // 12
+                            buffer_6, // 13
+                            buffer_7, // 14
+                            0xAAAA, // 15
+                            0x4321 // 16
+                        };
         for(int k=0; k<LastACCBuffer.size(); k++)
         {
             printf("B-%d: 0x%016llx\n",k,LastACCBuffer.at(k));
@@ -671,6 +689,7 @@ std::vector<unsigned short> ACC_ETH::CorrectData(std::vector<uint64_t> input_dat
     {
         printf("0x%016llx\n",k);
     }
+    std::cout<<"------"<<std::endl;
 
     std::vector<unsigned short> corrected_data;
 
