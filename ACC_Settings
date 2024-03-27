@@ -2,7 +2,7 @@ verbose 1
 
 #LAPPD to ACC
 Port0 0
-Port1 1
+Port1 0
 
 #Timeout for Readouts
 Timeout 500 #in ms
