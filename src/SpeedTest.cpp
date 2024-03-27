@@ -151,11 +151,11 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
             vector<int> bi = acc_usb->returnBoardIndices();
             acc_usb->clearData();
 	    
-	    for(unsigned short k: data)
-	    {
-		outfile << k << "\t";
-	    }
-	    outfile << endl;
+            for(unsigned short k: data)
+            {
+                outfile << k << "\t";
+            }
+            outfile << endl;
 	     
             events++;
         }else
@@ -163,6 +163,9 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
             if(read_back==404)
             {
                 //pass  
+            }else if(read_back==405)
+            {
+                exit(1);
             }else
             {
                 std::cout << "A non-404 error happened: " << read_back << std::endl;

@@ -417,9 +417,8 @@ int ACC_USB::listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 					readoutSize[k] = PPSFRAME;
 				}else
                 {
-                    std::cout<<"I broke down"<<std::endl;
-                    errorcode.push_back(0xAC15EE07);
-                    return 408;
+                    std::cout<<"I broke down?"<<std::endl;
+					std::cout<<"For buffer "<<k<<" size was "<<lastAccBuffer.at(16+k)<<std::endl;
                 }
 			}
 		}
