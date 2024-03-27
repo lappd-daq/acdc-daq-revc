@@ -139,7 +139,7 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
     ofstream outfile("./datafile_usb.txt", ios_base::out | ios_base::trunc);
     while(events<NumOfEvents)
     {
-        if(Settings["Triggermode"]=="1")
+        if(Settings["Triggermode"]=="1" && read_back!=404)
         {
             acc_usb->softwareTrigger();
         }
