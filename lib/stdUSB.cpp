@@ -208,7 +208,7 @@ bool stdUSB::sendData(unsigned int data) { // throw(...)
     retval = libusb_bulk_transfer(stdHandle, EP_WRITE, (unsigned char*)buff, sizeof(buff), &transferred, USB_TOUT_MS_WRITE);
 
     if (retval == 0 && transferred == 4){ //return value must be exact as the bytes transferred
-     	//printf("sending 0x%08x\n", data);  
+     	printf("sending 0x%08x\n", data);  
       	return true;
     }
     else if(retval != 0 && transferred == 4){
