@@ -126,6 +126,10 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
     {
         std::cout << "Setup went wrong!" << std::endl;
     }
+    
+    acc_usb->emptyUsbLine();
+    acc_usb->dumpData(0xff);
+                
 
     int events = 0;
     int read_back = -1;
