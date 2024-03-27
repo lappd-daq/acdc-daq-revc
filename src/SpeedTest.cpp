@@ -157,7 +157,7 @@ void StartTest_USB(std::map<std::string,std::string> Settings, int NumOfEvents)
 	    
             for(unsigned short k: data)
             {
-                outfile << std::hex << k << std::dec << "\t";
+                outfile << std::hex << k << std::dec << " ";
             }
             outfile << endl;
 	     
