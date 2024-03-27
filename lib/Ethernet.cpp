@@ -203,7 +203,7 @@ uint64_t Ethernet::RecieveDataSingle(uint64_t addr, uint64_t value)
 }
 
 
-std::vector<uint64_t> Ethernet::RecieveBurst(uint64_t addr, uint64_t value, int numwords, int timeout_sec, int timeout_us)
+std::vector<uint64_t> Ethernet::RecieveBurst(int numwords, int timeout_sec, int timeout_us)
 {
     int numbytes = 0;
     int wordsRead = 0;
