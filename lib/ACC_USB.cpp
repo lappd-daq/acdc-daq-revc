@@ -478,6 +478,7 @@ int ACC_USB::listenForAcdcData(int trigMode, vector<int> LAPPD_on_ACC)
 		//and checking each index 
 		vector_raw.insert(vector_raw.end(), acdc_buffer.begin(), acdc_buffer.end());
 	}
+	softwareTrigger();
 	vector_bi = boardsReadyForRead;
     boardsReadyForRead.clear();
 	
